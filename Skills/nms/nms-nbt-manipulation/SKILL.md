@@ -16,7 +16,7 @@ description: "直接操作 CompoundTag 讀寫物品、實體、方塊實體的 N
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（已由 Paper 1.20.5+ 原生支援）
 
 ## 觸發條件 / Triggers

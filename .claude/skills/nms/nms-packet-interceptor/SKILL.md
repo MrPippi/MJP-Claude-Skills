@@ -16,7 +16,7 @@ description: "透過 Netty ChannelDuplexHandler 注入玩家連線管線，攔�
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Netty 4.x（Paper 內建）
 
 ## 觸發條件 / Triggers

@@ -4,8 +4,8 @@
 
 - **MC 版本範圍**：1.21 – 1.21.3
 - **Java**：21（toolchain）
-- **建置工具**：Gradle（Groovy DSL）
-- **映射**：Mojang mappings（透過 Paperweight userdev 1.7.2）
+- **建置工具**：Gradle 8.11.2+（Groovy DSL；已驗證 9.8.1）— Paperweight 2.x 不支援更舊的 Gradle
+- **映射**：Mojang mappings（透過 Paperweight userdev 2.0.0-beta.24，pre-release）
 - **Javadoc**：https://jd.papermc.io/paper/1.21/
 
 ---
@@ -15,7 +15,7 @@
 ```groovy
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 group = 'com.example'

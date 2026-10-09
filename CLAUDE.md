@@ -75,10 +75,10 @@ MJP-Claude-Skills/
 |------|------|
 | MC 版本 | 1.21 – 1.21.3 |
 | Paper Dev Bundle | `1.21.1-R0.1-SNAPSHOT`（預設）、`1.21.3-R0.1-SNAPSHOT` |
-| Paperweight | `io.papermc.paperweight.userdev` 1.7.2+ |
+| Paperweight | `io.papermc.paperweight.userdev` 2.0.0-beta.24+ |
 | Mapping | Mojang mappings（Paper 1.20.5+ runtime 原生支援） |
 | Java | 21（toolchain） |
-| 建置工具 | Gradle（Groovy DSL） |
+| 建置工具 | Gradle 8.11.2+（Groovy DSL；Paperweight 2.x 需求） |
 | Javadoc | https://jd.papermc.io/paper/1.21/ |
 | 平台檔案 | `Skills/paper-nms/PLATFORM.md` |
 
@@ -159,7 +159,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 ```groovy
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 dependencies {

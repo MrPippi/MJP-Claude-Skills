@@ -16,7 +16,7 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（已由 Paper 1.20.5+ 原生支援）
 
 ## 觸發條件 / Triggers

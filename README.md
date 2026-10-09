@@ -14,7 +14,7 @@ MJP-Claude-Skills provides production-ready NMS skill templates that Claude Code
 |------|---------|
 | **MC Versions** | 1.21 – 1.21.3 |
 | **NMS Mapping** | Mojang mappings (Paper 1.20.5+ native) |
-| **Build Tool** | Paperweight userdev `1.7.2+` |
+| **Build Tool** | Paperweight userdev `2.0.0-beta.24+` |
 | **Java** | 21 (toolchain) |
 | **Runtime** | `.claude/skills/` (Claude Code) |
 

@@ -27,7 +27,7 @@ Paper 1.20.5+ 伺服器 runtime **已原生使用 Mojang mappings**，因此 Pap
 ```gradle
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 dependencies {

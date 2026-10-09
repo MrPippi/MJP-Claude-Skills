@@ -16,7 +16,7 @@ description: "透過 NMS LevelChunk 直接讀寫方塊、高度圖、ChunkSectio
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（已由 Paper 1.20.5+ 原生支援）
 
 ## 觸發條件 / Triggers

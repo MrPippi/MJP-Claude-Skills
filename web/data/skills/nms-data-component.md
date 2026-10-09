@@ -37,7 +37,7 @@ featured: false
 ## 平台需求
 
 - Paper **1.21** – 1.21.3（DataComponent 為 1.20.5+ 新增）
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（Paper 1.20.5+ 原生支援）
 - Java 21
 

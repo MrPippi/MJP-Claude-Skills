@@ -16,7 +16,7 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - 須使用 `paper-plugin.yml`（確保早於 Bukkit plugin 載入）
 
 ## 觸發條件 / Triggers
