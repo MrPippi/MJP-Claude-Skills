@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "tsx scripts/generate-static-metadata.ts && next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",

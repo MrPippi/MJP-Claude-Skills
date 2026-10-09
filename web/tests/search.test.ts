@@ -1,0 +1,79 @@
+/**
+ * Characterization tests for features/search/api/search.ts (Fuse.js wrapper).
+ * Records current ranking/limit behavior; not a statement of ideal relevance.
+ */
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { createSearchIndex, search } from '../features/search/api/search';
+import { getSearchIndex } from '../features/skills/api/skills';
+import type { SearchIndex } from '../shared/types/skill';
+
+function entry(slug: string, overrides: Partial<SearchIndex> = {}): SearchIndex {
+  return {
+    id: slug,
+    slug,
+    title: slug,
+    titleZh: slug,
+    description: '',
+    descriptionZh: '',
+    tags: [],
+    category: 'general',
+    status: 'active',
+    ...overrides,
+  };
+}
+
+describe('search (synthetic data)', () => {
+  it('returns [] for empty or whitespace-only queries', () => {
+    const fuse = createSearchIndex([entry('alpha')]);
+    assert.deepEqual(search('', fuse), []);
+    assert.deepEqual(search('   ', fuse), []);
+  });
+
+  it('caps results at 10', () => {
+    const data = Array.from({ length: 15 }, (_, i) => entry(`skill-${i}`));
+    const fuse = createSearchIndex(data);
+    assert.equal(search('skill', fuse).length, 10);
+  });
+
+  it('includes a numeric score on each result', () => {
+    const fuse = createSearchIndex([entry('alpha')]);
+    const [result] = search('alpha', fuse);
+    assert.equal(typeof result.score, 'number');
+  });
+
+  it('matches on tags', () => {
+    const fuse = createSearchIndex([entry('a', { tags: ['netty'] }), entry('b')]);
+    assert.deepEqual(search('netty', fuse).map((r) => r.item.slug), ['a']);
+  });
+
+  it('does not search the category field', () => {
+    const fuse = createSearchIndex([entry('a', { category: 'zzcategory' })]);
+    assert.deepEqual(search('zzcategory', fuse), []);
+  });
+});
+
+describe('search (real data)', () => {
+  const fuse = createSearchIndex(getSearchIndex());
+  const slugs = (q: string) => search(q, fuse).map((r) => r.item.slug);
+
+  it('packet', () => {
+    assert.deepEqual(slugs('packet'), ['nms-packet-sender', 'nms-packet-interceptor', 'nms-particle-effect']);
+  });
+
+  it('Chinese query 封包', () => {
+    assert.deepEqual(slugs('封包'), ['nms-packet-sender', 'nms-packet-interceptor']);
+  });
+
+  it('typo pakcet still matches (fuzzy)', () => {
+    assert.deepEqual(slugs('pakcet'), ['nms-packet-interceptor', 'nms-packet-sender']);
+  });
+
+  it('boss ranks nms-custom-entity above nms-boss-event', () => {
+    assert.deepEqual(slugs('boss'), ['nms-custom-entity', 'nms-boss-event', 'nms-reflection-bridge']);
+  });
+
+  it('no match returns []', () => {
+    assert.deepEqual(slugs('zzzzqqq'), []);
+  });
+});
