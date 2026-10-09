@@ -168,10 +168,11 @@ describe('getSkillBySlug (fixture)', () => {
     assert.ok(skill.content.includes('# Heading One'));
   });
 
-  it('renders headings without id attributes', async () => {
+  it('renders headings with slug ids and exposes h2/h3 as headings', async () => {
     const skill = await api.getSkillBySlug('full');
-    assert.ok(skill?.contentHtml.includes('<h1>Heading One</h1>'));
-    assert.ok(skill?.contentHtml.includes('<h2>目的</h2>'));
+    assert.ok(skill?.contentHtml.includes('<h1 id="heading-one">Heading One</h1>'));
+    assert.ok(skill?.contentHtml.includes('<h2 id="目的">目的</h2>'));
+    assert.deepEqual(skill?.headings, [{ id: '目的', text: '目的', level: 2 }]);
   });
 
   it('escapes < inside inline code as &#x3C;', async () => {

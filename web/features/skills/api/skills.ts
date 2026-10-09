@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import { remark } from 'remark';
-import remarkGfm from 'remark-gfm';
-import remarkHtml from 'remark-html';
+import { renderMarkdown } from '@/shared/markdown/render';
 import type { SkillMeta, SkillFull, Category, SearchIndex } from '@/shared/types/skill';
 
 const SKILLS_DIR = path.join(process.cwd(), 'data', 'skills');
@@ -59,18 +57,12 @@ export async function getSkillBySlug(slug: string): Promise<SkillFull | null> {
   const fileContents = fs.readFileSync(fullPath, 'utf8');
   const { data, content } = matter(fileContents);
 
-  const processed = await remark()
-    .use(remarkGfm)
-    // Default sanitize (GitHub schema): output is injected via dangerouslySetInnerHTML.
-    .use(remarkHtml)
-    .process(content);
-
-  const contentHtml = processed.toString();
-
   const meta = parseSkillFile(`${slug}.md`);
   if (!meta) return null;
 
-  return { ...meta, content, contentHtml };
+  const { html: contentHtml, headings } = await renderMarkdown(content);
+
+  return { ...meta, content, contentHtml, headings };
 }
 
 export function getSkillsByCategory(categoryId: string): SkillMeta[] {
