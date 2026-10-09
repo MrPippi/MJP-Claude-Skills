@@ -50,13 +50,8 @@ api_name: WalletApi
 change: 新增「轉帳」操作
 ```
 
-**Output — 新方法加在介面最後；舊方法完全不動:**
+**Output — 新方法加在介面最後；舊方法完全不動（節錄，`package` 與 import 同 SKILL.md）:**
 ```java
-package com.example.wallet.api;
-
-import java.util.OptionalLong;
-import java.util.UUID;
-
 public interface WalletApi {
 
     OptionalLong balance(UUID player);
@@ -71,6 +66,17 @@ public interface WalletApi {
      */
     ApiResult transfer(UUID from, UUID to, long amount, String note);
 }
+```
+
+**提供端 `WalletApiImpl` 同步實作新方法（同一個 jar 一起發布）:**
+```java
+    @Override
+    public ApiResult transfer(UUID from, UUID to, long amount, String note) {
+        requireMainThread();
+        ApiResult taken = withdraw(from, amount, note);
+        if (taken != ApiResult.OK) return taken;
+        return deposit(to, amount, note);
+    }
 ```
 
 **使用端 Hook 新增對應方法:**
