@@ -4,7 +4,9 @@
 
 MJP-Claude-Skills 提供經編譯驗證的 NMS 技能範本，Claude Code 在產生插件代碼前會先讀取這些範本，涵蓋封包、Netty 攔截、自定義實體、NBT／資料組件、GUI、計分板、Boss Bar、粒子、區塊存取、反射式存取與多版本 Adapter。
 
-> English documentation: [README.md](README.md) · 版本變更紀錄：[CHANGELOG.md](CHANGELOG.md)
+> 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
+>
+> 版本變更紀錄：[CHANGELOG.md](CHANGELOG.md)
 
 ---
 

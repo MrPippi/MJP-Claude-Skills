@@ -20,7 +20,9 @@ Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 已含全部 15 �
 ```
 MJP-Claude-Skills/
 ├── CLAUDE.md                            ← 本檔（Claude Code 入口）
-├── README.md / README.zh-TW.md
+├── README.md                            ← 英文 README（翻譯來源）
+├── README.{zh-TW,zh-CN,ja,ko,es,pt-BR,ru}.md ← 多語 README（修改 README.md 時同步更新）
+├── CHANGELOG.md
 ├── .github/workflows/
 │   ├── nextjs.yml                       ← main push：tsc + test + build + 部署 GitHub Pages
 │   └── ci.yml                           ← PR：tsc + test + build（不部署）

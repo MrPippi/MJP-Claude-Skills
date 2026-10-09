@@ -4,7 +4,9 @@
 
 MJP-Claude-Skills provides compile-verified NMS skill templates that Claude Code reads before generating plugin code — covering packets, Netty interception, custom entities, NBT / data components, GUIs, scoreboards, boss bars, particles, chunks, reflection-based access and multi-version adapters.
 
-> 繁體中文說明請見 [README.zh-TW.md](README.zh-TW.md) · Release notes: [CHANGELOG.md](CHANGELOG.md)
+> 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
+>
+> Release notes: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 

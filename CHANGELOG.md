@@ -30,6 +30,7 @@ PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper
 - `CustomMenuHolder` 範本：作為 container owner，讓 `InventoryClickEvent` 能辨識自訂 GUI；`CustomMenu` 新增 `(syncId, inventory, CustomMenuHolder)` 建構子（#14）
 - Web：以 `node:test` + `tsx` 撰寫的 characterization tests（`npm test`），CI 於 push 與 PR 執行（新增 `.github/workflows/ci.yml`）（#14）
 - `CHANGELOG.md`；README 新增依賴說明
+- 多語 README：简体中文、日本語、한국어、Español、Português (BR)、Русский，各 README 頂端提供語言切換列
 
 ### Changed
 
