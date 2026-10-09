@@ -18,15 +18,35 @@ function useScrollReveal(pathname: string) {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
+          // Also reveal anything already scrolled past (fast scroll, anchor jumps, page captures).
+          if (!entry.isIntersecting && entry.boundingClientRect.top > 0) continue;
           entry.target.classList.add('is-visible');
           observer.unobserve(entry.target);
         }
       },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.1 },
+      // Start revealing 20% of a viewport before the element arrives, so it is shown by the time it is seen.
+      { rootMargin: '0px 0px 20% 0px', threshold: 0 },
     );
-    document.querySelectorAll(REVEAL_SELECTOR).forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+    const observeWithin = (root: ParentNode) => root.querySelectorAll(REVEAL_SELECTOR).forEach((el) => observer.observe(el));
+    observeWithin(document);
+
+    // Elements mounted later (e.g. re-keyed after the language switch) must be observed too,
+    // or they would stay hidden forever.
+    const mutations = new MutationObserver((records) => {
+      for (const record of records) {
+        record.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) return;
+          if (node.matches(REVEAL_SELECTOR)) observer.observe(node);
+          observeWithin(node);
+        });
+      }
+    });
+    mutations.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mutations.disconnect();
+      observer.disconnect();
+    };
   }, [pathname]);
 }
 
