@@ -15,7 +15,7 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
 - 須使用 `paper-plugin.yml`（確保早於 Bukkit plugin 載入）
 
@@ -37,7 +37,7 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 
 ## 輸出產物 / Outputs
 
-- `CustomZombie.java` — 繼承 `net.minecraft.world.entity.monster.Zombie` 的自定義實體
+- `CustomZombie.java` — 繼承 `net.minecraft.world.entity.monster.zombie.Zombie` 的自定義實體
 - `FollowClosestPlayerGoal.java` — 自訂 `PathfinderGoal` 範本
 - `EntitySpawner.java` — 生成工具類
 - `EntityListener.java`（選）— 攔截 vanilla spawn 替換為自定義實體
@@ -59,7 +59,7 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 
@@ -167,7 +167,7 @@ public class FollowClosestPlayerGoal extends Goal {
 package com.example.entities;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 
@@ -182,8 +182,9 @@ public final class EntitySpawner {
     public static org.bukkit.entity.Entity spawnCustomZombie(Location loc) {
         ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
 
-        CustomZombie zombie = new CustomZombie(EntityType.ZOMBIE, level);
-        zombie.moveTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+        // 26.x：原版 EntityType 常數移至 EntityTypes；moveTo() 改名為 snapTo()
+        CustomZombie zombie = new CustomZombie(EntityTypes.ZOMBIE, level);
+        zombie.snapTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
 
         // 設定自訂名稱（顯示在頭上）
         zombie.setCustomName(net.minecraft.network.chat.Component.literal("§c自訂殭屍"));
@@ -209,7 +210,7 @@ src/main/java/com/example/
 
 ## 執行緒安全注意事項 / Thread Safety
 
-- ⚠️ 實體建立、`addFreshEntity()`、`moveTo()` **必須在主執行緒**
+- ⚠️ 實體建立、`addFreshEntity()`、`snapTo()` **必須在主執行緒**
 - ⚠️ `PathfinderGoal.tick()` 由 NMS 在主執行緒的 tick 迴圈呼叫，勿做耗時操作
 - ⚠️ 存取 `mob.level()` 時確認 chunk 已載入
 - ✅ 可在 async 預計算路徑資料，但 `Navigation.moveTo()` 必須在主執行緒呼叫

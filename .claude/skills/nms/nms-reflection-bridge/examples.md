@@ -12,7 +12,7 @@ cache_enabled: true
 **build.gradle（不使用 Paperweight）:**
 ```groovy
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable'
 }
 ```
 

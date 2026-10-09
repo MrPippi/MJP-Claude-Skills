@@ -1,6 +1,6 @@
 # NMS Packet 速查表 / NMS Packet Reference
 
-適用版本：Paper 1.21 – 1.21.3（Mojang mappings）
+適用版本：Paper 26.2（Mojang 官方命名；26.1 起原版不再混淆）
 套件根：`net.minecraft.network.protocol`
 
 > 封包發送用法見 `Skills/nms/nms-packet-sender/SKILL.md`
@@ -163,7 +163,8 @@ import net.minecraft.core.particles.ParticleTypes;
 
 ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
     ParticleTypes.FLAME,   // 粒子類型
-    true,                  // 強制顯示（遠距離也顯示）
+    true,                  // overrideLimiter：遠距離也顯示
+    false,                 // alwaysShow：無視客戶端「粒子：減少」設定（1.21.4+ 新增）
     x, y, z,              // 中心座標
     0.5f, 0.5f, 0.5f,     // 隨機偏移範圍
     0.0f,                  // speed（影響粒子初速度）
@@ -205,33 +206,24 @@ ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(
 
 #### `ClientboundExplodePacket`
 
-> 類名為 `ClientboundExplodePacket`（非 ~~ClientboundExplosionPacket~~），且建構子在 1.21.2 改版，兩版本寫法不同。
+> 類名為 `ClientboundExplodePacket`（非 ~~ClientboundExplosionPacket~~）。此建構子在 1.21.2、26.x 皆有改版，以下為 26.2 版本。
 
 ```java
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundExplodePacket;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.level.Explosion;
+import net.minecraft.util.random.WeightedList;
 import net.minecraft.world.phys.Vec3;
 
-// 1.21 – 1.21.1：純客戶端爆炸效果，不破壞方塊
+// 純客戶端爆炸效果，不破壞方塊
 ClientboundExplodePacket packet = new ClientboundExplodePacket(
-    x, y, z,                               // 中心座標
-    3.0f,                                  // 強度（影響視覺效果）
-    List.of(),                             // 受影響的方塊位置列表（空 = 不破壞）
-    Vec3.ZERO,                             // 玩家 knockback
-    Explosion.BlockInteraction.KEEP,
-    ParticleTypes.EXPLOSION,               // 小爆炸粒子
-    ParticleTypes.EXPLOSION_EMITTER,       // 大爆炸粒子
-    SoundEvents.GENERIC_EXPLODE
-);
-
-// 1.21.2 – 1.21.3：簡化為 中心點 / 可選 knockback / 粒子 / 音效
-ClientboundExplodePacket packet = new ClientboundExplodePacket(
-    new Vec3(x, y, z),
-    java.util.Optional.empty(),            // 玩家 knockback
-    ParticleTypes.EXPLOSION_EMITTER,
-    SoundEvents.GENERIC_EXPLODE
+    new Vec3(x, y, z),                 // 中心座標
+    3.0f,                              // 半徑（影響視覺效果）
+    0,                                 // 受影響方塊數（0 = 不破壞）
+    java.util.Optional.empty(),        // 玩家 knockback
+    ParticleTypes.EXPLOSION_EMITTER,   // 爆炸粒子
+    SoundEvents.GENERIC_EXPLODE,       // 音效
+    WeightedList.of()                  // 方塊碎屑粒子（空 = 無）
 );
 ```
 
@@ -280,17 +272,16 @@ ClientboundContainerSetSlotPacket packet = new ClientboundContainerSetSlotPacket
 
 #### `ClientboundCustomPayloadPacket`（Plugin Message）
 ```java
-import io.netty.buffer.Unpooled;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-ResourceLocation channel = ResourceLocation.fromNamespaceAndPath("myplugin", "sync");
+Identifier channel = Identifier.fromNamespaceAndPath("myplugin", "sync");
 byte[] data = /* your data */;
 
 // 1.20.5+：CustomPacketPayload 改為 type() + StreamCodec；任意 channel 原始位元組用 Paper 的 DiscardedPayload
 ClientboundCustomPayloadPacket packet =
-    new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, Unpooled.wrappedBuffer(data)));
+    new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, data));
 ```
 
 ---
@@ -336,14 +327,21 @@ if (msg instanceof ServerboundMovePlayerPacket.PosRot move) {
 
 ### Interaction / 互動
 
-#### `ServerboundInteractPacket`
+#### `ServerboundInteractPacket` / `ServerboundAttackPacket`
 ```java
+import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.Vec3;
 
+// 26.x：ServerboundInteractPacket 改為 record，攻擊拆成獨立的 ServerboundAttackPacket
 if (msg instanceof ServerboundInteractPacket interact) {
-    int entityId = interact.getEntityId();
-    // interact.getAction() == ServerboundInteractPacket.Action.INTERACT
-    // interact.getAction() == ServerboundInteractPacket.Action.ATTACK
+    int entityId = interact.entityId();
+    InteractionHand hand = interact.hand();      // MAIN_HAND / OFF_HAND
+    Vec3 location = interact.location();         // 互動點（相對實體）
+    boolean sneaking = interact.usingSecondaryAction();
+} else if (msg instanceof ServerboundAttackPacket attack) {
+    int entityId = attack.entityId();
 }
 ```
 
@@ -426,7 +424,7 @@ buf.writeUtf("hello");
 buf.writeBoolean(true);
 buf.writeFloat(3.14f);
 buf.writeVarInt(1000);       // 壓縮整數（封包常用）
-buf.writeResourceLocation(ResourceLocation.withDefaultNamespace("stone"));
+buf.writeIdentifier(Identifier.withDefaultNamespace("stone"));
 
 // 讀取
 int i = buf.readInt();

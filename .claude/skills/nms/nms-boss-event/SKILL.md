@@ -15,9 +15,9 @@ description: "透過 NMS ServerBossEvent 操作 Boss Bar 進度條、顏色、�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -44,7 +44,7 @@ description: "透過 NMS ServerBossEvent 操作 Boss Bar 進度條、顏色、�
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -62,6 +62,8 @@ import net.minecraft.world.BossEvent;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
+import java.util.UUID;
+
 @SuppressWarnings("UnstableApiUsage")
 public class NmsBossBar {
 
@@ -76,7 +78,9 @@ public class NmsBossBar {
      */
     public NmsBossBar(String title, BossEvent.BossBarColor color,
                       BossEvent.BossBarOverlay overlay) {
+        // 26.x 起建構子需明確傳入 boss bar UUID
         this.bossEvent = new ServerBossEvent(
+            UUID.randomUUID(),
             Component.literal(title),
             color,
             overlay

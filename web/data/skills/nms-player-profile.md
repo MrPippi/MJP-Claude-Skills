@@ -2,7 +2,7 @@
 id: nms-player-profile
 title: NMS Player Profile
 titleZh: NMS 玩家 Profile 操作
-description: Manipulate GameProfile for skin injection used in NPC appearance and fake player entities on Paper 1.21.x with Mojang mappings.
+description: Manipulate GameProfile for skin injection used in NPC appearance and fake player entities on Paper 26.x with official Mojang names.
 descriptionZh: 操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與假玩家實體（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -33,10 +33,10 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 

@@ -13,6 +13,8 @@ goal_class_name: BossChargeGoal
 
 **Output — BossZombie.java (關鍵段):**
 ```java
+import net.minecraft.world.entity.monster.zombie.Zombie; // 26.x 起位於 monster.zombie 子套件
+
 public class BossZombie extends Zombie {
     public BossZombie(EntityType<? extends Zombie> type, Level level) {
         super(type, level);
@@ -116,8 +118,8 @@ public class EntityListener implements Listener {
 
         // 用自定義版本取代
         ServerLevel nmsLevel = ((CraftWorld) loc.getWorld()).getHandle();
-        StrongerZombie custom = new StrongerZombie(EntityType.ZOMBIE, nmsLevel);
-        custom.moveTo(loc.getX(), loc.getY(), loc.getZ());
+        StrongerZombie custom = new StrongerZombie(EntityTypes.ZOMBIE, nmsLevel);
+        custom.snapTo(loc.getX(), loc.getY(), loc.getZ());
         nmsLevel.addFreshEntity(custom, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 }

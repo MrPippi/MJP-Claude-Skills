@@ -15,9 +15,9 @@ description: "繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 sl
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -45,7 +45,7 @@ description: "繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 sl
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 

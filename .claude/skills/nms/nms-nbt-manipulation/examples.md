@@ -93,8 +93,7 @@ item = CraftItemStack.asBukkitCopy(nms);
 // 讀回
 CompoundTag tag = CraftItemStack.asNMSCopy(item)
     .getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-if (tag.contains("playerData")) {
-    NbtSerializer.PlayerData loaded = NbtSerializer.deserialize(tag.getCompound("playerData"));
-    player.sendMessage("玩家：" + loaded.name() + " Lv." + loaded.level());
-}
+// 1.21.5+ getCompound 回傳 Optional<CompoundTag>
+tag.getCompound("playerData").map(NbtSerializer::deserialize).ifPresent(loaded ->
+    player.sendMessage("玩家：" + loaded.name() + " Lv." + loaded.level()));
 ```

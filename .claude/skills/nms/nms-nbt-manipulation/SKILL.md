@@ -15,9 +15,9 @@ description: "直接操作 CompoundTag 讀寫物品、實體、方塊實體的 N
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -45,7 +45,7 @@ description: "直接操作 CompoundTag 讀寫物品、實體、方塊實體的 N
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -81,8 +81,8 @@ public final class ItemNbtHelper {
 
     /** 讀取字串 NBT。 */
     public static Optional<String> getString(org.bukkit.inventory.ItemStack item, String key) {
-        CompoundTag tag = readTag(item);
-        return tag.contains(key) ? Optional.of(tag.getString(key)) : Optional.empty();
+        // 1.21.5+ CompoundTag getter 直接回傳 Optional
+        return readTag(item).getString(key);
     }
 
     /** 寫入字串 NBT 並回傳修改後的 Bukkit ItemStack（不可變模式）。 */
@@ -95,8 +95,7 @@ public final class ItemNbtHelper {
 
     /** 讀取整數 NBT。 */
     public static int getInt(org.bukkit.inventory.ItemStack item, String key, int def) {
-        CompoundTag tag = readTag(item);
-        return tag.contains(key) ? tag.getInt(key) : def;
+        return readTag(item).getIntOr(key, def);
     }
 
     /** 寫入整數 NBT 並回傳修改後的 Bukkit ItemStack。 */
@@ -129,7 +128,10 @@ public final class ItemNbtHelper {
 package com.example.nbt;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -143,15 +145,15 @@ public final class EntityNbtHelper {
      */
     public static CompoundTag getTag(org.bukkit.entity.Entity entity) {
         Entity nms = ((CraftEntity) entity).getHandle();
-        CompoundTag tag = new CompoundTag();
-        nms.save(tag);
-        return tag;
+        // 1.21.6+ Entity 序列化改經 ValueOutput；TagValueOutput 以 CompoundTag 為底層
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, nms.registryAccess());
+        nms.saveWithoutId(output);
+        return output.buildResult();
     }
 
     /** 讀取實體自定義 tag（custom_name, Tags 等之外的自定義鍵）。 */
     public static String getString(org.bukkit.entity.Entity entity, String key, String def) {
-        CompoundTag tag = getTag(entity);
-        return tag.contains(key) ? tag.getString(key) : def;
+        return getTag(entity).getStringOr(key, def);
     }
 
     /**
@@ -160,10 +162,9 @@ public final class EntityNbtHelper {
      */
     public static void mergeTag(org.bukkit.entity.Entity entity, CompoundTag patch) {
         Entity nms = ((CraftEntity) entity).getHandle();
-        CompoundTag current = new CompoundTag();
-        nms.save(current);
+        CompoundTag current = getTag(entity);
         current.merge(patch);
-        nms.load(current);
+        nms.load(TagValueInput.create(ProblemReporter.DISCARDING, nms.registryAccess(), current));
     }
 }
 ```
@@ -191,10 +192,11 @@ public final class NbtSerializer {
     }
 
     public static PlayerData deserialize(CompoundTag tag) {
+        // 1.21.5+：getXxx(key) 回傳 Optional，getXxxOr(key, default) 回傳原始值
         return new PlayerData(
-            tag.getString("name"),
-            tag.getInt("level"),
-            tag.getDouble("exp")
+            tag.getStringOr("name", ""),
+            tag.getIntOr("level", 0),
+            tag.getDoubleOr("exp", 0.0)
         );
     }
 }

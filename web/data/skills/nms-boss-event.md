@@ -2,7 +2,7 @@
 id: nms-boss-event
 title: NMS Boss Event
 titleZh: NMS Boss Bar 操作
-description: Operate Boss Bar progress, color, style, and per-player visibility via NMS ServerBossEvent on Paper 1.21.x with Mojang mappings.
+description: Operate Boss Bar progress, color, style, and per-player visibility via NMS ServerBossEvent on Paper 26.x with official Mojang names.
 descriptionZh: 透過 NMS ServerBossEvent 操作 Boss Bar 進度、顏色、風格與每人獨立可見性（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -36,10 +36,10 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 
@@ -70,10 +70,10 @@ bar.setTitle("§c§lBoss §f— 75%");
 ```java
 // 建立每人獨立的 Boss Bar（各自顯示不同進度）
 BossBarManager manager = new BossBarManager(plugin);
-manager.show(player, BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
-manager.setProgress(player, 0.5f);
-manager.hide(player);
-manager.cleanup();  // Plugin disable 時呼叫
+manager.getOrCreate(player, "§a任務進度", BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
+manager.update(player, "§a任務進度 50%", 0.5f);
+manager.remove(player);
+manager.removeAll();  // Plugin disable 時呼叫
 ```
 
 ---

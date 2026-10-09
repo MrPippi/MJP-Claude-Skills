@@ -14,7 +14,7 @@ public void onEquip(PlayerItemHeldEvent event) {
     Player player = event.getPlayer();
     // 移除舊加成
     AttributeUtil.removeModifier(player, Attributes.ATTACK_DAMAGE,
-        ResourceLocation.fromNamespaceAndPath("myplugin", "sword_bonus"));
+        Identifier.fromNamespaceAndPath("myplugin", "sword_bonus"));
 
     org.bukkit.inventory.ItemStack held = player.getInventory().getItem(event.getNewSlot());
     if (held != null && held.getType() == Material.DIAMOND_SWORD) {
@@ -43,7 +43,7 @@ public void applySpeedBuff(Player player, Plugin plugin) {
     // 10 秒後移除
     Bukkit.getScheduler().runTaskLater(plugin, () -> {
         AttributeUtil.removeModifier(player, Attributes.MOVEMENT_SPEED,
-            ResourceLocation.fromNamespaceAndPath("myplugin", "speed_buff"));
+            Identifier.fromNamespaceAndPath("myplugin", "speed_buff"));
     }, 200L);
 }
 ```

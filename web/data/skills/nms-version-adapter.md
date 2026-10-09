@@ -2,8 +2,8 @@
 id: nms-version-adapter
 title: NMS Version Adapter
 titleZh: NMS 多版本適配器
-description: Abstract adapter interface with version-specific implementations and runtime dispatch for multi-version NMS compatibility across Paper 1.21.x versions.
-descriptionZh: 抽象 Adapter 介面搭配版本特定實作與 runtime dispatch，讓同一 plugin 支援多個 Paper 1.21.x 版本。
+description: Abstract adapter interface with version-specific implementations and runtime dispatch for multi-version NMS compatibility across Paper 26.x versions.
+descriptionZh: 抽象 Adapter 介面搭配版本特定實作與 runtime dispatch，讓同一 plugin 支援多個 Paper 26.x 版本。
 version: "1.0.0"
 status: active
 category: nms-bridge
@@ -31,7 +31,7 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.x（26.2 / 26.3 adapter 範例）
 - 建議搭配 multi-module Gradle build（每個版本各自 module 使用 Paperweight 編譯）
 
 ---
@@ -53,8 +53,8 @@ public interface NmsAdapter {
 
 ```java
 // 啟動時注冊各版本 adapter
-AdapterRegistry.register(new V1_21_Adapter());
-AdapterRegistry.register(new V1_21_3_Adapter());
+AdapterRegistry.register(new V26_2_Adapter());
+AdapterRegistry.register(new V26_3_Adapter());
 AdapterRegistry.initialize(); // 自動偵測版本並選擇
 
 // 使用（版本無關）
@@ -65,13 +65,14 @@ AdapterRegistry.get().sendActionBar(player, Component.text("歡迎！"));
 
 ```java
 public enum NmsVersion {
-    V1_21, V1_21_1, V1_21_3, UNSUPPORTED;
+    V26_1, V26_2, V26_3, UNSUPPORTED;
 
     public static NmsVersion detect() {
-        return switch (Bukkit.getMinecraftVersion()) {
-            case "1.21" -> V1_21;
-            case "1.21.1" -> V1_21_1;
-            case "1.21.3" -> V1_21_3;
+        String[] parts = Bukkit.getMinecraftVersion().split("\\."); // "26.2"、"26.1.2"
+        return switch (parts[0] + "." + parts[1]) {
+            case "26.1" -> V26_1;
+            case "26.2" -> V26_2;
+            case "26.3" -> V26_3;
             default -> UNSUPPORTED;
         };
     }
@@ -85,7 +86,7 @@ public enum NmsVersion {
 ```
 my-plugin/
 ├── core/           # NmsAdapter 介面（只依賴 paper-api）
-├── adapter-v1_21/  # Paperweight 1.21.1 編譯
-├── adapter-v1_21_3/# Paperweight 1.21.3 編譯
+├── adapter-v26_2/  # Paper 26.2 dev bundle 編譯
+├── adapter-v26_3/# Paper 26.3 dev bundle 編譯
 └── plugin/         # shadowJar 整合打包
 ```

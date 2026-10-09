@@ -15,9 +15,9 @@ description: "透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -43,7 +43,7 @@ description: "透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -104,9 +104,9 @@ public final class AttributeUtil {
         });
     }
 
-    /** 移除指定 id 的 AttributeModifier（1.21 起 modifier id 為 ResourceLocation，不再是 UUID）。 */
+    /** 移除指定 id 的 AttributeModifier（1.21 起 modifier id 為 Identifier（1.21.11 前稱 ResourceLocation），不再是 UUID）。 */
     public static void removeModifier(LivingEntity entity, Holder<Attribute> attribute,
-                                      net.minecraft.resources.ResourceLocation id) {
+                                      net.minecraft.resources.Identifier id) {
         getInstance(entity, attribute).ifPresent(inst -> inst.removeModifier(id));
     }
 
@@ -134,7 +134,7 @@ public final class AttributeUtil {
 ```java
 package com.example.rpg;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
@@ -152,7 +152,7 @@ public final class ModifierBuilder {
     /** 建立加法 modifier（e.g. +5 攻擊力）。 */
     public static AttributeModifier addition(String namespace, String path, double amount) {
         return new AttributeModifier(
-            ResourceLocation.fromNamespaceAndPath(namespace, path),
+            Identifier.fromNamespaceAndPath(namespace, path),
             amount,
             AttributeModifier.Operation.ADD_VALUE
         );
@@ -161,7 +161,7 @@ public final class ModifierBuilder {
     /** 建立乘基底 modifier（e.g. +10% 攻擊力）。 */
     public static AttributeModifier multiplyBase(String namespace, String path, double multiplier) {
         return new AttributeModifier(
-            ResourceLocation.fromNamespaceAndPath(namespace, path),
+            Identifier.fromNamespaceAndPath(namespace, path),
             multiplier,
             AttributeModifier.Operation.ADD_MULTIPLIED_BASE
         );
@@ -170,7 +170,7 @@ public final class ModifierBuilder {
     /** 建立乘總值 modifier（e.g. 全部計算後再 ×1.1）。 */
     public static AttributeModifier multiplyTotal(String namespace, String path, double multiplier) {
         return new AttributeModifier(
-            ResourceLocation.fromNamespaceAndPath(namespace, path),
+            Identifier.fromNamespaceAndPath(namespace, path),
             multiplier,
             AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
         );
@@ -201,4 +201,4 @@ src/main/java/com/example/
 | `getInstance` 回傳 empty | 實體不支援該屬性 | 確認 EntityType 支援（如 Slime 無 ATTACK_DAMAGE） |
 | modifier 無效果 | Operation 選擇錯誤 | 參考 Operation 說明選擇正確計算方式 |
 | 屬性值被重置 | 實體死亡/重生後 modifier 消失 | 在 EntitySpawnEvent 重新套用 modifier |
-| `addModifier` 拋 IllegalArgumentException | 相同 ResourceLocation 已存在 | 呼叫前先 `removeModifier()` |
+| `addModifier` 拋 IllegalArgumentException | 相同 Identifier 已存在 | 呼叫前先 `removeModifier()` |

@@ -2,7 +2,7 @@
 id: nms-block-entity
 title: NMS Block Entity
 titleZh: NMS 自定義方塊實體
-description: Implement custom NMS BlockEntity with NBT serialization, tick logic, and client sync via packets on Paper 1.21.x with Mojang mappings.
+description: Implement custom NMS BlockEntity with NBT serialization, tick logic, and client sync via packets on Paper 26.x with official Mojang names.
 descriptionZh: 繼承 NMS BlockEntity 實作自定義方塊實體，支援 NBT 讀寫、伺服器端 Tick、封包同步（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -35,10 +35,10 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 
@@ -51,16 +51,21 @@ public class CustomBlockEntity extends BlockEntity {
 
     private int storedEnergy = 0;
 
+    public CustomBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
+    // 1.21.6+：序列化改用 ValueOutput / ValueInput
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putInt("storedEnergy", storedEnergy);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt("storedEnergy", storedEnergy);
     }
 
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        storedEnergy = tag.getInt("storedEnergy");
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        storedEnergy = input.getIntOr("storedEnergy", 0);
     }
 
     @Override

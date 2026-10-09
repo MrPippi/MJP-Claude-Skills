@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**A curated library of [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) for low-level Minecraft NMS (net.minecraft.server) development on Paper 1.21.x with Mojang mappings.**
+**A curated library of [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) for low-level Minecraft NMS (net.minecraft.server) development on Paper 26.x with official Mojang names.**
 
 MJP-Claude-Skills provides production-ready NMS skill templates that Claude Code reads before generating plugin code — covering packet sending, Netty pipeline interception, custom entity AI, reflection-based cross-version access, and multi-version adapter patterns.
 
@@ -12,10 +12,10 @@ MJP-Claude-Skills provides production-ready NMS skill templates that Claude Code
 
 | Item | Details |
 |------|---------|
-| **MC Versions** | 1.21 – 1.21.3 |
-| **NMS Mapping** | Mojang mappings (Paper 1.20.5+ native) |
+| **MC Versions** | 26.2 (Paper stable) |
+| **NMS Naming** | Official Mojang names (Minecraft is unobfuscated since 26.1) |
 | **Build Tool** | Paperweight userdev `2.0.0-beta.24+` |
-| **Java** | 21 (toolchain) |
+| **Java** | 25 (toolchain) |
 | **Runtime** | `.claude/skills/` (Claude Code) |
 
 ---

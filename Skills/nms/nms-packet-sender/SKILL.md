@@ -15,9 +15,9 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -45,7 +45,7 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -117,44 +117,36 @@ public final class PacketSender {
 ```java
 package com.example.network;
 
-import io.netty.buffer.Unpooled;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class PacketBuilder {
 
     private PacketBuilder() {}
 
-    /** 建立 Action Bar 文字封包。 */
+    /** 建立 Action Bar 文字封包（Adventure → NMS 用 Paper 內建的 PaperAdventure 轉換）。 */
     public static ClientboundSetActionBarTextPacket actionBar(Component message) {
-        String json = GsonComponentSerializer.gson().serialize(message);
-        MutableComponent nmsComponent = net.minecraft.network.chat.Component.Serializer
-                .fromJson(json, net.minecraft.core.RegistryAccess.EMPTY);
-        return new ClientboundSetActionBarTextPacket(nmsComponent);
+        return new ClientboundSetActionBarTextPacket(PaperAdventure.asVanilla(message));
     }
 
     /** 建立 Title 封包。 */
     public static ClientboundSetTitleTextPacket title(Component title) {
-        String json = GsonComponentSerializer.gson().serialize(title);
-        MutableComponent nmsComponent = net.minecraft.network.chat.Component.Serializer
-                .fromJson(json, net.minecraft.core.RegistryAccess.EMPTY);
-        return new ClientboundSetTitleTextPacket(nmsComponent);
+        return new ClientboundSetTitleTextPacket(PaperAdventure.asVanilla(title));
     }
 
     /**
      * 建立自定義 Plugin Message 封包（CustomPayload）。
      * 1.20.5+ CustomPacketPayload 改用 type() + StreamCodec；任意 channel 的原始位元組
-     * 使用 Paper 的 DiscardedPayload(id, ByteBuf) 承載（與 Player#sendPluginMessage 相同機制）。
+     * 使用 Paper 的 DiscardedPayload(id, byte[]) 承載（與 Player#sendPluginMessage 相同機制）。
      */
-    public static ClientboundCustomPayloadPacket customPayload(ResourceLocation channel, byte[] data) {
-        return new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, Unpooled.wrappedBuffer(data)));
+    public static ClientboundCustomPayloadPacket customPayload(Identifier channel, byte[] data) {
+        return new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, data));
     }
 }
 ```

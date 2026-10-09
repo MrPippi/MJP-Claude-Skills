@@ -33,7 +33,7 @@ featured: true
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
 - `paper-plugin.yml`（確保 NMS 早於 Bukkit plugin 載入）
 
@@ -44,8 +44,14 @@ featured: true
 ### CustomZombie.java
 
 ```java
+import net.minecraft.world.entity.monster.zombie.Zombie; // 26.x 起位於 monster.zombie 子套件
+
 @SuppressWarnings("UnstableApiUsage")
 public class CustomZombie extends Zombie {
+
+    public CustomZombie(EntityType<? extends Zombie> type, Level level) {
+        super(type, level);
+    }
 
     @Override
     protected void registerGoals() {

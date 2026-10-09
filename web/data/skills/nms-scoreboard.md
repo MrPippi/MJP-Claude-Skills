@@ -2,7 +2,7 @@
 id: nms-scoreboard
 title: NMS Scoreboard
 titleZh: NMS 計分板操作
-description: Operate sidebar, tablist, and scoreboard via NMS Scoreboard/Objective/Team API on Paper 1.21.x with Mojang mappings.
+description: Operate sidebar, tablist, and scoreboard via NMS Scoreboard/Objective/Team API on Paper 26.x with official Mojang names.
 descriptionZh: 透過 NMS Scoreboard/Objective/Team API 操作 sidebar、tablist 顯示名稱與計分板（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -33,10 +33,10 @@ featured: true
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 

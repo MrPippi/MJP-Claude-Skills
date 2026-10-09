@@ -1,12 +1,12 @@
 # Paper NMS Platform / Paper NMS 平台
 
-本平台定義 Paper NMS 開發的基礎建置設定，使用 Paperweight userdev 與 Mojang mappings。所有 MJP-Claude-Skills NMS 技能產出的代碼皆預設此平台。
+本平台定義 Paper NMS 開發的基礎建置設定，使用 Paperweight userdev 與 Mojang 官方命名（Minecraft 26.1 起原版不再混淆）。所有 MJP-Claude-Skills NMS 技能產出的代碼皆預設此平台。
 
-- **MC 版本範圍**：1.21 – 1.21.3
-- **Java**：21（toolchain）
+- **MC 版本**：26.2（Paper stable，dev bundle `26.2.build.132-stable`）
+- **Java**：25（toolchain；Paper 26.x 最低需求）
 - **建置工具**：Gradle 8.11.2+（Groovy DSL；已驗證 9.8.1）— Paperweight 2.x 不支援更舊的 Gradle
-- **映射**：Mojang mappings（透過 Paperweight userdev 2.0.0-beta.24，pre-release）
-- **Javadoc**：https://jd.papermc.io/paper/1.21/
+- **命名**：Mojang 官方名稱（透過 Paperweight userdev 2.0.0-beta.24，pre-release）
+- **Javadoc**：https://jd.papermc.io/paper/26.2/
 
 ---
 
@@ -28,17 +28,17 @@ repositories {
 
 dependencies {
     // Paperweight 提供 Mojang-mapped Paper + NMS API
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 
 tasks {
     compileJava {
         options.encoding = 'UTF-8'
-        options.release.set(21)
+        options.release.set(25)
     }
 
     // Paper 1.20.5+ 無需 reobfJar；直接使用 assemble 產物（build/libs/*.jar）
@@ -75,7 +75,7 @@ rootProject.name = 'my-nms-plugin'
 name: ${name}
 version: '${version}'
 main: com.example.MyNmsPlugin
-api-version: '1.21'
+api-version: '26.2'
 description: '${description}'
 author: YourName
 
@@ -117,13 +117,21 @@ public final class MyNmsPlugin extends JavaPlugin {
 
 | Paper 建置版本 | MC 版本 | CraftBukkit package | ServerPlayer location |
 |--------------|--------|--------------------|----------------------|
-| `1.21-R0.1-SNAPSHOT` | 1.21 | `org.bukkit.craftbukkit` | `net.minecraft.server.level.ServerPlayer` |
-| `1.21.1-R0.1-SNAPSHOT` | 1.21.1 | `org.bukkit.craftbukkit` | 同上 |
-| `1.21.3-R0.1-SNAPSHOT` | 1.21.3 | `org.bukkit.craftbukkit` | 同上 |
+| `26.1.2.build.<n>-stable` | 26.1.2 | `org.bukkit.craftbukkit` | `net.minecraft.server.level.ServerPlayer` |
+| `26.2.build.132-stable`（**預設**） | 26.2 | `org.bukkit.craftbukkit` | 同上 |
+| `26.3.build.<n>-beta` | 26.3（Paper 仍為 beta） | `org.bukkit.craftbukkit` | 同上 |
+
+> 26.x 起 Paper dev bundle 版本格式改為 `<MC版本>.build.<build號>-<channel>`（不再是 `-R0.1-SNAPSHOT`），可在
+> https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml 查詢最新 build。
 
 > Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
 >
-> 1.21.2 起部分 NMS API 改名（例：`MobSpawnType` → `EntitySpawnReason`、`getMinSection()` → `getMinSectionY()`、`ClientboundExplodePacket` 建構子）。技能範本優先使用 1.21–1.21.3 皆存在的 API；無共同 API 時會分別標註。
+> 從 1.21.x 升級到 26.x 常見的 NMS 變更（技能範本皆已對應）：
+> - `ResourceLocation` → `Identifier`；原版 `EntityType.XXX` 常數移至 `EntityTypes`；`Entity.moveTo()` → `snapTo()`；`Level.isClientSide` 欄位 → `isClientSide()`
+> - 實體與 BlockEntity 序列化改用 `ValueOutput` / `ValueInput`；`CompoundTag.getXxx(key)` 回傳 `Optional`（另有 `getXxxOr(key, default)`）
+> - `Component.Serializer` 移除，Adventure ↔ NMS 改用 `PaperAdventure.asVanilla()` / `asAdventure()`
+> - authlib：`GameProfile` 成為 record（`id()` / `name()` / `properties()`）；玩家 profile 查詢改用 `MinecraftServer.services()`
+> - 部分 mob 類別移入子套件（例：`net.minecraft.world.entity.monster.zombie.Zombie`）
 
 ---
 

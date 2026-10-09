@@ -15,9 +15,9 @@ description: "實作自定義 NMS BlockEntity（含 NBT 序列化、Tick 邏輯�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -46,7 +46,7 @@ description: "實作自定義 NMS BlockEntity（含 NBT 序列化、Tick 邏輯�
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -66,6 +66,8 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nullable;
 
@@ -82,20 +84,23 @@ public class CustomBlockEntity extends BlockEntity {
 
     // ─── NBT 序列化 ──────────────────────────────────────────────────
 
-    /** 儲存自定義資料到 NBT（世界儲存 + 封包同步）。 */
+    /**
+     * 儲存自定義資料（世界儲存 + 封包同步）。
+     * 1.21.6+ 改用 ValueOutput 抽象（不再直接操作 CompoundTag + HolderLookup.Provider）。
+     */
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
-        tag.putInt("storedEnergy", storedEnergy);
-        tag.putString("ownerName", ownerName);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.putInt("storedEnergy", storedEnergy);
+        output.putString("ownerName", ownerName);
     }
 
-    /** 從 NBT 讀取自定義資料（世界載入 + 封包接收）。 */
+    /** 讀取自定義資料（世界載入 + 封包接收）；缺少欄位時使用預設值。 */
     @Override
-    public void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        storedEnergy = tag.getInt("storedEnergy");
-        ownerName = tag.getString("ownerName");
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        storedEnergy = input.getIntOr("storedEnergy", 0);
+        ownerName = input.getStringOr("ownerName", "");
     }
 
     // ─── 客戶端同步 ──────────────────────────────────────────────────
@@ -116,7 +121,7 @@ public class CustomBlockEntity extends BlockEntity {
     /** 通知客戶端狀態變更（呼叫後自動發送更新封包）。 */
     public void markDirtyAndSync() {
         setChanged();
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
@@ -157,7 +162,7 @@ public class CustomBlockEntityTicker implements BlockEntityTicker<CustomBlockEnt
 
     @Override
     public void tick(Level level, BlockPos pos, BlockState state, CustomBlockEntity entity) {
-        if (level.isClientSide) return; // 只在伺服器端執行
+        if (level.isClientSide()) return; // 只在伺服器端執行
 
         tickCount++;
         if (tickCount % TICK_INTERVAL != 0) return;
@@ -221,7 +226,7 @@ src/main/java/com/example/
 
 - ⚠️ 所有 BlockEntity 操作（讀取、修改、`markDirtyAndSync()`）**必須在主執行緒呼叫**
 - ⚠️ `tick()` 由 NMS 在主執行緒呼叫，內部不可進行阻塞 IO
-- ⚠️ `level.isClientSide` 必須在 tick 內檢查，防止在客戶端 Tick 執行伺服器邏輯
+- ⚠️ `level.isClientSide()` 必須在 tick 內檢查，防止在客戶端 Tick 執行伺服器邏輯
 - 詳見 `Skills/_shared/nms-threading.md`
 
 ## 失敗回退 / Fallback

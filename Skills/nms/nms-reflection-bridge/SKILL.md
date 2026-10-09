@@ -11,7 +11,7 @@ description: "反射式 NMS 存取橋接：避開 CraftBukkit 編譯期依賴（
 
 ## 目的 / Purpose
 
-提供**不依賴 Paperweight userdev** 的 NMS 存取方式，透過 Java reflection + 快取 Method/Field handle，使同一 JAR 可在多個 NMS 版本執行（例如 1.21、1.21.1、1.21.3）。
+提供**不依賴 Paperweight userdev** 的 NMS 存取方式，透過 Java reflection + 快取 Method/Field handle，使同一 JAR 可在多個 NMS 版本執行（例如 26.1、26.2、26.3）。
 
 > 若專案只需單一版本，請使用 Paperweight 的原生 API（`nms-packet-sender` 等）更簡潔。本技能適用於跨版本分發場景。
 

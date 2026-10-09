@@ -2,7 +2,7 @@
 id: nms-attribute-modifier
 title: NMS Attribute Modifier
 titleZh: NMS 屬性修改器
-description: Dynamically modify entity attributes via NMS AttributeMap/AttributeModifier for RPG buff/debuff systems on Paper 1.21.x with Mojang mappings.
+description: Dynamically modify entity attributes via NMS AttributeMap/AttributeModifier for RPG buff/debuff systems on Paper 26.x with official Mojang names.
 descriptionZh: 透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性，實現 RPG 裝備加成與 Buff/Debuff 系統（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -36,10 +36,10 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 
@@ -55,9 +55,9 @@ double hp = AttributeUtil.getValue(player, Attributes.MAX_HEALTH);
 AttributeUtil.addModifier(player, Attributes.ATTACK_DAMAGE,
     ModifierBuilder.addition("myplugin", "sword_bonus", 10.0));
 
-// 移除指定 modifier（1.21 起 id 為 ResourceLocation）
+// 移除指定 modifier（1.21 起 id 為 Identifier，舊稱 ResourceLocation）
 AttributeUtil.removeModifier(player, Attributes.ATTACK_DAMAGE,
-    ResourceLocation.fromNamespaceAndPath("myplugin", "sword_bonus"));
+    Identifier.fromNamespaceAndPath("myplugin", "sword_bonus"));
 ```
 
 ### ModifierBuilder.java（建立器）

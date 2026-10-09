@@ -1,6 +1,6 @@
 version: "6.0.0"
 updated: "2026-04-30"
-description: "MJP-Claude-Skills — Minecraft NMS Claude Code Skills / NMS 技能索引（Paper 1.21.x + Mojang mappings）"
+description: "MJP-Claude-Skills — Minecraft NMS Claude Code Skills / NMS 技能索引（Paper 26.x + Mojang 官方命名）"
 
 skills:
   - id: nms-packet-sender
@@ -441,7 +441,7 @@ skills:
     status: active
     platform: paper-nms
     category: nms-data
-    description: "操作 Minecraft 1.21 DataComponentType 物品組件系統，讀寫 CustomData、MaxStackSize、Enchantments 等組件 / Read and write 1.21 DataComponentType item components"
+    description: "操作 Minecraft DataComponentType（1.20.5+）物品組件系統，讀寫 CustomData、MaxStackSize、Enchantments 等組件 / Read and write DataComponentType item components (1.20.5+)"
     skill_file: nms/nms-data-component/SKILL.md
     examples_file: nms/nms-data-component/examples.md
     inputs:
@@ -532,10 +532,10 @@ skills:
 platforms:
   - id: paper-nms
     name: "Paper NMS"
-    description: "Paper 1.21.x + Paperweight userdev + Mojang mappings"
+    description: "Paper 26.x + Paperweight userdev + Mojang 官方命名"
     platform_file: paper-nms/PLATFORM.md
-    mc_versions: ["1.21", "1.21.1", "1.21.3"]
-    java_version: 21
+    mc_versions: ["26.2"]
+    java_version: 25
     build_tool: gradle
 
 shared:

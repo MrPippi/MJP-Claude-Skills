@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**專為 Paper 1.21.x Mojang-mapped NMS 底層開發設計的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 函式庫。**
+**專為 Paper 26.x（Mojang 官方命名）NMS 底層開發設計的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 函式庫。**
 
 MJP-Claude-Skills 提供生產就緒的 NMS 技能範本，Claude Code 在產生插件代碼前會自動讀取這些範本，涵蓋封包發送、Netty pipeline 攔截、自定義實體 AI、反射式跨版本橋接，以及多版本 Adapter 模式。
 
@@ -12,10 +12,10 @@ MJP-Claude-Skills 提供生產就緒的 NMS 技能範本，Claude Code 在產生
 
 | 項目 | 說明 |
 |------|------|
-| **MC 版本** | 1.21 – 1.21.3 |
-| **NMS 映射** | Mojang mappings（Paper 1.20.5+ 原生支援） |
+| **MC 版本** | 26.2（Paper stable） |
+| **NMS 命名** | Mojang 官方名稱（Minecraft 26.1 起不再混淆） |
 | **建置工具** | Paperweight userdev `2.0.0-beta.24+` |
-| **Java** | 21（toolchain） |
+| **Java** | 25（toolchain） |
 | **執行時** | `.claude/skills/`（Claude Code 專用） |
 
 ---

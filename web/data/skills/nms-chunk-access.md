@@ -2,7 +2,7 @@
 id: nms-chunk-access
 title: NMS Chunk Access
 titleZh: NMS 區塊直接存取
-description: Direct LevelChunk block state, heightmap, and ChunkSection access for high-performance bulk operations on Paper 1.21.x with Mojang mappings.
+description: Direct LevelChunk block state, heightmap, and ChunkSection access for high-performance bulk operations on Paper 26.x with official Mojang names.
 descriptionZh: 透過 NMS LevelChunk 直接讀寫方塊狀態、高度圖與 ChunkSection，實現高效能大範圍方塊操作（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -38,10 +38,10 @@ featured: false
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 26.2
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 25
 
 ---
 
@@ -63,15 +63,14 @@ int surfaceY = ChunkAccessUtil.getSurfaceHeight(chunk, x, z);
 ### BulkBlockEditor.java（批次操作）
 
 ```java
-BulkBlockEditor editor = new BulkBlockEditor(level);
+BulkBlockEditor editor = new BulkBlockEditor(world);
 
 // 批次填充方塊（最小化客戶端更新）
-for (BlockPos pos : positionList) {
-    editor.setBlock(pos, Blocks.GLASS.defaultBlockState());
-}
+editor.fill(0, 64, 0, 15, 70, 15, Blocks.GLASS.defaultBlockState())
+      .set(8, 71, 8, Blocks.GLOWSTONE.defaultBlockState());
 
-int count = editor.getPendingCount();  // 取得待提交數量
-editor.commit();                       // 一次性推送所有區塊更新
+int count = editor.pendingCount();  // 取得待提交數量
+editor.commit(3);                   // 一次性推送（flags 3 = 更新鄰居 + 同步客戶端）
 ```
 
 ---
