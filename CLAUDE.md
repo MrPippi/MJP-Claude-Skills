@@ -20,16 +20,15 @@ Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 已含全部 15 �
 ```
 MJP-Claude-Skills/
 ├── CLAUDE.md                            ← 本檔（Claude Code 入口）
-├── AGENTS.md                            ← Codex 入口（與 CLAUDE.md 平行）
 ├── README.md / README.zh-TW.md
-├── .github/workflows/nextjs.yml
+├── .github/workflows/
+│   ├── nextjs.yml                       ← main push：tsc + test + build + 部署 GitHub Pages
+│   └── ci.yml                           ← PR：tsc + test + build（不部署）
 ├── .claude/
-│   └── skills/                          ← Claude Code 執行時（目前僅 5 個已同步，⚠️ 10 個缺失）
-│       ├── skills-registry.yml          ← 與 Skills/ 相同（已同步）
+│   └── skills/                          ← Claude Code 執行時（15 個技能，與 Skills/ 同步）
+│       ├── skills-registry.yml          ← 與 Skills/ 相同
 │       ├── _shared/
-│       └── nms/                         ← ⚠️ 缺少 nms-nbt-manipulation 等 10 個技能
-├── .agents/
-│   └── skills/                          ← Codex 執行時（同樣只有 5 個）
+│       └── nms/
 ├── Skills/                              ← Canonical source
 │   ├── skills-registry.yml              ← v6.0.0，15 個 NMS 技能
 │   ├── _shared/
@@ -56,8 +55,8 @@ MJP-Claude-Skills/
 當使用者要求產生 NMS 代碼時，一律遵循：
 
 1. **檢查 `.claude/skills/skills-registry.yml`** — 找出 `trigger_keywords` 匹配請求的技能
-2. **讀取對應的 `SKILL.md`** — 優先讀 `.claude/skills/nms/<id>/SKILL.md`；若不存在（10 個未同步技能），改讀 `Skills/nms/<id>/SKILL.md`
-3. **查看 `examples.md`** — 理解多種使用情境（同上路徑邏輯）
+2. **讀取對應的 `SKILL.md`** — `.claude/skills/nms/<id>/SKILL.md`
+3. **查看 `examples.md`** — 理解多種使用情境（同目錄）
 4. **讀取 `Skills/paper-nms/PLATFORM.md`** — 確認正確的 `build.gradle` 與依賴聲明
 5. **閱讀 `Skills/_shared/nms-threading.md` 與 `Skills/_shared/nms-obfuscation.md`** — 理解執行緒與映射規則
 6. **深度 API 查詢**：若 SKILL.md 範本無法涵蓋需求，查閱 `docs/paper-nms/`：
@@ -76,10 +75,10 @@ MJP-Claude-Skills/
 |------|------|
 | MC 版本 | 1.21 – 1.21.3 |
 | Paper Dev Bundle | `1.21.1-R0.1-SNAPSHOT`（預設）、`1.21.3-R0.1-SNAPSHOT` |
-| Paperweight | `io.papermc.paperweight.userdev` 1.7.2+ |
+| Paperweight | `io.papermc.paperweight.userdev` 2.0.0-beta.24+ |
 | Mapping | Mojang mappings（Paper 1.20.5+ runtime 原生支援） |
 | Java | 21（toolchain） |
-| 建置工具 | Gradle（Groovy DSL） |
+| 建置工具 | Gradle 8.11.2+（Groovy DSL；Paperweight 2.x 需求） |
 | Javadoc | https://jd.papermc.io/paper/1.21/ |
 | 平台檔案 | `Skills/paper-nms/PLATFORM.md` |
 
@@ -87,7 +86,7 @@ MJP-Claude-Skills/
 
 ## Skills Index
 
-所有技能以 `Skills/skills-registry.yml`（v6.0.0）為準。✅ = 已同步至 `.claude/skills/`，⚠️ = 僅存於 `Skills/`。
+所有技能以 `Skills/skills-registry.yml`（v6.0.0）為準。✅ = 已同步至 `.claude/skills/`。
 
 | Skill ID | Category | Purpose | 狀態 |
 |----------|----------|---------|------|
@@ -96,16 +95,16 @@ MJP-Claude-Skills/
 | `nms-custom-entity` | nms-entity | 自定義 NMS 實體 + PathfinderGoal AI | ✅ |
 | `nms-reflection-bridge` | nms-bridge | 無 Paperweight 依賴的反射式 NMS 存取 | ✅ |
 | `nms-version-adapter` | nms-bridge | 多版本 NMS 相容的 Adapter 模式 | ✅ |
-| `nms-nbt-manipulation` | nms-data | CompoundTag 讀寫物品/實體/方塊實體 NBT | ⚠️ |
-| `nms-custom-menu` | nms-ui | AbstractContainerMenu 自定義容器 GUI | ⚠️ |
-| `nms-scoreboard` | nms-display | NMS Scoreboard/Objective/Team 計分板 | ⚠️ |
-| `nms-player-profile` | nms-player | GameProfile skin 注入（NPC 外觀） | ⚠️ |
-| `nms-particle-effect` | nms-world | ClientboundLevelParticlesPacket 粒子效果 | ⚠️ |
-| `nms-attribute-modifier` | nms-entity | AttributeMap/AttributeModifier 動態屬性 | ⚠️ |
-| `nms-block-entity` | nms-world | 自定義 BlockEntity（NBT + Tick + 同步） | ⚠️ |
-| `nms-data-component` | nms-data | 1.21 DataComponentType 物品組件系統 | ⚠️ |
-| `nms-chunk-access` | nms-world | LevelChunk 直接方塊/ChunkSection 存取 | ⚠️ |
-| `nms-boss-event` | nms-display | ServerBossEvent Boss Bar 每人獨立控制 | ⚠️ |
+| `nms-nbt-manipulation` | nms-data | CompoundTag 讀寫物品/實體/方塊實體 NBT | ✅ |
+| `nms-custom-menu` | nms-ui | AbstractContainerMenu 自定義容器 GUI | ✅ |
+| `nms-scoreboard` | nms-display | NMS Scoreboard/Objective/Team 計分板 | ✅ |
+| `nms-player-profile` | nms-player | GameProfile skin 注入（NPC 外觀） | ✅ |
+| `nms-particle-effect` | nms-world | ClientboundLevelParticlesPacket 粒子效果 | ✅ |
+| `nms-attribute-modifier` | nms-entity | AttributeMap/AttributeModifier 動態屬性 | ✅ |
+| `nms-block-entity` | nms-world | 自定義 BlockEntity（NBT + Tick + 同步） | ✅ |
+| `nms-data-component` | nms-data | 1.21 DataComponentType 物品組件系統 | ✅ |
+| `nms-chunk-access` | nms-world | LevelChunk 直接方塊/ChunkSection 存取 | ✅ |
+| `nms-boss-event` | nms-display | ServerBossEvent Boss Bar 每人獨立控制 | ✅ |
 
 ---
 
@@ -152,7 +151,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 
 - **一律使用 Mojang mappings**（由 Paperweight 提供）
 - Paper 1.20.5+ runtime 原生使用 Mojang mappings，無需 remap
-- CraftBukkit 套件（如 `org.bukkit.craftbukkit.v1_21_R1`）的 `v1_21_R1` 部分**隨版本變動**；跨版本時用 `nms-reflection-bridge`
+- CraftBukkit 套件在 Paper 1.20.5+ 固定為 `org.bukkit.craftbukkit`（**不帶** `v1_21_R1` 版本號）；需相容 Spigot / 舊版時用 `nms-reflection-bridge`
 - 詳見 `Skills/_shared/nms-obfuscation.md`
 
 ### NMS 依賴宣告範本
@@ -160,7 +159,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 ```groovy
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 dependencies {
@@ -178,7 +177,7 @@ java {
 
 ### Registry
 
-`Skills/skills-registry.yml`、`.claude/skills/skills-registry.yml`、`.agents/skills/skills-registry.yml` **三個檔案內容必須相同**，包含：
+`Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml` **兩個檔案內容必須相同**，包含：
 
 - `skills` 陣列：15 個 NMS 技能條目（`id`, `version`, `status`, `platform`, `category`, `skill_file`, `examples_file`, `inputs`, `outputs`, `tags`, `trigger_keywords`）
 - `platforms` 陣列：`paper-nms` 平台定義
@@ -207,15 +206,16 @@ description: "中英雙語描述（含 NMS Paperweight 要求）"
 ## 失敗回退 / Fallback
 ```
 
-### 新增技能流程（7 步）
+### 新增技能流程（8 步）
 
 1. 在 `Skills/nms/<slug>/` 建立目錄
 2. 撰寫 `SKILL.md`（含 YAML frontmatter：`name`, `description`）
 3. 撰寫 `examples.md`（**至少 2 個範例**，涵蓋不同使用情境）
-4. 同步至 `.claude/skills/nms/<slug>/` 與 `.agents/skills/nms/<slug>/`
-5. 將新條目加入 `Skills/skills-registry.yml`、`.claude/skills/skills-registry.yml`、`.agents/skills/skills-registry.yml`
+4. 同步至 `.claude/skills/nms/<slug>/`
+5. 將新條目加入 `Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml`
 6. 若涉及新平台，建立 `Skills/<platform>/PLATFORM.md`
 7. 驗證觸發關鍵字無與既有技能衝突
+8. 在 `web/data/skills/<slug>.md` 新增網站頁面，並更新 `web/tests/skills-api.data.test.ts` 的預期清單
 
 ---
 
@@ -227,18 +227,21 @@ Next.js 16 靜態匯出至 `web/out/`。`web/data/skills/` 已含全部 15 個 N
 cd web
 npm run dev           # dev server（http://localhost:3000）
 npx tsc --noEmit      # TypeScript 型別檢查
-npm run build         # 靜態匯出至 web/out/
+npm test              # characterization tests（node:test + tsx，web/tests/）
+npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 app/robots.ts、app/sitemap.ts 產生）
 ```
 
 ### 技術堆疊
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 16.1.6（App Router） |
-| UI | React 19.2.3, TypeScript（strict） |
+| Runtime | Node.js 24（CI） |
+| Framework | Next.js 16.4.0（App Router） |
+| UI | React 19.3.0, TypeScript 6.0（strict） |
 | Styling | Tailwind CSS v4 |
-| Markdown | gray-matter, remark, remark-gfm, remark-html |
-| Search | Fuse.js v7.1.0 |
+| Markdown | gray-matter, remark, remark-gfm, remark-html（預設 sanitize） |
+| Search | Fuse.js v7.5.0 |
+| Test | `node:test` + tsx |
 | Deployment | GitHub Pages（`output: 'export'`） |
 
 ### 關鍵路徑
@@ -248,16 +251,8 @@ npm run build         # 靜態匯出至 web/out/
 | `web/data/skills/` | 每個技能一個 `.md`；YAML frontmatter 驅動所有元資料 |
 | `web/config/site.ts` | `SITE_NAME`, `GITHUB_REPO_URL` 等常數 |
 | `web/shared/types/skill.ts` | TypeScript 介面 |
-| `web/features/skills/api/skills.ts` | 資料存取（模組級快取） |
-
----
-
-## Multi-Platform Entry Points
-
-| 檔案 | 平台 | 執行時目錄 |
-|------|------|-----------|
-| `CLAUDE.md` | Claude Code | `.claude/skills/` |
-| `AGENTS.md` | Codex | `.agents/skills/` |
+| `web/features/skills/api/skills.ts` | 資料存取（模組級快取；slug 僅接受 kebab-case） |
+| `web/tests/` | characterization tests 與 fixtures |
 
 ---
 
@@ -272,7 +267,7 @@ npm run build         # 靜態匯出至 web/out/
 
 ## Key Invariants
 
-1. **雙路徑同步**：`Skills/nms/<path>/` 與 `.claude/skills/nms/<path>/`（及 `.agents/skills/nms/<path>/`）內容必須相同。`skills-registry.yml` 三份同理。**⚠️ 當前狀態**：`.claude/skills/nms/` 與 `.agents/skills/nms/` 只有 5 個技能已同步，另 10 個（nms-nbt-manipulation、nms-custom-menu、nms-scoreboard、nms-player-profile、nms-particle-effect、nms-attribute-modifier、nms-block-entity、nms-data-component、nms-chunk-access、nms-boss-event）僅存於 `Skills/nms/`。
+1. **雙路徑同步**：`Skills/nms/<path>/`、`Skills/_shared/` 與 `.claude/skills/nms/<path>/`、`.claude/skills/_shared/` 內容必須相同（`diff -rq Skills .claude/skills` 只應顯示 `Only in Skills: paper-nms`）。`skills-registry.yml` 兩份同理。
 
 2. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 

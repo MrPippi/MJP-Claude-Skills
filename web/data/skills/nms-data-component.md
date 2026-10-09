@@ -37,7 +37,7 @@ featured: false
 ## 平台需求
 
 - Paper **1.21** – 1.21.3（DataComponent 為 1.20.5+ 新增）
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（Paper 1.20.5+ 原生支援）
 - Java 21
 
@@ -65,11 +65,11 @@ ItemStack clean = ItemComponentUtil.remove(item, DataComponents.CUSTOM_DATA);
 // 寫入自定義字串資料
 ItemStack tagged = CustomDataHelper.setString(item, "rarity", "legendary");
 
-// 讀取自定義整數資料
-int level = CustomDataHelper.getInt(item, "weapon-level", 0);
+// 讀取自定義整數資料（getTag 回傳 custom_data 的 CompoundTag 副本）
+int level = CustomDataHelper.getTag(item).getInt("weapon_level");
 
 // 檢查是否有指定鍵
-boolean hasTag = CustomDataHelper.has(item, "owner-uuid");
+boolean hasTag = CustomDataHelper.getTag(item).contains("owner_uuid");
 ```
 
 ---

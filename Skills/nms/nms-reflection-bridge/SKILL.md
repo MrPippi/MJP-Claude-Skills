@@ -1,6 +1,6 @@
 ---
 name: nms-reflection-bridge
-description: "反射式 NMS 存取橋接：避開 CraftBukkit v1_21_R1 版本編譯依賴，透過 reflection 快取取得跨版本相容性 / Reflection-based NMS bridge for cross-version compatibility without Paperweight compile dependency"
+description: "反射式 NMS 存取橋接：避開 CraftBukkit 編譯期依賴（相容 Spigot 的 v1_xx_Rx 套件），透過 reflection 快取取得跨版本相容性 / Reflection-based NMS bridge for cross-version compatibility without Paperweight compile dependency"
 ---
 
 # NMS Reflection Bridge / NMS 反射橋接器
@@ -63,10 +63,13 @@ public final class NmsClasses {
     public static final String CONNECTION = "net.minecraft.network.Connection";
     public static final String MINECRAFT_SERVER = "net.minecraft.server.MinecraftServer";
 
-    /** CraftBukkit 套件名隨版本變動，需動態取得。 */
+    /**
+     * 動態取得 CraftBukkit 套件名。
+     * Paper 1.20.5+ 為不帶版本號的 "org.bukkit.craftbukkit"；Spigot 與舊版 Paper 為 "org.bukkit.craftbukkit.v1_xx_Rx"。
+     */
     public static String craftBukkitPackage() {
         String serverClassName = org.bukkit.Bukkit.getServer().getClass().getName();
-        // e.g. "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
+        // Paper 1.20.5+: "org.bukkit.craftbukkit.CraftServer"；Spigot: "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
         int lastDot = serverClassName.lastIndexOf('.');
         return serverClassName.substring(0, lastDot);
     }
@@ -97,13 +100,19 @@ public final class MethodHandleCache {
     public static MethodHandle method(Class<?> owner, String name, Class<?>... params) {
         String key = owner.getName() + "#" + name + "#" + paramKey(params);
         return METHOD_CACHE.computeIfAbsent(key, k -> {
-            try {
-                Method m = owner.getDeclaredMethod(name, params);
-                m.setAccessible(true);
-                return LOOKUP.unreflect(m);
-            } catch (ReflectiveOperationException e) {
-                throw new IllegalStateException("Method not found: " + key, e);
+            // 逐層往父類查找：例如 send(Packet) 宣告在 ServerCommonPacketListenerImpl，而非 ServerGamePacketListenerImpl
+            for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
+                try {
+                    Method m = c.getDeclaredMethod(name, params);
+                    m.setAccessible(true);
+                    return LOOKUP.unreflect(m);
+                } catch (NoSuchMethodException ignored) {
+                    // 繼續查父類
+                } catch (IllegalAccessException e) {
+                    throw new IllegalStateException("Method not accessible: " + key, e);
+                }
             }
+            throw new IllegalStateException("Method not found: " + key);
         });
     }
 
@@ -111,8 +120,7 @@ public final class MethodHandleCache {
         String key = owner.getName() + "#get#" + name;
         return FIELD_GETTER_CACHE.computeIfAbsent(key, k -> {
             try {
-                Field f = owner.getDeclaredField(name);
-                f.setAccessible(true);
+                Field f = findField(owner, name);
                 return LOOKUP.unreflectGetter(f);
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException("Field not found: " + key, e);
@@ -124,13 +132,26 @@ public final class MethodHandleCache {
         String key = owner.getName() + "#set#" + name;
         return FIELD_SETTER_CACHE.computeIfAbsent(key, k -> {
             try {
-                Field f = owner.getDeclaredField(name);
-                f.setAccessible(true);
+                Field f = findField(owner, name);
                 return LOOKUP.unreflectSetter(f);
             } catch (ReflectiveOperationException e) {
                 throw new IllegalStateException("Field not found: " + key, e);
             }
         });
+    }
+
+    /** 逐層往父類查找欄位（getDeclaredField 不會搜尋父類）。 */
+    private static Field findField(Class<?> owner, String name) throws NoSuchFieldException {
+        for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
+            try {
+                Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                return f;
+            } catch (NoSuchFieldException ignored) {
+                // 繼續查父類
+            }
+        }
+        throw new NoSuchFieldException(owner.getName() + "#" + name);
     }
 
     private static String paramKey(Class<?>... params) {
@@ -229,4 +250,4 @@ src/main/java/com/example/
 | `NoSuchMethodException: send` | 方法簽名變更（如新增 optional 參數） | 改用 `getDeclaredMethods()` 迴圈比對 |
 | `IllegalAccessException` | JVM module system 阻擋反射 | 在 `build.gradle` 加 `--add-opens java.base/java.lang=ALL-UNNAMED` |
 | 效能問題（反射呼叫慢） | 未使用 `MethodHandle` 快取 | 確認所有呼叫走 `MethodHandleCache` |
-| CraftBukkit package 版本錯誤 | hardcode `v1_21_R1` | 永遠用 `NmsClasses.craftBukkitPackage()` 動態取得 |
+| CraftBukkit package 錯誤 | hardcode `v1_21_R1`（Paper 1.20.5+ 不存在） | 永遠用 `NmsClasses.craftBukkitPackage()` 動態取得 |

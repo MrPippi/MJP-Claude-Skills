@@ -86,7 +86,7 @@ java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 ```groovy
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 dependencies {
@@ -101,7 +101,7 @@ java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
 ```groovy
 plugins {
     id 'java'
-    id 'io.papermc.paperweight.userdev' version '1.7.2'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
 }
 
 dependencies {

@@ -16,7 +16,7 @@ package com.example.network;
 
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -89,7 +89,7 @@ public static void sendLater(Plugin plugin, Player player, Packet<?> packet, lon
 
 **使用端：20 tick（1 秒）後發送一個自定義 channel 封包:**
 ```java
-ResourceLocation channel = new ResourceLocation("myplugin", "sync_data");
+ResourceLocation channel = ResourceLocation.fromNamespaceAndPath("myplugin", "sync_data");
 byte[] payload = serializer.encode(data);
 Packet<?> packet = PacketBuilder.customPayload(channel, payload);
 

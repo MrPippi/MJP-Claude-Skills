@@ -1,10 +1,10 @@
 # Bukkit ↔ NMS 橋接速查表 / Bukkit ↔ NMS Bridge Reference
 
 適用版本：Paper 1.21 – 1.21.3（Mojang mappings）
-橋接套件：`org.bukkit.craftbukkit.v1_21_R1.*`
+橋接套件：`org.bukkit.craftbukkit.*`
 
-> CraftBukkit 套件中的版本號（`v1_21_R1`）每個 MC 大版本會改變。
-> 跨版本分發請搭配 `Skills/nms/nms-reflection-bridge/SKILL.md`。
+> Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
+> 需相容 Spigot / 舊版時請搭配 `Skills/nms/nms-reflection-bridge/SKILL.md`。
 
 ---
 
@@ -13,11 +13,11 @@
 ### Bukkit → NMS（getHandle）
 
 ```java
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 ```
 
 | Bukkit 類型 | NMS 類型 | 轉換方式 |
@@ -48,7 +48,7 @@ import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack;
 ```java
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 // Bukkit → NMS
@@ -59,7 +59,7 @@ ServerPlayer nms = ((CraftPlayer) bukkit).getHandle();
 ServerGamePacketListenerImpl conn = nms.connection;
 
 // 常用 NMS-only 欄位
-int latency = nms.latency;                   // 延遲（ms）
+int latency = nms.connection.latency();      // 延遲（ms）
 int entityId = nms.getId();                  // NMS entity ID
 java.util.UUID uuid = nms.getUUID();         // UUID（同 Bukkit）
 ```
@@ -70,7 +70,7 @@ java.util.UUID uuid = nms.getUUID();         // UUID（同 Bukkit）
 
 ```java
 import net.minecraft.server.level.ServerLevel;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.World;
 
 // Bukkit → NMS
@@ -92,7 +92,7 @@ World back = nms.getWorld();
 
 ```java
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 // Bukkit → NMS（副本，修改不影響原物品）
 org.bukkit.inventory.ItemStack bukkit = player.getInventory().getItemInMainHand();
@@ -140,16 +140,16 @@ Component backAdventure = GsonComponentSerializer.gson().deserialize(backJson);
 
 ---
 
-## CraftBukkit 套件版本動態取得
+## CraftBukkit 套件動態取得（相容 Spigot / 舊版）
 
-`v1_21_R1` 在不同 MC 版本會改變（如 1.21.3 使用 `v1_21_R2`）。
-跨版本分發時動態取得套件名：
+Paper 1.20.5+ 固定為 `org.bukkit.craftbukkit`；Spigot 與 1.20.4 以前的 Paper 才有 `v1_xx_Rx` 後綴。
+若同一個 jar 需跨這些平台運作，動態取得套件名：
 
 ```java
-/** 取得 CraftBukkit 套件名（如 "org.bukkit.craftbukkit.v1_21_R1"）*/
+/** 取得 CraftBukkit 套件名（Paper 1.20.5+："org.bukkit.craftbukkit"）*/
 public static String getCraftBukkitPackage() {
     String serverClass = Bukkit.getServer().getClass().getName();
-    // "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
+    // Paper 1.20.5+: "org.bukkit.craftbukkit.CraftServer"；Spigot: "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
     return serverClass.substring(0, serverClass.lastIndexOf('.'));
 }
 
@@ -168,11 +168,11 @@ public static Object getHandle(Player player) throws ReflectiveOperationExceptio
 
 ## 版本號對照
 
-| MC 版本 | CraftBukkit 套件後綴 | Paper Dev Bundle |
-|--------|---------------------|-----------------|
-| 1.21 | `v1_21_R1` | `1.21-R0.1-SNAPSHOT` |
-| 1.21.1 | `v1_21_R1` | `1.21.1-R0.1-SNAPSHOT` |
-| 1.21.3 | `v1_21_R2` | `1.21.3-R0.1-SNAPSHOT` |
+| MC 版本 | CraftBukkit 套件（Paper） | CraftBukkit 套件（Spigot） | Paper Dev Bundle |
+|--------|------------------------|--------------------------|-----------------|
+| 1.21 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R1` | `1.21-R0.1-SNAPSHOT` |
+| 1.21.1 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R1` | `1.21.1-R0.1-SNAPSHOT` |
+| 1.21.3 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R2` | `1.21.3-R0.1-SNAPSHOT` |
 
 ---
 
@@ -182,7 +182,7 @@ public static Object getHandle(Player player) throws ReflectiveOperationExceptio
 
 ```java
 import net.minecraft.core.RegistryAccess;
-import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
+import org.bukkit.craftbukkit.CraftServer;
 
 // 方法 1：空 registry（純文字渲染適用）
 RegistryAccess empty = RegistryAccess.EMPTY;
@@ -201,7 +201,7 @@ RegistryAccess fromLevel = serverLevel.registryAccess();
 ### 讀取玩家延遲（ms）
 
 ```java
-int ping = ((CraftPlayer) player).getHandle().latency;
+int ping = ((CraftPlayer) player).getHandle().connection.latency();
 ```
 
 ### 發送封包（不通過 Bukkit 事件）
@@ -241,7 +241,7 @@ for (ServerPlayer viewer : serverLevel.players()) {
 | 方法 | 狀態 | 替代方案 |
 |------|------|---------|
 | `CraftItemStack.asNMSMirror(null)` | NPE 風險 | 先檢查 item != null |
-| 直接 cast `org.bukkit.craftbukkit.v1_21_R1.*` | 版本綁定 | 用 reflection 或 Paperweight userdev |
+| import `org.bukkit.craftbukkit.v1_21_R1.*` | Paper 1.20.5+ 不存在此套件，編譯失敗 | 改用 `org.bukkit.craftbukkit.*`（Paperweight userdev） |
 | `Bukkit.getUnsafe().serialize()` | 不穩定 | 使用 Adventure 序列化 |
 
 ---

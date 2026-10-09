@@ -39,7 +39,7 @@ featured: false
 ## 平台需求
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（Paper 1.20.5+ 原生支援）
 - Java 21
 
@@ -51,10 +51,10 @@ featured: false
 
 ```java
 // 取得指定座標的 NMS BlockState（不觸發光照更新）
-BlockState state = ChunkAccessUtil.getBlockState(world, blockPos);
+BlockState state = ChunkAccessUtil.getBlockState(location);
 
-// 直接設定 BlockState（繞過 Bukkit 事件）
-ChunkAccessUtil.setBlockState(world, blockPos, Blocks.STONE.defaultBlockState());
+// 直接設定 BlockState（繞過 Bukkit 事件；flags 3 = 更新鄰居 + 同步客戶端）
+ChunkAccessUtil.setBlockState(location, Blocks.STONE.defaultBlockState(), 3);
 
 // 讀取 WORLD_SURFACE 高度圖
 int surfaceY = ChunkAccessUtil.getSurfaceHeight(chunk, x, z);

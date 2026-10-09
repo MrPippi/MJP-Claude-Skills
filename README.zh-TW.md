@@ -14,7 +14,7 @@ MJP-Claude-Skills 提供生產就緒的 NMS 技能範本，Claude Code 在產生
 |------|------|
 | **MC 版本** | 1.21 – 1.21.3 |
 | **NMS 映射** | Mojang mappings（Paper 1.20.5+ 原生支援） |
-| **建置工具** | Paperweight userdev `1.7.2+` |
+| **建置工具** | Paperweight userdev `2.0.0-beta.24+` |
 | **Java** | 21（toolchain） |
 | **執行時** | `.claude/skills/`（Claude Code 專用） |
 

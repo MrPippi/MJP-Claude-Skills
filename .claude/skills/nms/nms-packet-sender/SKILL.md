@@ -16,7 +16,7 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（已由 Paper 1.20.5+ 原生支援）
 
 ## 觸發條件 / Triggers
@@ -60,7 +60,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -120,10 +120,9 @@ package com.example.network;
 import io.netty.buffer.Unpooled;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -149,19 +148,13 @@ public final class PacketBuilder {
         return new ClientboundSetTitleTextPacket(nmsComponent);
     }
 
-    /** 建立自定義 Plugin Message 封包（CustomPayload）。 */
+    /**
+     * 建立自定義 Plugin Message 封包（CustomPayload）。
+     * 1.20.5+ CustomPacketPayload 改用 type() + StreamCodec；任意 channel 的原始位元組
+     * 使用 Paper 的 DiscardedPayload(id, ByteBuf) 承載（與 Player#sendPluginMessage 相同機制）。
+     */
     public static ClientboundCustomPayloadPacket customPayload(ResourceLocation channel, byte[] data) {
-        CustomPacketPayload payload = new CustomPacketPayload() {
-            @Override
-            public void write(FriendlyByteBuf buf) {
-                buf.writeBytes(data);
-            }
-            @Override
-            public ResourceLocation id() {
-                return channel;
-            }
-        };
-        return new ClientboundCustomPayloadPacket(payload);
+        return new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, Unpooled.wrappedBuffer(data)));
     }
 }
 ```

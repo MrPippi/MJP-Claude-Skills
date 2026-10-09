@@ -34,7 +34,7 @@ featured: true
 ## 平台需求
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - `paper-plugin.yml`（確保 NMS 早於 Bukkit plugin 載入）
 
 ---

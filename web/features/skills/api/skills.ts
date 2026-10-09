@@ -7,6 +7,8 @@ import remarkHtml from 'remark-html';
 import type { SkillMeta, SkillFull, Category, SearchIndex } from '@/shared/types/skill';
 
 const SKILLS_DIR = path.join(process.cwd(), 'data', 'skills');
+/** Slugs map 1:1 to filenames in SKILLS_DIR; anything else (e.g. `../x`) is rejected. */
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 let skillsCache: SkillMeta[] | null = null;
 
@@ -50,6 +52,7 @@ export function getAllSkills(): SkillMeta[] {
 }
 
 export async function getSkillBySlug(slug: string): Promise<SkillFull | null> {
+  if (!SLUG_PATTERN.test(slug)) return null;
   const fullPath = path.join(SKILLS_DIR, `${slug}.md`);
   if (!fs.existsSync(fullPath)) return null;
 
@@ -58,7 +61,8 @@ export async function getSkillBySlug(slug: string): Promise<SkillFull | null> {
 
   const processed = await remark()
     .use(remarkGfm)
-    .use(remarkHtml, { sanitize: false })
+    // Default sanitize (GitHub schema): output is injected via dangerouslySetInnerHTML.
+    .use(remarkHtml)
     .process(content);
 
   const contentHtml = processed.toString();

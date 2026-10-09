@@ -36,7 +36,7 @@ NmsBridge.sendPacket(player, packet);
 
 ---
 
-## 範例 2：讀取 ServerPlayer 私有欄位（latency）
+## 範例 2：讀取玩家網路延遲（connection.latency()）
 
 **Input:**
 ```
@@ -50,11 +50,11 @@ cache_enabled: true
 public static int getLatency(Player player) {
     try {
         Object serverPlayer = NmsBridge.getHandle(player);
-        Class<?> serverPlayerClass = serverPlayer.getClass();
-
-        MethodHandle latencyGetter = MethodHandleCache.fieldGetter(
-            serverPlayerClass, "latency");
-        return (int) latencyGetter.invoke(serverPlayer);
+        // 1.20.2+ latency 位於 ServerCommonPacketListenerImpl（ServerPlayer.connection 的父類），不在 ServerPlayer
+        Object connection = MethodHandleCache.fieldGetter(serverPlayer.getClass(), "connection")
+            .invoke(serverPlayer);
+        MethodHandle latencyGetter = MethodHandleCache.method(connection.getClass(), "latency");
+        return (int) latencyGetter.invoke(connection);
     } catch (Throwable t) {
         return -1;
     }

@@ -36,7 +36,7 @@ featured: false
 ## 平台需求
 
 - Paper 1.21 – 1.21.3
-- Paperweight userdev 1.7.2+
+- Paperweight userdev 2.0.0-beta.24+
 - Mojang mappings（Paper 1.20.5+ 原生支援）
 - Java 21
 
@@ -74,10 +74,10 @@ public class CustomBlockEntity extends BlockEntity {
 
 ```java
 // 在指定位置取得自定義 BlockEntity
-Optional<CustomBlockEntity> be = BlockEntityHelper.get(world, pos, CustomBlockEntity.class);
+Optional<CustomBlockEntity> be = BlockEntityHelper.getCustom(location);
 
 // 標記已修改（觸發 NBT 儲存與客戶端同步）
-BlockEntityHelper.markDirtyAndSync(level, blockEntity);
+be.ifPresent(CustomBlockEntity::markDirtyAndSync);
 ```
 
 ---
