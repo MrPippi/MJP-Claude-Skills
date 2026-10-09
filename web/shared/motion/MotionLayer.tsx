@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { createBurst, prefersReducedMotion } from './particles';
+import { createBurst, prefersReducedMotion, trajectory } from './particles';
 
 const REVEAL_SELECTOR = '[data-reveal]:not(.is-visible)';
 const BURST_SELECTOR = '.btn-primary, [data-burst]';
@@ -30,7 +30,7 @@ function useScrollReveal(pathname: string) {
   }, [pathname]);
 }
 
-/** XP-orb burst from the pointer when a primary button is clicked. */
+/** XP orbs thrown from the pointer when a primary button is clicked; they fall to the viewport bottom. */
 function useParticleBurst(layerRef: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -42,19 +42,14 @@ function useParticleBurst(layerRef: React.RefObject<HTMLDivElement | null>) {
       const x = event.clientX || box.left + box.width / 2;
       const y = event.clientY || box.top + box.height / 2;
 
-      for (const p of createBurst(BURST_COUNT)) {
+      for (const p of createBurst(BURST_COUNT, window.innerHeight - y)) {
         const dot = document.createElement('span');
         dot.className = 'xp-orb';
-        dot.style.cssText = `left:${x}px;top:${y}px;width:${p.size}px;height:${p.size}px;background:${p.color}`;
+        dot.style.cssText = `left:${x - p.size / 2}px;top:${y}px;width:${p.size}px;height:${p.size}px;background:${p.color}`;
         layer.appendChild(dot);
-        const animation = dot.animate(
-          [
-            { transform: 'translate(-50%, -50%)', opacity: 1 },
-            { transform: `translate(calc(-50% + ${p.peakX}px), calc(-50% + ${p.peakY}px))`, opacity: 1, offset: 0.4 },
-            { transform: `translate(calc(-50% + ${p.endX}px), calc(-50% + ${p.endY}px))`, opacity: 0 },
-          ],
-          { duration: p.duration, easing: 'cubic-bezier(.2,.7,.4,1)' },
-        );
+        const keyframes = trajectory(p).map((f) => ({ transform: `translate(${f.x}px, ${f.y}px)`, offset: f.offset }));
+        // Linear between samples: the gravity curve is baked into the keyframe positions.
+        const animation = dot.animate(keyframes, { duration: p.duration, easing: 'linear' });
         animation.onfinish = () => dot.remove();
         animation.oncancel = () => dot.remove();
         // Background tabs pause the animation clock, so onfinish may never fire there.

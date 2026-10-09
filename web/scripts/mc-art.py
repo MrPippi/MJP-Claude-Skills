@@ -4,7 +4,7 @@ Extracts the handful of vanilla textures the site uses from a full resource dump
     python web/scripts/mc-art.py [SOURCE] [OUTPUT]
 
 SOURCE defaults to web/public/mc (an unpacked client assets/minecraft folder, gitignored);
-OUTPUT defaults to web/public/art (committed). Re-run after updating the dump.
+OUTPUT defaults to web/public/art (committed); favicons go to web/app/. Re-run after updating the dump.
 Requires Pillow. Every source path is checked; a missing file aborts with its path.
 """
 import sys
@@ -15,6 +15,9 @@ from PIL import Image, ImageOps
 WEB = Path(__file__).resolve().parent.parent
 SOURCE = Path(sys.argv[1]) if len(sys.argv) > 1 else WEB / "public" / "mc"
 OUTPUT = Path(sys.argv[2]) if len(sys.argv) > 2 else WEB / "public" / "art"
+# Next.js file-based metadata icons (served with the right basePath automatically).
+APP_DIR = WEB / "app"
+IVORY = (0xFA, 0xF9, 0xF5, 0xFF)
 
 # Default plains foliage colour; oak_leaves.png ships greyscale and is tinted in-game.
 FOLIAGE = (0x48, 0xB5, 0x18)
@@ -85,6 +88,15 @@ def tinted(rel: str, color: tuple[int, int, int]) -> Image.Image:
     return colored
 
 
+def favicons(icon: Image.Image) -> None:
+    """Browser tab icon (transparent, 4x) and Apple touch icon (opaque ivory, 10x centred in 180px)."""
+    icon.resize((64, 64), Image.NEAREST).save(APP_DIR / "icon.png", optimize=True)
+    touch = Image.new("RGBA", (180, 180), IVORY)
+    touch.alpha_composite(icon.resize((160, 160), Image.NEAREST), (10, 10))
+    touch.convert("RGB").save(APP_DIR / "apple-icon.png", optimize=True)
+    print("  app/icon.png, app/apple-icon.png")
+
+
 def save(img: Image.Image, rel: str) -> None:
     path = OUTPUT / rel
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,6 +117,7 @@ def main() -> None:
     for key, rel in BLOCKS.items():
         save(load(rel), f"blocks/{key}.png")
     save(tinted("block/oak_leaves.png", FOLIAGE), "blocks/oak_leaves.png")
+    favicons(load(PLAIN_ITEMS["pickaxe"]))
 
 
 if __name__ == "__main__":
