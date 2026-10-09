@@ -31,7 +31,8 @@ function Column({ index }: { index: number }) {
       <rect x={x} y={HEIGHT - BLOCK} width={BLOCK} height={BLOCK} style={fill('mc-stone')} />
       <rect x={x} y={top} width={BLOCK} height={1} style={fill('mc-grass')} />
       <rect x={x + (index % 3)} y={top + 1} width={1} height={1} style={fill('mc-grass-dark')} />
-      <rect x={x + ((index + 2) % 4)} y={top + BLOCK + 1} width={1} height={1} style={fill('mc-dirt-dark')} />
+      {blocks > 2 && <rect x={x + ((index + 2) % 4)} y={top + BLOCK + 1} width={1} height={1} style={fill('mc-dirt-dark')} />}
+      <rect x={x + (index % 2) * 2} y={HEIGHT - 2} width={1} height={1} style={fill('mc-dirt-dark')} opacity={0.5} />
     </g>
   );
 }

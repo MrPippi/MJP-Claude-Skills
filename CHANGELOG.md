@@ -3,6 +3,23 @@
 本檔記錄 MJP-Claude-Skills 的重要變更，格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)。
 技能庫版本以 `Skills/skills-registry.yml` 的 `version` 為準。
 
+## [Unreleased]
+
+### Web（網站重新設計）
+
+#### Changed
+- 改為文件中心架構：`/docs`（總覽、開始使用、平台、核心概念、Skills、NMS 速查表），三欄版面（側欄導覽／內文／本頁目錄）
+- 視覺改為 Claude 風格：淺色象牙白 + 陶土橘、深色暖炭，跟隨系統並可手動切換；Source Serif 標題、Silkscreen 像素字點綴
+- Minecraft 點綴：SVG 像素圖示（分類、平台）、首頁像素地景、像素按鈕陰影與分隔線；可在 `web/config/mc-assets.ts` 換成遊戲截圖與物品圖
+- 程式碼區塊改為建置時 Shiki 雙主題高亮（零執行時高亮 JS），附語言標籤與複製鈕
+- 搜尋同時涵蓋 Skills 與文件頁；技能列表支援 `?platform=`、`?category=` 篩選
+
+#### Added
+- `Skills/*/PLATFORM.md`、`Skills/_shared/*.md`、`docs/paper-nms/*.md` 直接渲染為網站頁面（單一來源，不複製）
+
+#### Deprecated
+- 舊網址 `/skills/*`、`/categories/*`、`/guide` 改為轉址頁（noindex），導向新路由
+
 ## [7.0.0] - 2026-10-09
 
 技能庫 registry 版本 `6.0.0` → `7.0.0`（major：目標平台改為 Paper 1.21.11／26.2、範本 API 不相容變更、新增 `paper-api` 平台）。共 30 個技能。

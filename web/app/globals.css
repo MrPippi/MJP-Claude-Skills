@@ -3,7 +3,8 @@
 /* ── Tokens ───────────────────────────────────────────────────────────────
    Light = Claude ivory + clay. Dark = warm charcoal. Utilities: bg-bg, text-fg,
    border-line, bg-surface, text-accent, text-nms, text-api … */
-@theme {
+/* static: keep every token, some are only read through var() in inline SVG styles. */
+@theme static {
   --color-bg: #faf9f5;
   --color-surface: #f0eee6;
   --color-surface-2: #e8e5da;
@@ -236,6 +237,10 @@
   overflow-wrap: anywhere;
 }
 .doc-prose > * + * { margin-top: 1rem; }
+/* The page header already shows the title; h2 carries its own rule. */
+.doc-prose > h1:first-child { display: none; }
+.doc-prose > h1:first-child + * { margin-top: 0; }
+.doc-prose hr:has(+ h2) { display: none; }
 .doc-prose h1,
 .doc-prose h2,
 .doc-prose h3,

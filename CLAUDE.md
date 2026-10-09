@@ -274,20 +274,40 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | Runtime | Node.js 24（CI） |
 | Framework | Next.js 16.4.0（App Router） |
 | UI | React 19.3.0, TypeScript 6.0（strict） |
-| Styling | Tailwind CSS v4 |
-| Markdown | gray-matter, remark, remark-gfm, remark-html（預設 sanitize） |
-| Search | Fuse.js v7.5.0 |
+| Styling | Tailwind CSS v4（`app/globals.css` 的 `@theme static` token；淺色 Claude 象牙白 + 陶土橘、深色暖炭；`data-theme` 手動切換） |
+| Markdown | unified：remark-parse → remark-gfm → remark-rehype → rehype-sanitize → rehype-slug → Shiki（建置時雙主題高亮） |
+| Search | Fuse.js v7.5.0（Skills）+ 文件頁標題比對 |
 | Test | `node:test` + tsx |
 | Deployment | GitHub Pages（`output: 'export'`） |
+
+### 路由（文件中心）
+
+| Route | 來源 |
+|-------|------|
+| `/` | 落地頁（hero 像素地景 + 終端機、雙平台、精選、速查表入口） |
+| `/docs`、`/docs/getting-started` | 總覽、開始使用（文字在 `shared/i18n/locales/`） |
+| `/docs/platforms/*`、`/docs/concepts/*`、`/docs/reference/*` | 直接讀 repo 內 `Skills/*/PLATFORM.md`、`Skills/_shared/*.md`、`docs/paper-nms/*.md`（註冊表 `web/features/docs/registry.ts`） |
+| `/docs/skills`、`/docs/skills/[slug]` | `web/data/skills/`（`?platform=` / `?category=` 篩選） |
+| `/skills/*`、`/categories/*`、`/guide` | 舊網址轉址頁（noindex，不進 sitemap） |
+
+新增文件頁：在 `features/docs/registry.ts` 的 `DOC_SOURCES` 加一筆即可（sidebar、sitemap、搜尋自動更新）。站內 raw URL（meta refresh、`<img>`、Markdown 內連結）一律經 `withBasePath()`（`config/routes.ts`）。
+
+### Minecraft 圖片素材
+
+未提供圖片前使用 `shared/ui/pixel-icons.ts` 的 SVG 像素圖示與 `features/home/HeroScene.tsx` 的像素地景。提供後：
+1. 放到 `web/public/mc/`（場景截圖用 WebP，物品用透明 PNG）
+2. `web/config/mc-assets.ts`：`HERO_ARTWORK = { day, night, alt }`；`ITEM_ARTWORK = { chest: '/mc/items/chest.png', ... }`（鍵名見 `PIXEL_ICONS`）
 
 ### 關鍵路徑
 
 | Path | Purpose |
 |------|---------|
 | `web/data/skills/` | 每個技能一個 `.md`；YAML frontmatter 驅動所有元資料 |
-| `web/config/site.ts` | `SITE_NAME`, `GITHUB_REPO_URL` 等常數 |
-| `web/shared/types/skill.ts` | TypeScript 介面 |
-| `web/features/skills/api/skills.ts` | 資料存取（模組級快取；slug 僅接受 kebab-case） |
+| `web/config/site.ts`、`web/config/routes.ts` | 站台常數；路由常數、轉址表、`withBasePath` |
+| `web/shared/markdown/render.ts` | Markdown → HTML + headings（技能頁與文件頁共用） |
+| `web/features/skills/api/skills.ts` | 技能資料存取（模組級快取；slug 僅接受 kebab-case） |
+| `web/features/skills/lib/platform.ts` | 平台判定、分類 → 像素圖示對照 |
+| `web/features/docs/` | 文件註冊表、載入、導覽（`lib/nav.ts`）、DocsShell / DocArticle |
 | `web/tests/` | characterization tests 與 fixtures |
 
 ---

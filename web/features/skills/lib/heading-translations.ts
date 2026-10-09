@@ -19,6 +19,12 @@ const HEADING_TRANSLATIONS: Record<string, string> = {
   '注意事項': 'Notes',
   '範例': 'Examples',
   '依賴宣告': 'Dependency Declaration',
+  '執行緒安全': 'Thread Safety',
+  '規則': 'Rules',
+  '替代方案': 'Alternatives',
+  '關鍵做法': 'Key Techniques',
+  '傷害歸因矩陣': 'Damage Attribution Matrix',
+  'Multi-module Gradle 結構': 'Multi-module Gradle Layout',
 };
 
 export function translateHeadingText(text: string): string {
