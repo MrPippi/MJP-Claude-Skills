@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Source_Serif_4 } from 'next/font/google';
 import localFont from 'next/font/local';
 import './globals.css';
+import './motion.css';
 import { AppShell } from '@/layout';
 import { THEME_INIT_SCRIPT } from '@/layout/theme-script';
 import { getSearchIndex } from '@/features/skills';

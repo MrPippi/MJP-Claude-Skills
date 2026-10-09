@@ -26,10 +26,16 @@ export function useCopyButtons(containerRef: RefObject<HTMLElement | null>, deps
         try {
           await navigator.clipboard.writeText(code);
           button.textContent = 'COPIED';
+          button.classList.remove('is-copied');
+          void button.offsetWidth; // restart the pop animation on repeated clicks
+          button.classList.add('is-copied');
         } catch {
           button.textContent = 'FAILED';
         }
-        window.setTimeout(() => (button.textContent = 'COPY'), RESET_MS);
+        window.setTimeout(() => {
+          button.textContent = 'COPY';
+          button.classList.remove('is-copied');
+        }, RESET_MS);
       });
       pre.appendChild(button);
       buttons.push(button);

@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { BLOCK_TEXTURES, HERO_ARTWORK } from '@/config/mc-assets';
 import { withBasePath } from '@/config/routes';
 
@@ -18,6 +19,16 @@ const CLOUDS: Array<[number, number, number]> = [
   [128, 9, 16],
   [176, 5, 22],
   [236, 8, 26],
+];
+/** Pollen (light) / fireflies (dark): [left %, top %, drift px, duration s, delay s]. */
+const MOTES: Array<[number, number, number, number, number]> = [
+  [8, 62, 22, 9, 0],
+  [21, 48, -18, 11, 2.5],
+  [37, 70, 26, 10, 5],
+  [52, 55, -24, 12, 1.2],
+  [66, 66, 20, 9.5, 3.8],
+  [79, 50, -20, 11.5, 6.1],
+  [91, 64, 18, 10.5, 0.7],
 ];
 /** Leaf blocks relative to the trunk column: [dx, blocks above ground]. */
 const CANOPY: Array<[number, number]> = [
@@ -52,9 +63,11 @@ function Tree({ column }: { column: number }) {
     <g>
       <Block x={x} y={ground - BLOCK} texture="log" />
       <Block x={x} y={ground - 2 * BLOCK} texture="log" />
-      {CANOPY.map(([dx, up]) => (
-        <Block key={`${dx}-${up}`} x={x + dx * BLOCK} y={ground - up * BLOCK} texture="leaves" />
-      ))}
+      <g className="hero-canopy" style={{ '--sway-delay': `${(column % 4) * -1.1}s` } as CSSProperties}>
+        {CANOPY.map(([dx, up]) => (
+          <Block key={`${dx}-${up}`} x={x + dx * BLOCK} y={ground - up * BLOCK} texture="leaves" />
+        ))}
+      </g>
     </g>
   );
 }
@@ -66,6 +79,7 @@ function PixelLandscape() {
       preserveAspectRatio="xMidYMax slice"
       shapeRendering="crispEdges"
       className="h-full w-full"
+      style={{ '--scene-width': WIDTH } as CSSProperties}
       aria-hidden
     >
       <defs>
@@ -75,13 +89,18 @@ function PixelLandscape() {
           </pattern>
         ))}
       </defs>
-      <rect x={WIDTH - 22} y={4} width={8} height={8} style={{ fill: 'var(--color-celestial)' }} />
-      {CLOUDS.map(([x, y, w]) => (
-        <g key={x} className="hero-cloud">
-          <rect x={x} y={y} width={w} height={2} />
-          <rect x={x + 3} y={y - 1} width={w - 8} height={1} />
-        </g>
-      ))}
+      <rect className="hero-sun" x={WIDTH - 22} y={4} width={8} height={8} style={{ fill: 'var(--color-celestial)' }} />
+      {/* Two copies side by side so the drift (one scene width) loops seamlessly. */}
+      <g className="hero-clouds">
+        {[0, WIDTH].flatMap((offset) =>
+          CLOUDS.map(([x, y, w]) => (
+            <g key={`${offset}-${x}`} className="hero-cloud">
+              <rect x={x + offset} y={y} width={w} height={2} />
+              <rect x={x + offset + 3} y={y - 1} width={w - 8} height={1} />
+            </g>
+          )),
+        )}
+      </g>
       <g className="hero-ground">
         {HEIGHTS.map((_, i) => (
           <Column key={i} index={i} />
@@ -108,7 +127,26 @@ export function HeroBackdrop() {
     );
   }
 
-  return <div className="absolute inset-0 bg-linear-to-b from-sky-top to-sky-bottom" aria-hidden />;
+  return (
+    <div className="absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 bg-linear-to-b from-sky-top to-sky-bottom" />
+      {MOTES.map(([left, top, dx, duration, delay]) => (
+        <span
+          key={`${left}-${top}`}
+          className="hero-mote"
+          style={
+            {
+              left: `${left}%`,
+              top: `${top}%`,
+              '--mote-dx': `${dx}px`,
+              '--mote-duration': `${duration}s`,
+              '--mote-delay': `${delay}s`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </div>
+  );
 }
 
 /**
