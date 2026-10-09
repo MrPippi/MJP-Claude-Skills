@@ -23,14 +23,6 @@
   --color-sky-top: #f6e3cf;
   --color-sky-bottom: #faf9f5;
   --color-celestial: #f2b84b;
-  --color-mc-grass: #6baa3c;
-  --color-mc-grass-dark: #4e8a2a;
-  --color-mc-dirt: #8b5a2b;
-  --color-mc-dirt-dark: #6b4220;
-  --color-mc-stone: #8a8a8a;
-  --color-mc-wood: #6b4a22;
-  --color-mc-leaf: #3f7d2a;
-  --color-mc-cloud: #ffffff;
 }
 
 @theme inline {
@@ -59,14 +51,6 @@
     --color-code-bg: #191817;
     --color-sky-top: #141a2e;
     --color-sky-bottom: #1f1e1d;
-    --color-mc-grass: #3c6b25;
-    --color-mc-grass-dark: #2c5119;
-    --color-mc-dirt: #4f3419;
-    --color-mc-dirt-dark: #3a2511;
-    --color-mc-stone: #4d4d52;
-    --color-mc-wood: #3e2b14;
-    --color-mc-leaf: #24461a;
-    --color-mc-cloud: #3a3f55;
     --color-celestial: #e9e6d8;
     color-scheme: dark;
   }
@@ -90,14 +74,6 @@
       --color-code-bg: #191817;
       --color-sky-top: #141a2e;
       --color-sky-bottom: #1f1e1d;
-      --color-mc-grass: #3c6b25;
-      --color-mc-grass-dark: #2c5119;
-      --color-mc-dirt: #4f3419;
-      --color-mc-dirt-dark: #3a2511;
-      --color-mc-stone: #4d4d52;
-      --color-mc-wood: #3e2b14;
-      --color-mc-leaf: #24461a;
-      --color-mc-cloud: #3a3f55;
       --color-celestial: #e9e6d8;
       color-scheme: dark;
     }
@@ -150,6 +126,17 @@
 }
 
 @layer components {
+  /* Inventory-slot frame for item icons: inset bevel, dark top-left / light bottom-right. */
+  .mc-slot {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    border-radius: 2px;
+    background: var(--color-surface-2);
+    box-shadow:
+      inset 2px 2px 0 color-mix(in srgb, var(--color-fg) 22%, transparent),
+      inset -2px -2px 0 color-mix(in srgb, var(--color-bg) 85%, white);
+  }
 .copy-btn {
   position: absolute;
   top: 0.4rem;
@@ -228,6 +215,15 @@
 }
 
 .pixelated { image-rendering: pixelated; }
+
+/* ── Hero landscape (textured blocks) ── */
+.hero-cloud { fill: #ffffff; opacity: 0.85; }
+:root[data-theme="dark"] .hero-ground { filter: brightness(0.5) saturate(0.75) hue-rotate(-8deg); }
+:root[data-theme="dark"] .hero-cloud { fill: #3a3f55; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-ground { filter: brightness(0.5) saturate(0.75) hue-rotate(-8deg); }
+  :root:not([data-theme="light"]) .hero-cloud { fill: #3a3f55; }
+}
 
 /* ── Rendered Markdown ── */
 .doc-prose {

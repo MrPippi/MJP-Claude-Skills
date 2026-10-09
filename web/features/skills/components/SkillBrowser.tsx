@@ -93,7 +93,7 @@ export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
           </button>
           {PLATFORMS.map((p) => (
             <button key={p.id} type="button" aria-pressed={platform === p.id} className={chipClass(platform === p.id)} onClick={() => setFilter({ platform: p.id, category: null })}>
-              <PixelIcon name={p.icon} className="h-3.5 w-3.5" />
+              <PixelIcon name={p.icon} className="h-4 w-4" />
               {p.label}
             </button>
           ))}
@@ -141,7 +141,7 @@ export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
         <SkillGrid skills={filtered} />
       ) : (
         <div className="flex flex-col items-center gap-3 rounded-md border border-dashed border-line-strong py-16 text-sm text-fg-3">
-          <PixelIcon name="creeper" className="h-10 w-10" />
+          <PixelIcon name="creeper" className="h-12 w-12" />
           {t.skills.emptyState}
         </div>
       )}

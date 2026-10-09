@@ -294,9 +294,10 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 ### Minecraft 圖片素材
 
-未提供圖片前使用 `shared/ui/pixel-icons.ts` 的 SVG 像素圖示與 `features/home/HeroScene.tsx` 的像素地景。提供後：
-1. 放到 `web/public/mc/`（場景截圖用 WebP，物品用透明 PNG）
-2. `web/config/mc-assets.ts`：`HERO_ARTWORK = { day, night, alt }`；`ITEM_ARTWORK = { chest: '/mc/items/chest.png', ... }`（鍵名見 `PIXEL_ICONS`）
+- `web/public/mc/`：完整原版資源包（使用者提供，gitignored，不提交、不部署）
+- `web/public/art/`：網站實際使用的 13 個物品圖示與 5 張方塊貼圖（已提交，約 22 KB），由 `python web/scripts/mc-art.py` 從資源包擷取（需 Pillow；箱子正面、Creeper／Steve 臉從實體貼圖集裁切，橡樹葉以平原葉色上色）
+- `web/config/mc-assets.ts`：`ITEM_ARTWORK`（圖示鍵 → PNG，缺的退回 `shared/ui/pixel-icons.ts` SVG）、`BLOCK_TEXTURES`（首頁地景）、`HERO_ARTWORK`（選用的場景截圖）；`tests/mc-assets.test.ts` 檢查檔案存在
+- PNG 圖示只用整數倍尺寸（16／32／48／96px，`h-4`／`h-8`／`h-12`／`h-24`），否則像素粗細不均；外框用 `.mc-slot`（物品欄格子凹陷效果）
 
 ### 關鍵路徑
 

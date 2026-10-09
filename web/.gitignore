@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Raw vanilla resource dump (input for scripts/mc-art.py; never committed or deployed)
+/public/mc/
