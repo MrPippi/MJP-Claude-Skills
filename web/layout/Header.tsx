@@ -48,7 +48,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           </span>
           <span className="flex items-baseline gap-1.5">
             <span className="font-serif text-lg font-semibold tracking-tight text-fg">MJP</span>
-            <span className="hidden text-sm text-fg-3 sm:inline">Claude Skills</span>
+            <span className="hidden text-sm text-fg-3 sm:inline">Paper Skills</span>
           </span>
         </Link>
 

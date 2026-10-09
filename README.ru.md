@@ -1,12 +1,12 @@
-# MJP-Claude-Skills — Minecraft NMS Claude Code Skills
+# MJP-Paper-Skills — Agent Skills для Minecraft Paper
 
-**Отобранная библиотека [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) для низкоуровневой разработки на Minecraft NMS (net.minecraft.server) под Paper 1.21.11 / 26.x с официальными названиями Mojang.**
+**Agent Skills ([Agent Skills](https://agentskills.io)) с проверенной компиляцией для разработки плагинов Minecraft Paper 1.21.11 / 26.x — низкоуровневый NMS (net.minecraft.server) с официальными названиями Mojang и чистый Paper API.**
 
-MJP-Claude-Skills предоставляет шаблоны NMS-навыков с проверенной компиляцией, которые Claude Code читает перед генерацией кода плагина — они охватывают пакеты, перехват через Netty, пользовательские сущности, NBT / data components, GUI, скорборды, боссбары, частицы, чанки, доступ через рефлексию и адаптеры для нескольких версий.
+Каждый навык — это файл `SKILL.md`, который ваш ИИ-инструмент для программирования читает перед генерацией кода плагина. Навыки используют открытый формат Agent Skills, поэтому работают с Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI и любым другим инструментом, загружающим `SKILL.md`. Инструменты без поддержки навыков всё равно могут ссылаться на эти файлы, а каждый навык вполне читается как обычная справочная документация.
 
 > 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
 >
-> Примечания к выпуску: [CHANGELOG.md](CHANGELOG.md)
+> Сайт документации: **[mrpippi.github.io/MJP-Paper-Skills](https://mrpippi.github.io/MJP-Paper-Skills)** · Примечания к выпуску: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -19,7 +19,7 @@ MJP-Claude-Skills предоставляет шаблоны NMS-навыков �
 | **Именование NMS** | Официальные названия Mojang (Minecraft не обфусцирован начиная с 26.1) |
 | **Инструмент сборки** | Gradle 8.11.2+ (проверено на 9.8.1) + Paperweight userdev `2.0.0-beta.24` |
 | **Java** | 21 (1.21.11) / 25 (26.2) |
-| **Среда выполнения навыков** | `.claude/skills/` (Claude Code) |
+| **Формат навыков** | [Agent Skills](https://agentskills.io) (`SKILL.md` + YAML frontmatter) |
 
 > Обновляетесь с шаблонов 1.21.x? См. [CHANGELOG.md](CHANGELOG.md) и заметки по миграции в [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) (раздел 5).
 
@@ -27,71 +27,58 @@ MJP-Claude-Skills предоставляет шаблоны NMS-навыков �
 
 ## Навыки
 
-30 навыков в двух направлениях: навыки **NMS** требуют Paperweight userdev; навыки **Paper API** требуют только `paper-api`. Все шаблоны проверены на компиляцию с Paper 1.21.11 и 26.2.
+30 навыков в двух направлениях, все с проверенной компиляцией на Paper 1.21.11 и 26.2:
 
-### Навыки NMS (`Skills/nms/`)
+- **NMS** (16 навыков, `Skills/nms/`): пакеты, перехват через Netty, пользовательские сущности, NBT / data components, GUI, скорборды, боссбары, частицы, чанки, фейковые игроки, рефлексия и адаптеры для нескольких версий. Требует Paperweight userdev.
+- **Paper API** (14 навыков, `Skills/paper/`): Dialogs, GUI-сундуки, SQLite, конфигурация и языковые файлы, API между плагинами, мягкие зависимости, фильтры пакетов, геймплей PvP и экономики, команды Brigadier, одноразовые миры. Требует только `paper-api`.
 
-| ID навыка | Категория | Назначение |
-|----------|----------|---------|
-| [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | Отправка Clientbound-пакетов через `ServerPlayer.connection.send()` |
-| [`nms-packet-interceptor`](Skills/nms/nms-packet-interceptor/SKILL.md) | nms-packet | Внедрение `ChannelDuplexHandler` в pipeline Netty для перехвата/изменения пакетов |
-| [`nms-custom-entity`](Skills/nms/nms-custom-entity/SKILL.md) | nms-entity | Пользовательские NMS-мобы с ИИ на основе `Goal` |
-| [`nms-attribute-modifier`](Skills/nms/nms-attribute-modifier/SKILL.md) | nms-entity | Чтение/изменение атрибутов сущностей через `AttributeModifier` |
-| [`nms-nbt-manipulation`](Skills/nms/nms-nbt-manipulation/SKILL.md) | nms-data | `custom_data` предметов и NBT сущностей через `CompoundTag` / `ValueOutput` |
-| [`nms-data-component`](Skills/nms/nms-data-component/SKILL.md) | nms-data | Система `DataComponentType` предметов (custom data, размер стопки, зачарования…) |
-| [`nms-custom-menu`](Skills/nms/nms-custom-menu/SKILL.md) | nms-ui | GUI на основе `AbstractContainerMenu` с мостом к Bukkit `InventoryHolder` |
-| [`nms-scoreboard`](Skills/nms/nms-scoreboard/SKILL.md) | nms-display | Боковые панели и команды для отдельных игроков через пакеты скорборда |
-| [`nms-boss-event`](Skills/nms/nms-boss-event/SKILL.md) | nms-display | Боссбары для отдельных игроков через `ServerBossEvent` |
-| [`nms-player-profile`](Skills/nms/nms-player-profile/SKILL.md) | nms-player | Скины через `GameProfile` для NPC и голов игроков |
-| [`nms-particle-effect`](Skills/nms/nms-particle-effect/SKILL.md) | nms-world | Клиентские частицы через `ClientboundLevelParticlesPacket` |
-| [`nms-block-entity`](Skills/nms/nms-block-entity/SKILL.md) | nms-world | Пользовательский `BlockEntity` с сохранением, тиками и синхронизацией с клиентом |
-| [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | Прямой доступ к `LevelChunk` / секциям и массовое изменение блоков |
-| [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | Доступ к NMS с кэшированием через `MethodHandle` без зависимости Paperweight на этапе компиляции |
-| [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | Интерфейс адаптера для нескольких версий с диспетчеризацией во время выполнения |
-| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | Фейковые игроки (боты) без клиента на основе настоящего NMS `ServerPlayer` |
+👉 **Полный каталог с фильтрацией по платформе и категории: [mrpippi.github.io/MJP-Paper-Skills/docs/skills](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)**
 
-### Навыки Paper API (без NMS, `Skills/paper/`)
-
-| ID навыка | Категория | Назначение |
-|----------|----------|---------|
-| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | Экраны Paper Dialog API с колбэками, безопасными для главного потока |
-| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | GUI-сундуки на основе `InventoryHolder` с постраничным просмотром и защитой от кликов |
-| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | Репозитории SQLite, миграции через `user_version`, сброс данных единственным писателем |
-| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | Неизменяемые снимки конфигурации, `config-version`, языковые файлы MiniMessage |
-| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | API между плагинами через `ServicesManager`, устойчивые к рассинхронизации версий jar |
-| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | Hook/Bridge для мягких зависимостей, Vault, расширения PlaceholderAPI |
-| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | JSON API на встроенном JDK `HttpServer` (localhost, ограничение частоты, снимки) |
-| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | Фильтры пакетов PacketEvents / ProtocolLib (безопасны для потока Netty, fail-open) |
-| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | Иллюзии для отдельных игроков: граница мира, время, погода и видимость |
-| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | Боевая метка PvP с атрибуцией урона и обработкой выхода из игры |
-| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | Поиск безопасной точки, RTP, асинхронные телепортации, задержки подготовки и кулдауны |
-| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | Мультивалютная книга учёта, эскроу и провайдер Vault |
-| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | Команды Brigadier через `LifecycleEvents.COMMANDS` |
-| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | Одноразовые миры и сбрасываемые арены |
+Машиночитаемый индекс (ID, ключевые слова-триггеры, входные и выходные данные) — [`Skills/skills-registry.yml`](Skills/skills-registry.yml).
 
 ---
 
 ## Быстрый старт
 
-### 1. Установите среду выполнения навыков
-
-Скопируйте `.claude/skills/` в корень вашего проекта:
+### 1. Установите навыки
 
 ```bash
-cp -r /path/to/MJP-Claude-Skills/.claude/skills/ .claude/skills/
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
+```
+
+Скопируйте `MJP-Paper-Skills/.claude/skills/` в папку, из которой ваш ИИ-инструмент загружает навыки:
+
+| Инструмент | Типичный путь в проекте |
+|------|---------------------|
+| Claude Code | `.claude/skills/` |
+| OpenAI Codex, Gemini CLI | `.agents/skills/` |
+| Cursor | `.cursor/skills/` |
+| GitHub Copilot | `.github/skills/` |
+
+```bash
+cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # измените целевой путь под свой инструмент
+```
+
+> Пути к навыкам различаются между инструментами и версиями; смотрите документацию вашего инструмента. `.agents/skills/` многие инструменты читают как общее расположение.
+
+**Инструмент без поддержки Agent Skills?** Укажите в его файле инструкций (`AGENTS.md`, `.cursorrules`, `.github/copilot-instructions.md`, …) на навыки:
+
+```markdown
+Перед написанием кода плагина Paper найди подходящий навык в <skills-folder>/skills-registry.yml
+(по trigger_keywords) и следуй его SKILL.md, а также заметкам PLATFORM.md и _shared/, на которые он ссылается.
 ```
 
 ### 2. Используйте навык
 
-Claude Code автоматически подхватывает `.claude/skills/`. Опишите, что вам нужно, используя ключевые слова-триггеры:
+Опишите, что вам нужно, обычным языком; инструмент сопоставит ваш запрос с описанием и ключевыми словами-триггерами каждого навыка:
 
 ```
-"幫我實作封包發送器，發送 Action Bar 訊息給玩家"
-"我需要攔截 ServerboundChatPacket，過濾特定詞彙"
-"建立一個繼承 Zombie、有自訂 AI 追蹤行為的自定義實體"
+"Отправь игроку сообщение в action bar через пакет"
+"Перехвати ServerboundChatPacket и отфильтруй определённые слова"
+"Создай пользовательскую сущность Zombie с собственным ИИ преследования"
 ```
 
-Claude Code читает соответствующий `SKILL.md`, [`PLATFORM.md`](Skills/paper-nms/PLATFORM.md) и общие заметки по потокам и именованию перед генерацией кода.
+Агент читает соответствующий `SKILL.md`, настройку платформы ([`PLATFORM.md`](Skills/paper-nms/PLATFORM.md)) и общие заметки по потокам и именованию перед генерацией кода.
 
 ---
 
@@ -120,20 +107,20 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 ## Структура репозитория
 
 ```
-MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
-├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+MJP-Paper-Skills/
+├── .claude/skills/           ← Готовая к копированию папка навыков (зеркало Skills/, кроме папок PLATFORM)
+├── Skills/                   ← Канонические исходники навыков
+│   ├── skills-registry.yml   ← 30 навыков (paper-nms + paper-api)
 │   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
-│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
-│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
-│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
-│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
-├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
-├── web/                      ← Next.js documentation site (static export → GitHub Pages)
-├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
+│   ├── paper-nms/PLATFORM.md ← Шаблоны NMS build.gradle / paper-plugin.yml, таблица версий
+│   ├── paper-api/PLATFORM.md ← build.gradle для Paper API, координаты мягких зависимостей
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 навыков NMS)
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 навыков Paper API)
+├── docs/paper-nms/           ← Краткий справочник по NMS API (пакеты, сущности, сеть, мост)
+├── web/                      ← Сайт документации на Next.js (статический экспорт → GitHub Pages)
+├── .github/workflows/        ← ci.yml (проверки PR), nextjs.yml (деплой), рабочие процессы Claude
 ├── CHANGELOG.md
-└── CLAUDE.md                 ← Instructions for Claude Code in this repo
+└── CLAUDE.md                 ← Инструкции для ИИ-агентов, работающих в этом репозитории
 ```
 
 ---
@@ -143,9 +130,9 @@ MJP-Claude-Skills/
 ```bash
 cd web
 npm ci
-npx tsc --noEmit   # type check
-npm test           # characterization tests (node:test + tsx)
-npm run build      # static export to web/out/
+npx tsc --noEmit   # проверка типов
+npm test           # characterization-тесты (node:test + tsx)
+npm run build      # статический экспорт в web/out/
 ```
 
 CI выполняет те же проверки для каждого pull request (`.github/workflows/ci.yml`).

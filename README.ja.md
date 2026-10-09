@@ -1,12 +1,12 @@
-# MJP-Claude-Skills — Minecraft NMS Claude Code Skills
+# MJP-Paper-Skills — Minecraft Paper Agent Skills
 
-**Mojang 公式名称を使用する Paper 1.21.11 / 26.x 上の、低レベルな Minecraft NMS（net.minecraft.server）開発向けに厳選された [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) ライブラリです。**
+**Minecraft Paper 1.21.11 / 26.x のプラグイン開発向けに、コンパイル検証済みの [Agent Skills](https://agentskills.io) を提供します。Mojang 公式名称を使う低レベルな NMS（net.minecraft.server）と、純粋な Paper API の両方に対応しています。**
 
-MJP-Claude-Skills は、コンパイル検証済みの NMS スキルテンプレートを提供します。Claude Code はプラグインのコードを生成する前にこれらを読み込みます。パケット、Netty によるインターセプト、カスタムエンティティ、NBT / データコンポーネント、GUI、スコアボード、ボスバー、パーティクル、チャンク、リフレクションベースのアクセス、マルチバージョンアダプターを扱います。
+各スキルは、AI コーディングツールがプラグインのコードを生成する前に読み込む `SKILL.md` です。スキルにはオープンな Agent Skills 形式を採用しているため、Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI など、`SKILL.md` を読み込むあらゆるツールで利用できます。スキル非対応のツールでもファイルを参照でき、どのスキルも通常のリファレンスドキュメントとして読めます。
 
 > 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
 >
-> 変更履歴：[CHANGELOG.md](CHANGELOG.md)
+> ドキュメントサイト：**[mrpippi.github.io/MJP-Paper-Skills](https://mrpippi.github.io/MJP-Paper-Skills)** · リリースノート：[CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -19,7 +19,7 @@ MJP-Claude-Skills は、コンパイル検証済みの NMS スキルテンプレ
 | **NMS の命名** | Mojang 公式名称（Minecraft は 26.1 以降、難読化されていません） |
 | **ビルドツール** | Gradle 8.11.2+（9.8.1 で検証済み）+ Paperweight userdev `2.0.0-beta.24` |
 | **Java** | 21 (1.21.11) / 25 (26.2) |
-| **スキルランタイム** | `.claude/skills/`（Claude Code） |
+| **スキル形式** | [Agent Skills](https://agentskills.io)（`SKILL.md` + YAML フロントマター） |
 
 > 1.21.x テンプレートからアップグレードしますか？ [CHANGELOG.md](CHANGELOG.md) と、[`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)（セクション 5）の移行ノートを参照してください。
 
@@ -27,71 +27,58 @@ MJP-Claude-Skills は、コンパイル検証済みの NMS スキルテンプレ
 
 ## スキル
 
-スキルは 30 個あり、2 つのトラックに分かれています。**NMS** スキルは Paperweight userdev が必要で、**Paper API** スキルは `paper-api` だけで動作します。すべてのテンプレートは Paper 1.21.11 と 26.2 に対してコンパイル検証済みです。
+スキルは 2 つのトラックに分かれた 30 個で、すべて Paper 1.21.11 と 26.2 に対してコンパイル検証済みです。
 
-### NMS スキル（`Skills/nms/`）
+- **NMS**（16 スキル、`Skills/nms/`）：パケット、Netty によるインターセプト、カスタムエンティティ、NBT / データコンポーネント、GUI、スコアボード、ボスバー、パーティクル、チャンク、フェイクプレイヤー、リフレクション、マルチバージョンアダプター。Paperweight userdev が必要です。
+- **Paper API**（14 スキル、`Skills/paper/`）：Dialog、チェスト GUI、SQLite、設定・言語ファイル、プラグイン間 API、ソフト依存関係、パケットフィルター、PvP とエコノミーのゲームプレイ、Brigadier コマンド、使い捨てワールド。`paper-api` だけで動作します。
 
-| Skill ID | カテゴリ | 用途 |
-|----------|----------|------|
-| [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | `ServerPlayer.connection.send()` で Clientbound パケットを送信 |
-| [`nms-packet-interceptor`](Skills/nms/nms-packet-interceptor/SKILL.md) | nms-packet | Netty パイプラインに `ChannelDuplexHandler` を注入してパケットを傍受・変更 |
-| [`nms-custom-entity`](Skills/nms/nms-custom-entity/SKILL.md) | nms-entity | `Goal` ベースの AI を持つカスタム NMS モブ |
-| [`nms-attribute-modifier`](Skills/nms/nms-attribute-modifier/SKILL.md) | nms-entity | `AttributeModifier` によるエンティティ属性の読み取り・変更 |
-| [`nms-nbt-manipulation`](Skills/nms/nms-nbt-manipulation/SKILL.md) | nms-data | `CompoundTag` / `ValueOutput` によるアイテムの `custom_data` とエンティティ NBT の操作 |
-| [`nms-data-component`](Skills/nms/nms-data-component/SKILL.md) | nms-data | アイテムの `DataComponentType` システム（カスタムデータ、スタックサイズ、エンチャント…） |
-| [`nms-custom-menu`](Skills/nms/nms-custom-menu/SKILL.md) | nms-ui | Bukkit `InventoryHolder` ブリッジを備えた `AbstractContainerMenu` GUI |
-| [`nms-scoreboard`](Skills/nms/nms-scoreboard/SKILL.md) | nms-display | スコアボードパケットによるプレイヤーごとのサイドバーとチーム |
-| [`nms-boss-event`](Skills/nms/nms-boss-event/SKILL.md) | nms-display | `ServerBossEvent` によるプレイヤーごとのボスバー |
-| [`nms-player-profile`](Skills/nms/nms-player-profile/SKILL.md) | nms-player | NPC とプレイヤーヘッド用の `GameProfile` スキン |
-| [`nms-particle-effect`](Skills/nms/nms-particle-effect/SKILL.md) | nms-world | `ClientboundLevelParticlesPacket` によるクライアント側パーティクル |
-| [`nms-block-entity`](Skills/nms/nms-block-entity/SKILL.md) | nms-world | 永続化、ティック処理、クライアント同期を備えたカスタム `BlockEntity` |
-| [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | `LevelChunk` / セクションへの直接アクセスとブロックの一括編集 |
-| [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | Paperweight のコンパイル依存関係なしで、`MethodHandle` をキャッシュして NMS にアクセス |
-| [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | 実行時ディスパッチを備えたマルチバージョン対応アダプターインターフェース |
-| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | 実際の NMS `ServerPlayer` を基盤とする、クライアント不要のフェイクプレイヤー（ボット） |
+👉 **プラットフォームとカテゴリで絞り込める全カタログはこちら：[mrpippi.github.io/MJP-Paper-Skills/docs/skills](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)**
 
-### Paper API スキル（NMS 不使用、`Skills/paper/`）
-
-| Skill ID | カテゴリ | 用途 |
-|----------|----------|------|
-| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | メインスレッドで安全に動作するコールバックを備えた Paper Dialog API 画面 |
-| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | ページ送りとクリック保護を備えた `InventoryHolder` ベースのチェスト GUI |
-| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | SQLite リポジトリ、`user_version` マイグレーション、単一ライターの flusher |
-| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | イミュータブルな設定スナップショット、`config-version`、MiniMessage 言語ファイル |
-| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | `ServicesManager` によるプラグイン間 API。jar のバージョン差異を許容 |
-| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | ソフト依存関係の Hook/Bridge、Vault、PlaceholderAPI 拡張 |
-| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | 組み込み JDK `HttpServer` による JSON API（localhost、レート制限、スナップショット） |
-| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | PacketEvents / ProtocolLib のパケットフィルター（Netty スレッドセーフ、fail-open） |
-| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | プレイヤーごとのワールドボーダー、時間、天候、可視性の錯覚演出 |
-| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | ダメージ帰属とログアウト処理を備えた PvP コンバットタグ |
-| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | 安全な地点の探索、RTP、非同期テレポート、ウォームアップとクールダウン |
-| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | 複数通貨の台帳、エスクロー、Vault プロバイダー |
-| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | `LifecycleEvents.COMMANDS` による Brigadier コマンド |
-| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | 使い捨てワールドとリセット可能なアリーナ |
+機械可読なインデックス（ID、トリガーキーワード、入力と出力）は [`Skills/skills-registry.yml`](Skills/skills-registry.yml) です。
 
 ---
 
 ## クイックスタート
 
-### 1. スキルランタイムをインストールする
-
-`.claude/skills/` をプロジェクトのルートにコピーします。
+### 1. スキルをインストールする
 
 ```bash
-cp -r /path/to/MJP-Claude-Skills/.claude/skills/ .claude/skills/
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
+```
+
+`MJP-Paper-Skills/.claude/skills/` を、お使いの AI ツールがスキルを読み込むフォルダにコピーします。
+
+| ツール | 一般的なプロジェクトパス |
+|------|---------------------|
+| Claude Code | `.claude/skills/` |
+| OpenAI Codex、Gemini CLI | `.agents/skills/` |
+| Cursor | `.cursor/skills/` |
+| GitHub Copilot | `.github/skills/` |
+
+```bash
+cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
+```
+
+> スキルのパスはツールやバージョンによって異なります。お使いのツールのドキュメントを確認してください。`.agents/skills/` は、多くのツールが共有の場所として読み込みます。
+
+**Agent Skills に対応していないツールの場合** は、指示ファイル（`AGENTS.md`、`.cursorrules`、`.github/copilot-instructions.md` など）からスキルを参照するようにします。
+
+```markdown
+Paper プラグインのコードを書く前に、<skills-folder>/skills-registry.yml から
+（trigger_keywords で）該当するスキルを探し、その SKILL.md と、そこで参照されている PLATFORM.md および _shared/ のノートに従ってください。
 ```
 
 ### 2. スキルを使う
 
-Claude Code は `.claude/skills/` を自動的に読み込みます。トリガーキーワードを使って必要な内容を伝えてください。
+必要な内容を普通の言葉で伝えてください。ツールが、リクエストを各スキルの説明とトリガーキーワードに照らして照合します。
 
 ```
-"幫我實作封包發送器，發送 Action Bar 訊息給玩家"
-"我需要攔截 ServerboundChatPacket，過濾特定詞彙"
-"建立一個繼承 Zombie、有自訂 AI 追蹤行為的自定義實體"
+"パケットでプレイヤーにアクションバーのメッセージを送信したい"
+"ServerboundChatPacket を傍受して特定の単語をフィルターしたい"
+"独自の追跡 AI を持つカスタム Zombie エンティティを作成したい"
 ```
 
-Claude Code は、コードを生成する前に、該当する `SKILL.md`、[`PLATFORM.md`](Skills/paper-nms/PLATFORM.md)、および共有のスレッド・命名に関するノートを読み込みます。
+エージェントは、コードを生成する前に、該当する `SKILL.md`、プラットフォーム設定（[`PLATFORM.md`](Skills/paper-nms/PLATFORM.md)）、および共有のスレッド・命名に関するノートを読み込みます。
 
 ---
 
@@ -120,20 +107,20 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 ## リポジトリ構成
 
 ```
-MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
-├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+MJP-Paper-Skills/
+├── .claude/skills/           ← コピーしてすぐ使えるスキルフォルダ（Skills/ のミラー。PLATFORM フォルダを除く）
+├── Skills/                   ← 正規のスキルソース
+│   ├── skills-registry.yml   ← 30 スキル（paper-nms + paper-api）
 │   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
-│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
-│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
-│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
-│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
-├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
-├── web/                      ← Next.js documentation site (static export → GitHub Pages)
-├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
+│   ├── paper-nms/PLATFORM.md ← NMS 用 build.gradle / paper-plugin.yml テンプレート、バージョン表
+│   ├── paper-api/PLATFORM.md ← Paper API 用 build.gradle、ソフト依存関係の座標
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md（NMS スキル 16 個）
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md（Paper API スキル 14 個）
+├── docs/paper-nms/           ← NMS API クイックリファレンス（packets, entities, network, bridge）
+├── web/                      ← Next.js ドキュメントサイト（静的エクスポート → GitHub Pages）
+├── .github/workflows/        ← ci.yml（PR チェック）、nextjs.yml（デプロイ）、Claude ワークフロー
 ├── CHANGELOG.md
-└── CLAUDE.md                 ← Instructions for Claude Code in this repo
+└── CLAUDE.md                 ← このリポジトリで作業する AI エージェント向けのメンテナー用指示
 ```
 
 ---
@@ -143,9 +130,9 @@ MJP-Claude-Skills/
 ```bash
 cd web
 npm ci
-npx tsc --noEmit   # type check
+npx tsc --noEmit   # 型チェック
 npm test           # characterization tests (node:test + tsx)
-npm run build      # static export to web/out/
+npm run build      # web/out/ への静的エクスポート
 ```
 
 CI は、すべてのプルリクエストで同じチェックを実行します（`.github/workflows/ci.yml`）。

@@ -1,12 +1,12 @@
-# MJP-Claude-Skills — Minecraft NMS Claude Code Skills
+# MJP-Paper-Skills — Minecraft Paper Agent Skills
 
-**Uma biblioteca selecionada de [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) para desenvolvimento de baixo nível com NMS (net.minecraft.server) do Minecraft no Paper 1.21.11 / 26.x, com os nomes oficiais da Mojang.**
+**[Agent Skills](https://agentskills.io) com compilação verificada para desenvolvimento de plugins do Minecraft Paper 1.21.11 / 26.x — NMS de baixo nível (net.minecraft.server) com os nomes oficiais da Mojang e Paper API pura.**
 
-O MJP-Claude-Skills fornece modelos de skills NMS com compilação verificada que o Claude Code lê antes de gerar código de plugin — cobrindo pacotes, interceptação via Netty, entidades personalizadas, NBT / data components, GUIs, scoreboards, boss bars, partículas, chunks, acesso por reflexão e adaptadores multiversão.
+Cada skill é um `SKILL.md` que a sua ferramenta de programação com IA lê antes de gerar código de plugin. As skills usam o formato aberto Agent Skills, portanto funcionam com Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI e qualquer outra ferramenta que carregue `SKILL.md`. Ferramentas sem suporte a skills ainda podem referenciar os arquivos, e cada skill pode ser lida normalmente como documentação de referência.
 
 > 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
 >
-> Notas de lançamento: [CHANGELOG.md](CHANGELOG.md)
+> Site de documentação: **[mrpippi.github.io/MJP-Paper-Skills](https://mrpippi.github.io/MJP-Paper-Skills)** · Notas de lançamento: [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -19,7 +19,7 @@ O MJP-Claude-Skills fornece modelos de skills NMS com compilação verificada qu
 | **Nomenclatura NMS** | Nomes oficiais da Mojang (o Minecraft não é ofuscado desde a 26.1) |
 | **Ferramenta de build** | Gradle 8.11.2+ (verificado com 9.8.1) + Paperweight userdev `2.0.0-beta.24` |
 | **Java** | 21 (1.21.11) / 25 (26.2) |
-| **Runtime das skills** | `.claude/skills/` (Claude Code) |
+| **Formato das skills** | [Agent Skills](https://agentskills.io) (`SKILL.md` + frontmatter YAML) |
 
 > Atualizando a partir dos modelos 1.21.x? Veja [CHANGELOG.md](CHANGELOG.md) e as notas de migração em [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) (seção 5).
 
@@ -27,71 +27,58 @@ O MJP-Claude-Skills fornece modelos de skills NMS com compilação verificada qu
 
 ## Skills
 
-30 skills em duas trilhas: as skills **NMS** exigem o Paperweight userdev; as skills da **Paper API** exigem apenas `paper-api`. Todos os modelos têm compilação verificada contra o Paper 1.21.11 e 26.2.
+30 skills em duas trilhas, todas com compilação verificada contra o Paper 1.21.11 e 26.2:
 
-### Skills NMS (`Skills/nms/`)
+- **NMS** (16 skills, `Skills/nms/`): pacotes, interceptação via Netty, entidades personalizadas, NBT / data components, GUIs, scoreboards, boss bars, partículas, chunks, jogadores falsos, reflexão e adaptadores multiversão. Exige o Paperweight userdev.
+- **Paper API** (14 skills, `Skills/paper/`): Dialogs, GUIs de baú, SQLite, arquivos de configuração e de idioma, APIs entre plugins, dependências opcionais, filtros de pacotes, jogabilidade de PvP e economia, comandos Brigadier, mundos descartáveis. Exige apenas `paper-api`.
 
-| ID da skill | Categoria | Finalidade |
-|----------|----------|---------|
-| [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | Enviar pacotes Clientbound via `ServerPlayer.connection.send()` |
-| [`nms-packet-interceptor`](Skills/nms/nms-packet-interceptor/SKILL.md) | nms-packet | Injetar um `ChannelDuplexHandler` no pipeline do Netty para interceptar/modificar pacotes |
-| [`nms-custom-entity`](Skills/nms/nms-custom-entity/SKILL.md) | nms-entity | Mobs NMS personalizados com IA baseada em `Goal` |
-| [`nms-attribute-modifier`](Skills/nms/nms-attribute-modifier/SKILL.md) | nms-entity | Ler/modificar atributos de entidades com `AttributeModifier` |
-| [`nms-nbt-manipulation`](Skills/nms/nms-nbt-manipulation/SKILL.md) | nms-data | `custom_data` de itens e NBT de entidades via `CompoundTag` / `ValueOutput` |
-| [`nms-data-component`](Skills/nms/nms-data-component/SKILL.md) | nms-data | Sistema `DataComponentType` de itens (custom data, tamanho da pilha, encantamentos…) |
-| [`nms-custom-menu`](Skills/nms/nms-custom-menu/SKILL.md) | nms-ui | GUIs com `AbstractContainerMenu` e ponte para o `InventoryHolder` do Bukkit |
-| [`nms-scoreboard`](Skills/nms/nms-scoreboard/SKILL.md) | nms-display | Barras laterais e equipes por jogador via pacotes de scoreboard |
-| [`nms-boss-event`](Skills/nms/nms-boss-event/SKILL.md) | nms-display | Boss bars por jogador com `ServerBossEvent` |
-| [`nms-player-profile`](Skills/nms/nms-player-profile/SKILL.md) | nms-player | Skins via `GameProfile` para NPCs e cabeças de jogadores |
-| [`nms-particle-effect`](Skills/nms/nms-particle-effect/SKILL.md) | nms-world | Partículas no lado do cliente com `ClientboundLevelParticlesPacket` |
-| [`nms-block-entity`](Skills/nms/nms-block-entity/SKILL.md) | nms-world | `BlockEntity` personalizado com persistência, ticking e sincronização com o cliente |
-| [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | Acesso direto a `LevelChunk` / seções e edições de blocos em massa |
-| [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | Acesso ao NMS com cache de `MethodHandle`, sem dependência de compilação do Paperweight |
-| [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | Interface de adaptador multiversão com despacho em tempo de execução |
-| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | Jogadores falsos (bots) sem cliente, baseados em um `ServerPlayer` real do NMS |
+👉 **Explore o catálogo completo, filtrável por plataforma e categoria: [mrpippi.github.io/MJP-Paper-Skills/docs/skills](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)**
 
-### Skills da Paper API (sem NMS, `Skills/paper/`)
-
-| ID da skill | Categoria | Finalidade |
-|----------|----------|---------|
-| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | Telas da Paper Dialog API com callbacks seguros para a thread principal |
-| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | GUIs de baú com `InventoryHolder`, paginação e proteção contra cliques |
-| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | Repositórios SQLite, migrações com `user_version`, flusher de escritor único |
-| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | Snapshots imutáveis de configuração, `config-version`, arquivos de idioma MiniMessage |
-| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | APIs entre plugins via `ServicesManager`, tolerantes a diferenças de versão entre jars |
-| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | Hook/Bridge de dependência opcional, Vault, expansões do PlaceholderAPI |
-| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | API JSON com `HttpServer` embutido do JDK (localhost, limite de taxa, snapshots) |
-| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | Filtros de pacotes com PacketEvents / ProtocolLib (seguros para a thread do Netty, fail-open) |
-| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | Ilusões por jogador de borda do mundo, hora, clima e visibilidade |
-| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | Marcação de combate PvP com atribuição de dano e tratamento de logout |
-| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | Busca de local seguro, RTP, teletransportes assíncronos, tempos de preparação e cooldowns |
-| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | Livro-razão multimoeda, custódia (escrow) e um provedor do Vault |
-| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | Comandos Brigadier via `LifecycleEvents.COMMANDS` |
-| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | Mundos descartáveis e arenas reiniciáveis |
+O índice legível por máquina (IDs, palavras-chave de gatilho, entradas e saídas) é [`Skills/skills-registry.yml`](Skills/skills-registry.yml).
 
 ---
 
 ## Início rápido
 
-### 1. Instale o runtime das skills
-
-Copie `.claude/skills/` para a raiz do seu projeto:
+### 1. Instale as skills
 
 ```bash
-cp -r /path/to/MJP-Claude-Skills/.claude/skills/ .claude/skills/
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
+```
+
+Copie `MJP-Paper-Skills/.claude/skills/` para a pasta de onde a sua ferramenta de IA carrega skills:
+
+| Ferramenta | Caminho comum no projeto |
+|------|---------------------|
+| Claude Code | `.claude/skills/` |
+| OpenAI Codex, Gemini CLI | `.agents/skills/` |
+| Cursor | `.cursor/skills/` |
+| GitHub Copilot | `.github/skills/` |
+
+```bash
+cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # ajuste o destino para a sua ferramenta
+```
+
+> Os caminhos das skills variam entre ferramentas e versões; consulte a documentação da sua ferramenta. `.agents/skills/` é lido por muitas ferramentas como um local compartilhado.
+
+**Ferramenta sem suporte a Agent Skills?** Aponte o arquivo de instruções dela (`AGENTS.md`, `.cursorrules`, `.github/copilot-instructions.md`, …) para as skills:
+
+```markdown
+Antes de escrever código de plugin Paper, encontre a skill correspondente em <skills-folder>/skills-registry.yml
+(por trigger_keywords) e siga o seu SKILL.md, além das notas de PLATFORM.md e _shared/ que ele referencia.
 ```
 
 ### 2. Use uma skill
 
-O Claude Code reconhece `.claude/skills/` automaticamente. Descreva o que você precisa usando palavras-chave de gatilho:
+Descreva o que você precisa em linguagem natural; a ferramenta compara o seu pedido com a descrição e as palavras-chave de gatilho de cada skill:
 
 ```
-"幫我實作封包發送器，發送 Action Bar 訊息給玩家"
-"我需要攔截 ServerboundChatPacket，過濾特定詞彙"
-"建立一個繼承 Zombie、有自訂 AI 追蹤行為的自定義實體"
+"Envie uma mensagem na action bar para um jogador usando um pacote"
+"Intercepte o ServerboundChatPacket e filtre certas palavras"
+"Crie uma entidade Zombie personalizada com IA própria de perseguição"
 ```
 
-O Claude Code lê o `SKILL.md` correspondente, o [`PLATFORM.md`](Skills/paper-nms/PLATFORM.md) e as notas compartilhadas de threading/nomenclatura antes de gerar o código.
+O agente lê o `SKILL.md` correspondente, a configuração da plataforma ([`PLATFORM.md`](Skills/paper-nms/PLATFORM.md)) e as notas compartilhadas de threading / nomenclatura antes de gerar o código.
 
 ---
 
@@ -120,20 +107,20 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 ## Estrutura do repositório
 
 ```
-MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
-├── Skills/                   ← Canonical skill sources
+MJP-Paper-Skills/
+├── .claude/skills/           ← Pasta de skills pronta para copiar (espelha Skills/, exceto as pastas PLATFORM)
+├── Skills/                   ← Fontes canônicas das skills
 │   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
 │   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
-│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
-│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
-│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
-│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
-├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
-├── web/                      ← Next.js documentation site (static export → GitHub Pages)
-├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
+│   ├── paper-nms/PLATFORM.md ← Modelos de build.gradle / paper-plugin.yml do NMS, tabela de versões
+│   ├── paper-api/PLATFORM.md ← build.gradle da Paper API, coordenadas das dependências opcionais
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 skills NMS)
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 skills da Paper API)
+├── docs/paper-nms/           ← Referência rápida da API NMS (pacotes, entidades, rede, bridge)
+├── web/                      ← Site de documentação Next.js (exportação estática → GitHub Pages)
+├── .github/workflows/        ← ci.yml (verificações de PR), nextjs.yml (deploy), workflows do Claude
 ├── CHANGELOG.md
-└── CLAUDE.md                 ← Instructions for Claude Code in this repo
+└── CLAUDE.md                 ← Instruções para os mantenedores e agentes de IA que trabalham neste repositório
 ```
 
 ---
@@ -143,9 +130,9 @@ MJP-Claude-Skills/
 ```bash
 cd web
 npm ci
-npx tsc --noEmit   # type check
-npm test           # characterization tests (node:test + tsx)
-npm run build      # static export to web/out/
+npx tsc --noEmit   # verificação de tipos
+npm test           # testes de caracterização (node:test + tsx)
+npm run build      # exportação estática para web/out/
 ```
 
 O CI executa as mesmas verificações em cada pull request (`.github/workflows/ci.yml`).

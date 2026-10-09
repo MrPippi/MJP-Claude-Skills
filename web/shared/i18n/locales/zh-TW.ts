@@ -11,7 +11,7 @@ export const zhTW: Translations = {
     switchLang: 'Switch to English',
   },
   footer: {
-    tagline: 'Paper 1.21.11 / 26.2 插件開發的 Claude Code Agent Skills：NMS 底層與純 Paper API，兩版皆編譯驗證。',
+    tagline: 'Paper 1.21.11 / 26.2 插件開發的 AI Agent Skills：NMS 底層與純 Paper API，兩版皆編譯驗證，適用任何支援 SKILL.md 的 AI 工具。',
     docs: '文件',
     resources: '資源',
     gettingStarted: '開始使用',
@@ -23,17 +23,17 @@ export const zhTW: Translations = {
     disclaimer: 'NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.',
   },
   home: {
-    eyebrow: 'Claude Code Agent Skills',
+    eyebrow: 'AI Agent Skills · SKILL.md',
     titleLead: '一句話，',
     titleAccent: '寫出 Paper 插件。',
     heroDescription:
-      '30 個專為 Paper 插件開發打造的 Claude Code Skills —— 從 NMS 封包、Netty 攔截、自定義實體，到 Dialog、SQLite、跨插件 API 與 PvP 玩法。每個範本都對 1.21.11 與 26.2 實際編譯驗證。',
+      '30 個專為 Paper 插件開發打造的 AI Agent Skills，Claude Code、Codex、Cursor、Copilot 都能用 —— 從 NMS 封包、Netty 攔截、自定義實體，到 Dialog、SQLite、跨插件 API 與 PvP 玩法。每個範本都對 1.21.11 與 26.2 實際編譯驗證。',
     ctaPrimary: '開始使用',
     ctaSecondary: '瀏覽 Skills',
     statsSkills: 'Skills',
     statsPlatforms: '平台',
     statsVersions: 'MC 版本',
-    terminalTitle: 'claude — my-plugin',
+    terminalTitle: 'agent — my-plugin',
     terminalComment: '# 1. 安裝 Skills 到插件專案',
     terminalComment2: '# 2. 用自然語言描述需求',
     terminalPrompt: '幫我做一個只有該玩家看得到的世界邊界',
@@ -47,7 +47,7 @@ export const zhTW: Translations = {
     stepsLabel: '運作方式',
     stepsTitle: '三步驟，從需求到程式碼',
     steps: [
-      { title: '安裝', body: '把 .claude/skills/ 複製到插件專案，Claude Code 會自動載入。' },
+      { title: '安裝', body: '把 Skills 複製到你的 AI 工具讀取 Skills 的目錄，例如 .claude/skills/ 或 .agents/skills/。' },
       { title: '描述需求', body: '用中文或英文說出你要什麼，Agent 依觸發關鍵字挑選最合適的 Skill。' },
       { title: '取得程式碼', body: '產出符合執行緒規則、雙版本相容的 Java 類別與 Gradle 設定。' },
     ],
@@ -63,7 +63,7 @@ export const zhTW: Translations = {
   },
   docs: {
     overviewLabel: '文件',
-    overviewTitle: 'MJP Claude Skills 文件',
+    overviewTitle: 'MJP Paper Skills 文件',
     overviewDescription: '安裝、平台建置設定、執行緒與命名概念、30 個 Skills，以及 NMS API 速查表。',
     sections: { start: '開始使用', platforms: '平台', concepts: '核心概念', skills: 'Skills', reference: '速查表' },
     sectionDescriptions: {
@@ -102,19 +102,19 @@ export const zhTW: Translations = {
   gettingStarted: {
     label: '開始使用',
     title: '三步驟開始使用',
-    description: '用一句自然語言，讓 Claude Code 產生完整的 Paper 插件程式碼。以下說明安裝、觸發與產出。',
+    description: '用一句自然語言，讓你的 AI 編碼工具產生完整的 Paper 插件程式碼。Skills 採用開放的 Agent Skills（SKILL.md）格式，Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI 等工具都能載入。',
     stepsTitle: '安裝與使用',
     steps: [
       {
         number: '01',
         title: '安裝 Skills 到專案',
-        description: '把本專案的 .claude/skills/ 複製到你的插件專案根目錄，Claude Code 啟動時會自動載入。',
-        code: 'git clone https://github.com/MrPippi/MJP-Claude-Skills.git\ncp -r MJP-Claude-Skills/.claude/skills .claude/skills',
-        note: '也可以直接 Fork 本專案，把 .claude/skills/ 當成你的 Skills 來源。',
+        description: '把本專案的 Skills 複製到你的 AI 工具讀取 Skills 的目錄，工具啟動時會自動載入。',
+        code: 'git clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .claude/skills   # Claude Code\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills   # Codex, Gemini CLI …',
+        note: 'Cursor 常用 .cursor/skills/、GitHub Copilot 常用 .github/skills/，實際路徑以各工具官方文件為準。不支援 Agent Skills 的工具，可在 AGENTS.md 或規則檔中引用需要的 SKILL.md。',
       },
       {
         number: '02',
-        title: '在 Claude Code 觸發 Skill',
+        title: '在 AI 工具中觸發 Skill',
         description: '用自然語言描述需求，Agent 會依觸發關鍵字選出最合適的 Skill。',
         triggers: [
           { keyword: '「幫我發送封包」', skill: 'nms-packet-sender' },
@@ -124,7 +124,7 @@ export const zhTW: Translations = {
           { keyword: '「SQLite 資料庫」', skill: 'paper-sqlite-repository' },
           { keyword: '「戰鬥標記」', skill: 'paper-combat-tag' },
         ],
-        note: '觸發詞不需完全相同，Claude Code 會理解語意。',
+        note: '觸發詞不需完全相同，AI 工具會依 Skill 的描述理解語意。',
       },
       {
         number: '03',
@@ -144,8 +144,8 @@ export const zhTW: Translations = {
     faqSubtitle: '找不到答案？到 GitHub 開 Issue。',
     faqs: [
       {
-        q: '需要什麼版本的 Claude Code？',
-        a: '任何支援 Agent Skills 的 Claude Code 版本皆可。Skills 放在 .claude/skills/，在 Claude Code 中用自然語言即可觸發。',
+        q: '可以搭配哪些 AI 工具？',
+        a: '任何支援 Agent Skills（SKILL.md 開放格式）的 AI 編碼工具，例如 Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI。不支援的工具也能在 AGENTS.md 或規則檔中引用 SKILL.md，或直接把它們當成 Paper 開發參考文件閱讀。',
       },
       {
         q: '支援哪些 Minecraft 版本？',
@@ -157,7 +157,7 @@ export const zhTW: Translations = {
       },
       {
         q: 'Skills 會自動改我的檔案嗎？',
-        a: '預設會先提出修改並等你確認才寫入。你可以檢視、接受或拒絕產出的程式碼。',
+        a: 'Skills 本身只是說明文件，寫不寫入檔案由你的 AI 工具決定；多數工具預設會先提出修改並等你確認。',
       },
       {
         q: '如何貢獻新的 Skill？',

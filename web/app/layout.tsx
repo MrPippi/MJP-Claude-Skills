@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
-    template: `%s | MJP-Claude-Skills`,
+    template: `%s | MJP-Paper-Skills`,
   },
   description: SITE_DESCRIPTION,
   openGraph: {

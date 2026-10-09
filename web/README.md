@@ -1,6 +1,6 @@
-# MJP-Claude-Skills Web — Minecraft NMS Claude Code Skills 網站
+# MJP-Paper-Skills Web — Minecraft Paper Agent Skills 網站
 
-MJP-Claude-Skills 官方網站，提供 Skills 瀏覽、搜尋與詳細頁功能。以 Next.js static export 產出 `out/`，部署於 GitHub Pages。
+MJP-Paper-Skills 官方網站，提供 Skills 瀏覽、搜尋與詳細頁功能。以 Next.js static export 產出 `out/`，部署於 GitHub Pages。
 
 ## 需求
 
@@ -50,7 +50,7 @@ npm run dev
 
 | 變數 | 說明 | 預設值 |
 |------|------|--------|
-| `NEXT_PUBLIC_SITE_URL` | 網站正式 URL（SEO、sitemap 用） | `https://mrpippi.github.io/MJP-Claude-Skills`（見 `config/site.ts`） |
+| `NEXT_PUBLIC_SITE_URL` | 網站正式 URL（SEO、sitemap 用） | `https://mrpippi.github.io/MJP-Paper-Skills`（見 `config/site.ts`） |
 
 本機需要時可建立 `.env.local` 設定上述變數。
 
@@ -64,4 +64,3 @@ npm run dev
 
 - **GitHub Pages（主要）**：推送至 `main` 後由 `.github/workflows/nextjs.yml` 執行型別檢查、測試、建置並部署；basePath 由 `GITHUB_REPOSITORY` 自動推得。
 - **PR 檢查**：`.github/workflows/ci.yml` 對每個 PR 執行型別檢查、測試與建置（不部署）。
-- **Vercel（選用）**：`vercel.json` 已設定 `outputDirectory: out`，可直接匯入 Vercel 專案。

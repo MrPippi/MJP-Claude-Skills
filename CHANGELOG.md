@@ -5,6 +5,14 @@
 
 ## [Unreleased]
 
+### Changed — 專案改名與定位
+
+- 專案更名 **MJP-Claude-Skills → MJP-Paper-Skills**；目標使用者擴大到任何支援 Agent Skills（`SKILL.md`）的 AI 編碼工具（Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI…），不再限定 Claude Code
+- README（8 種語言）：快速開始改為各工具的 Skills 目錄對照，並提供不支援 Agent Skills 時的 `AGENTS.md` 寫法；30 列 Skills 表格改為摘要加網站目錄連結
+- 網站文案、標題、站名同步更新
+- 移除不再使用的 `web/vercel.json`（改由 GitHub Pages 部署）
+
+
 ### Web（網站重新設計）
 
 #### Changed
