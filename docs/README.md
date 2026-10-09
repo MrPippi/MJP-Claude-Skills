@@ -1,6 +1,6 @@
-# MJP-Claude-Skills — NMS API 參考文件
+# MJP-Paper-Skills — NMS API 參考文件
 
-此資料夾存放 MJP-Claude-Skills 所有 NMS API 速查表與深度參考文件。
+此資料夾存放 MJP-Paper-Skills 所有 NMS API 速查表與深度參考文件。
 
 > **開發者注意**：Cursor Agent 實際載入的 Skill 路徑為 `.cursor/skills/`，本目錄為同步鏡像，供瀏覽器 / GitHub 直接閱讀使用。兩處內容需保持一致。
 

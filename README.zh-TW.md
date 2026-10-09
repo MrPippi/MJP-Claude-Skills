@@ -1,12 +1,12 @@
-# MJP-Claude-Skills — Minecraft NMS Claude Code Skills
+# MJP-Paper-Skills — Minecraft Paper Agent Skills
 
-**專為 Paper 1.21.11 / 26.x（Mojang 官方命名）NMS（net.minecraft.server）底層開發設計的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 精選函式庫。**
+**經編譯驗證的 [Agent Skills](https://agentskills.io)，專為 Minecraft Paper 1.21.11 / 26.x 插件開發設計：涵蓋採用 Mojang 官方命名的底層 NMS（net.minecraft.server），以及純 Paper API。**
 
-MJP-Claude-Skills 提供經編譯驗證的 NMS 技能範本，Claude Code 在產生插件程式碼前會先讀取這些範本，涵蓋封包、Netty 攔截、自定義實體、NBT／資料組件、GUI、計分板、Boss Bar、粒子、區塊存取、反射式存取與多版本 Adapter。
+每個技能都是一份 `SKILL.md`，你的 AI 程式設計工具會在產生插件程式碼前先讀取它。這些技能採用開放的 Agent Skills 格式，因此可搭配 Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI，以及任何會載入 `SKILL.md` 的工具。不支援技能的工具仍可引用這些檔案，而且每個技能都可以直接當作一般參考文件閱讀。
 
 > 🌐 [English](README.md) · [繁體中文](README.zh-TW.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Português (BR)](README.pt-BR.md) · [Русский](README.ru.md)
 >
-> 版本變更紀錄：[CHANGELOG.md](CHANGELOG.md)
+> 文件網站：**[mrpippi.github.io/MJP-Paper-Skills](https://mrpippi.github.io/MJP-Paper-Skills)** · 版本變更紀錄：[CHANGELOG.md](CHANGELOG.md)
 
 ---
 
@@ -19,79 +19,66 @@ MJP-Claude-Skills 提供經編譯驗證的 NMS 技能範本，Claude Code 在產
 | **NMS 命名** | Mojang 官方名稱（Minecraft 自 26.1 起不再混淆） |
 | **建置工具** | Gradle 8.11.2+（已驗證 9.8.1）+ Paperweight userdev `2.0.0-beta.24` |
 | **Java** | 21 (1.21.11) / 25 (26.2) |
-| **技能執行時** | `.claude/skills/`（Claude Code） |
+| **技能格式** | [Agent Skills](https://agentskills.io)（`SKILL.md` + YAML frontmatter） |
 
 > 從 1.21.x 版範本升級？請參考 [CHANGELOG.md](CHANGELOG.md) 與 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 第 5 節的遷移說明。
 
 ---
 
-## 技能列表
+## 技能
 
-共 30 個技能，分為兩條路線：**NMS** 技能需要 Paperweight userdev；**Paper API** 技能只需 `paper-api`。所有範本皆已針對 Paper 1.21.11 與 26.2 編譯驗證。
+共 30 個技能，分為兩條路線，皆已針對 Paper 1.21.11 與 26.2 編譯驗證：
 
-### NMS 技能（`Skills/nms/`）
+- **NMS**（16 個技能，`Skills/nms/`）：封包、Netty 攔截、自定義實體、NBT／資料組件、GUI、計分板、Boss Bar、粒子、區塊、假玩家、反射式存取與多版本 Adapter。需要 Paperweight userdev。
+- **Paper API**（14 個技能，`Skills/paper/`）：Dialog、箱子 GUI、SQLite、設定與語言檔、跨插件 API、軟依賴、封包過濾器、PvP 與經濟玩法、Brigadier 指令、用完即棄的世界。只需 `paper-api`。
 
-| Skill ID | 類別 | 功能 |
-|----------|------|------|
-| [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | 透過 `ServerPlayer.connection.send()` 發送 Clientbound 封包 |
-| [`nms-packet-interceptor`](Skills/nms/nms-packet-interceptor/SKILL.md) | nms-packet | 注入 `ChannelDuplexHandler` 至 Netty pipeline 攔截／修改封包 |
-| [`nms-custom-entity`](Skills/nms/nms-custom-entity/SKILL.md) | nms-entity | 自定義 NMS 生物與 `Goal` AI |
-| [`nms-attribute-modifier`](Skills/nms/nms-attribute-modifier/SKILL.md) | nms-entity | 以 `AttributeModifier` 讀寫實體屬性 |
-| [`nms-nbt-manipulation`](Skills/nms/nms-nbt-manipulation/SKILL.md) | nms-data | 透過 `CompoundTag` / `ValueOutput` 處理物品 `custom_data` 與實體 NBT |
-| [`nms-data-component`](Skills/nms/nms-data-component/SKILL.md) | nms-data | 物品 `DataComponentType` 系統（自定義資料、堆疊數、附魔…） |
-| [`nms-custom-menu`](Skills/nms/nms-custom-menu/SKILL.md) | nms-ui | 具備 Bukkit `InventoryHolder` 橋接的 `AbstractContainerMenu` GUI |
-| [`nms-scoreboard`](Skills/nms/nms-scoreboard/SKILL.md) | nms-display | 以計分板封包實作每位玩家獨立的 sidebar 與隊伍 |
-| [`nms-boss-event`](Skills/nms/nms-boss-event/SKILL.md) | nms-display | 以 `ServerBossEvent` 實作每位玩家獨立的 Boss Bar |
-| [`nms-player-profile`](Skills/nms/nms-player-profile/SKILL.md) | nms-player | NPC 與玩家頭顱的 `GameProfile` skin |
-| [`nms-particle-effect`](Skills/nms/nms-particle-effect/SKILL.md) | nms-world | 以 `ClientboundLevelParticlesPacket` 發送客戶端粒子 |
-| [`nms-block-entity`](Skills/nms/nms-block-entity/SKILL.md) | nms-world | 支援持久化、Tick 與客戶端同步的自定義 `BlockEntity` |
-| [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | 直接存取 `LevelChunk`／區段與批次修改方塊 |
-| [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | 以 `MethodHandle` 快取存取 NMS，不需 Paperweight 編譯依賴 |
-| [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | 具備 runtime dispatch 的多版本 Adapter 介面 |
-| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | 以真實 NMS `ServerPlayer` 為基礎、無需客戶端的假玩家（機器人） |
+👉 **瀏覽完整目錄，可依平台與類別篩選：[mrpippi.github.io/MJP-Paper-Skills/docs/skills](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)**
 
-### Paper API 技能（不使用 NMS，`Skills/paper/`）
-
-| Skill ID | 類別 | 功能 |
-|----------|------|------|
-| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | 具備主執行緒安全回呼的 Paper Dialog API 畫面 |
-| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | 支援分頁與點擊防護的 `InventoryHolder` 箱子 GUI |
-| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | SQLite repository、`user_version` 遷移、單一寫入者 flusher |
-| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | 不可變設定快照、`config-version`、MiniMessage 語言檔 |
-| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | 透過 `ServicesManager` 提供跨插件 API，可容忍 jar 版本差異 |
-| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | 軟依賴 Hook/Bridge、Vault、PlaceholderAPI 擴充 |
-| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | 內嵌 JDK `HttpServer` JSON API（localhost、速率限制、快照） |
-| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | PacketEvents / ProtocolLib 封包過濾器（Netty 執行緒安全、fail-open） |
-| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | 每位玩家獨立的世界邊界、時間、天氣與可見性幻象 |
-| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | 具備傷害歸屬與登出處理的 PvP 戰鬥標記 |
-| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | 安全落點搜尋、RTP、非同步傳送、預備時間與冷卻 |
-| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | 多幣種帳本、託管（escrow）與 Vault provider |
-| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | 透過 `LifecycleEvents.COMMANDS` 註冊 Brigadier 指令 |
-| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | 用完即棄的世界與可重置的競技場 |
+機器可讀的索引（ID、觸發關鍵字、輸入與輸出）位於 [`Skills/skills-registry.yml`](Skills/skills-registry.yml)。
 
 ---
 
 ## 快速開始
 
-### 1. 安裝技能執行時
-
-將 `.claude/skills/` 複製到你的專案根目錄：
+### 1. 安裝技能
 
 ```bash
-cp -r /path/to/MJP-Claude-Skills/.claude/skills/ .claude/skills/
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
+```
+
+將 `MJP-Paper-Skills/.claude/skills/` 複製到你的 AI 工具載入技能的資料夾：
+
+| 工具 | 常見專案路徑 |
+|------|--------------|
+| Claude Code | `.claude/skills/` |
+| OpenAI Codex、Gemini CLI | `.agents/skills/` |
+| Cursor | `.cursor/skills/` |
+| GitHub Copilot | `.github/skills/` |
+
+```bash
+cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # 請依你的工具調整目標路徑
+```
+
+> 技能路徑會因工具與版本而異，請查閱你所用工具的文件。許多工具會將 `.agents/skills/` 當作共用位置讀取。
+
+**使用的工具不支援 Agent Skills？** 請在它的指令檔（`AGENTS.md`、`.cursorrules`、`.github/copilot-instructions.md`……）中指向這些技能：
+
+```markdown
+撰寫 Paper 插件程式碼之前，請先依 trigger_keywords 在 <skills-folder>/skills-registry.yml
+中找出對應的技能，並遵循其 SKILL.md，以及它所引用的 PLATFORM.md 與 _shared/ 說明。
 ```
 
 ### 2. 使用技能
 
-Claude Code 會自動載入 `.claude/skills/`。用觸發關鍵字描述需求：
+用白話描述你的需求；工具會將你的請求與每個技能的描述及觸發關鍵字進行比對：
 
 ```
-"幫我實作封包發送器，發送 Action Bar 訊息給玩家"
-"我需要攔截 ServerboundChatPacket，過濾特定詞彙"
-"建立一個繼承 Zombie、有自訂 AI 追蹤行為的自定義實體"
+"用封包發送 Action Bar 訊息給玩家"
+"攔截 ServerboundChatPacket 並過濾特定詞彙"
+"建立一個有自己追蹤 AI 的自定義 Zombie 實體"
 ```
 
-Claude Code 會先讀取對應的 `SKILL.md`、[`PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 與共享的執行緒／命名說明，再產生程式碼。
+代理會先讀取對應的 `SKILL.md`、平台設定（[`PLATFORM.md`](Skills/paper-nms/PLATFORM.md)）與共享的執行緒／命名說明，再產生程式碼。
 
 ---
 
@@ -120,20 +107,20 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 ## 倉庫結構
 
 ```
-MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
-├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+MJP-Paper-Skills/
+├── .claude/skills/           ← 可直接複製的技能資料夾（鏡像 Skills/，PLATFORM 資料夾除外）
+├── Skills/                   ← 技能的規範來源
+│   ├── skills-registry.yml   ← 30 個技能（paper-nms + paper-api）
 │   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
-│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
-│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
-│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
-│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
-├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
-├── web/                      ← Next.js documentation site (static export → GitHub Pages)
-├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
+│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml 範本、版本對照表
+│   ├── paper-api/PLATFORM.md ← Paper API build.gradle、軟依賴座標
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md（16 個 NMS 技能）
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md（14 個 Paper API 技能）
+├── docs/paper-nms/           ← NMS API 速查表（封包、實體、網路、橋接）
+├── web/                      ← Next.js 文件網站（靜態匯出 → GitHub Pages）
+├── .github/workflows/        ← ci.yml（PR 檢查）、nextjs.yml（部署）、Claude workflows
 ├── CHANGELOG.md
-└── CLAUDE.md                 ← Instructions for Claude Code in this repo
+└── CLAUDE.md                 ← 供在此倉庫工作的 AI 代理使用的維護者指引
 ```
 
 ---
@@ -143,9 +130,9 @@ MJP-Claude-Skills/
 ```bash
 cd web
 npm ci
-npx tsc --noEmit   # type check
+npx tsc --noEmit   # 型別檢查
 npm test           # characterization tests (node:test + tsx)
-npm run build      # static export to web/out/
+npm run build      # 靜態匯出至 web/out/
 ```
 
 每個 Pull Request 都會由 CI（`.github/workflows/ci.yml`）執行相同檢查。

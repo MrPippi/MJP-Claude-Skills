@@ -11,7 +11,7 @@ export const en: Translations = {
     switchLang: '切換為繁體中文',
   },
   footer: {
-    tagline: 'Claude Code Agent Skills for Paper 1.21.11 / 26.2 plugin development — NMS and pure Paper API, compile-verified on both versions.',
+    tagline: 'AI agent skills for Paper 1.21.11 / 26.2 plugin development — NMS and pure Paper API, compile-verified on both versions, for any tool that reads SKILL.md.',
     docs: 'Docs',
     resources: 'Resources',
     gettingStarted: 'Get started',
@@ -23,17 +23,17 @@ export const en: Translations = {
     disclaimer: 'NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.',
   },
   home: {
-    eyebrow: 'Claude Code Agent Skills',
+    eyebrow: 'AI Agent Skills · SKILL.md',
     titleLead: 'One prompt.',
     titleAccent: 'A working Paper plugin.',
     heroDescription:
-      '30 Claude Code skills built for Paper plugin development — from NMS packets, Netty interception and custom entities to Dialogs, SQLite, cross-plugin APIs and PvP gameplay. Every template is compile-verified against 1.21.11 and 26.2.',
+      '30 agent skills built for Paper plugin development, for Claude Code, Codex, Cursor, Copilot and more — from NMS packets, Netty interception and custom entities to Dialogs, SQLite, cross-plugin APIs and PvP gameplay. Every template is compile-verified against 1.21.11 and 26.2.',
     ctaPrimary: 'Get started',
     ctaSecondary: 'Browse skills',
     statsSkills: 'Skills',
     statsPlatforms: 'Platforms',
     statsVersions: 'MC versions',
-    terminalTitle: 'claude — my-plugin',
+    terminalTitle: 'agent — my-plugin',
     terminalComment: '# 1. Install the skills into your plugin',
     terminalComment2: '# 2. Describe what you need',
     terminalPrompt: 'Show a world border only this player can see',
@@ -47,7 +47,7 @@ export const en: Translations = {
     stepsLabel: 'How it works',
     stepsTitle: 'From request to code in three steps',
     steps: [
-      { title: 'Install', body: 'Copy .claude/skills/ into your plugin project; Claude Code loads it automatically.' },
+      { title: 'Install', body: 'Copy the skills into the folder your AI tool reads skills from, e.g. .claude/skills/ or .agents/skills/.' },
       { title: 'Describe', body: 'Say what you need in plain language; the agent picks the best skill by its trigger keywords.' },
       { title: 'Ship', body: 'Get thread-safe, dual-version Java classes and Gradle setup.' },
     ],
@@ -63,7 +63,7 @@ export const en: Translations = {
   },
   docs: {
     overviewLabel: 'Docs',
-    overviewTitle: 'MJP Claude Skills docs',
+    overviewTitle: 'MJP Paper Skills docs',
     overviewDescription: 'Installation, platform build setup, threading and naming concepts, all 30 skills, and the NMS API reference.',
     sections: { start: 'Get started', platforms: 'Platforms', concepts: 'Concepts', skills: 'Skills', reference: 'Reference' },
     sectionDescriptions: {
@@ -102,19 +102,19 @@ export const en: Translations = {
   gettingStarted: {
     label: 'Get started',
     title: 'Get started in three steps',
-    description: 'Type one natural-language prompt and let Claude Code generate complete Paper plugin code. Here is how to install, trigger and use the skills.',
+    description: 'Type one natural-language prompt and let your AI coding tool generate complete Paper plugin code. The skills use the open Agent Skills (SKILL.md) format, so Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI and others can load them.',
     stepsTitle: 'Install & use',
     steps: [
       {
         number: '01',
         title: 'Install the skills',
-        description: 'Copy .claude/skills/ from this repo into your plugin project root. Claude Code loads it on start.',
-        code: 'git clone https://github.com/MrPippi/MJP-Claude-Skills.git\ncp -r MJP-Claude-Skills/.claude/skills .claude/skills',
-        note: 'You can also fork this repo and use .claude/skills/ as your skills source.',
+        description: 'Copy the skills from this repo into the folder your AI tool reads skills from. The tool loads them on start.',
+        code: 'git clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .claude/skills   # Claude Code\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills   # Codex, Gemini CLI …',
+        note: 'Cursor commonly uses .cursor/skills/ and GitHub Copilot .github/skills/; check each tool\'s docs for the exact path. For tools without Agent Skills support, reference the SKILL.md files you need from AGENTS.md or your rules file.',
       },
       {
         number: '02',
-        title: 'Trigger a skill in Claude Code',
+        title: 'Trigger a skill in your AI tool',
         description: 'Describe what you need in plain language. The agent selects the best-matching skill by its trigger keywords.',
         triggers: [
           { keyword: '"send a custom packet"', skill: 'nms-packet-sender' },
@@ -124,7 +124,7 @@ export const en: Translations = {
           { keyword: '"sqlite repository"', skill: 'paper-sqlite-repository' },
           { keyword: '"combat tag"', skill: 'paper-combat-tag' },
         ],
-        note: "Trigger phrases don't need to match exactly — Claude Code understands intent.",
+        note: "Trigger phrases don't need to match exactly — the tool matches intent against each skill's description.",
       },
       {
         number: '03',
@@ -144,8 +144,8 @@ export const en: Translations = {
     faqSubtitle: "Can't find an answer? Open an issue on GitHub.",
     faqs: [
       {
-        q: 'Which Claude Code version do I need?',
-        a: 'Any Claude Code version with Agent Skills support. Skills live in .claude/skills/ and are triggered by natural-language prompts.',
+        q: 'Which AI tools does this work with?',
+        a: 'Any AI coding tool that supports Agent Skills (the open SKILL.md format), such as Claude Code, OpenAI Codex, Cursor, GitHub Copilot and Gemini CLI. Other tools can reference SKILL.md files from AGENTS.md or a rules file, and every skill also reads fine as plain Paper reference docs.',
       },
       {
         q: 'Which Minecraft versions are supported?',
@@ -157,7 +157,7 @@ export const en: Translations = {
       },
       {
         q: 'Will skills modify my files automatically?',
-        a: 'By default Claude Code proposes changes and waits for your confirmation before writing. You can review, accept or reject the output.',
+        a: 'Skills are just instructions; whether files get written is up to your AI tool. Most tools propose changes and wait for your confirmation by default.',
       },
       {
         q: 'How do I contribute a skill?',

@@ -11,7 +11,7 @@ import sitemap from '../app/sitemap';
 import { getAllSkills } from '../features/skills/api/skills';
 import { DOC_SOURCES } from '../features/docs/registry';
 
-const DEFAULT_SITE_URL = 'https://mrpippi.github.io/MJP-Claude-Skills';
+const DEFAULT_SITE_URL = 'https://mrpippi.github.io/MJP-Paper-Skills';
 const skipIfSiteUrlSet = { skip: process.env.NEXT_PUBLIC_SITE_URL ? 'NEXT_PUBLIC_SITE_URL set' : false };
 
 describe('robots()', () => {
@@ -29,7 +29,7 @@ describe('sitemap()', () => {
 
   it('has 4 static + one entry per docs page + one per skill, and no legacy routes', () => {
     assert.equal(entries.length, skillsStart + getAllSkills().length);
-    for (const e of entries) assert.ok(!/\/(categories|guide)(\/|$)|\.io\/MJP-Claude-Skills\/skills/.test(e.url), e.url);
+    for (const e of entries) assert.ok(!/\/(categories|guide)(\/|$)|\.io\/MJP-Paper-Skills\/skills/.test(e.url), e.url);
   });
 
   it('static routes point at the docs hub', skipIfSiteUrlSet, () => {

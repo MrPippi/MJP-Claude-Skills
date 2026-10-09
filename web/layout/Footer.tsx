@@ -35,7 +35,7 @@ export function Footer() {
         <div className="max-w-sm">
           <Link href="/" className="inline-flex items-center gap-2">
             <PixelIcon name="pickaxe" className="h-8 w-8" />
-            <span className="font-serif text-lg font-semibold text-fg">MJP Claude Skills</span>
+            <span className="font-serif text-lg font-semibold text-fg">MJP Paper Skills</span>
           </Link>
           <p className="mt-3 text-sm leading-relaxed text-fg-2">{t.footer.tagline}</p>
           <p className="mt-4 font-pixel text-[12px] text-fg-3">Paper 1.21.11 · 26.2</p>

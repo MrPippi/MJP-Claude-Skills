@@ -1,6 +1,6 @@
 # Paper NMS Platform / Paper NMS 平台
 
-本平台定義 Paper NMS 開發的基礎建置設定，使用 Paperweight userdev 與 Mojang 官方命名（Minecraft 26.1 起原版不再混淆）。所有 MJP-Claude-Skills NMS 技能產出的代碼皆預設此平台。
+本平台定義 Paper NMS 開發的基礎建置設定，使用 Paperweight userdev 與 Mojang 官方命名（Minecraft 26.1 起原版不再混淆）。所有 MJP-Paper-Skills NMS 技能產出的代碼皆預設此平台。
 
 - **MC 版本**：**1.21.11** 與 **26.2**（兩版皆經編譯驗證；範本預設 26.2）
 - **Java**：1.21.11 → 21；26.2 → 25（Paper 26.x 最低需求）

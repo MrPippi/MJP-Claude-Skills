@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is This Repository
 
-MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套 Paper 插件開發的 Claude Code Agent Skills 集合，分兩個平台：
+MJP-Paper-Skills (Minecraft Paper Agent Skills) 是一套 Paper 插件開發的 Agent Skills 集合（開放的 `SKILL.md` 格式；目標使用者是任何 AI 編碼工具：Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI 等，不限 Claude），分兩個平台：
+
+> 專案原名 MJP-Claude-Skills，2026-10-09 改名。撰寫 README、網站文案時不要假設讀者使用 Claude Code；`.claude/skills/` 只是現成可複製的 Skills 資料夾。
 
 - **NMS 技能**（`Skills/nms/`）：Paper NMS（net.minecraft.server）底層開發，需 Paperweight userdev
 - **Paper API 技能**（`Skills/paper/`）：純 Paper API（`paper-api` compileOnly），涵蓋 Dialog、SQLite、跨插件 API、軟依賴、封包過濾等插件集常見模式
@@ -21,7 +23,7 @@ Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 含全部 30 個�
 ### Repository Layout
 
 ```
-MJP-Claude-Skills/
+MJP-Paper-Skills/
 ├── CLAUDE.md                            ← 本檔（Claude Code 入口）
 ├── README.md                            ← 英文 README（翻譯來源）
 ├── README.{zh-TW,zh-CN,ja,ko,es,pt-BR,ru}.md ← 多語 README（修改 README.md 時同步更新）
