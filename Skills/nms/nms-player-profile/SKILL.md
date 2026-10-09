@@ -13,6 +13,11 @@ description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與
 
 透過 NMS `GameProfile` 操作玩家皮膚（texture）屬性，實現 NPC 外觀注入、假玩家實體皮膚設定，以及客製化頭顱 skull 顯示。
 
+### 相關技能 / Related
+
+- 需要一個「會動、會打、有原版物理」的玩家分身 → [`nms-fake-player`](../nms-fake-player/SKILL.md)（真的 `ServerPlayer`，沿用本技能的 skin 取得方式）
+- 只需要玩家頭顱的 skin → Paper API `PlayerProfile` / `SkullMeta#setPlayerProfile` 即可，不必用 NMS
+
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

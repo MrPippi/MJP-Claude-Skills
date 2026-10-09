@@ -8,6 +8,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import robots from '../app/robots';
 import sitemap from '../app/sitemap';
+import { getAllSkills, getCategories } from '../features/skills/api/skills';
 
 const DEFAULT_SITE_URL = 'https://mrpippi.github.io/MJP-Claude-Skills';
 const skipIfSiteUrlSet = { skip: process.env.NEXT_PUBLIC_SITE_URL ? 'NEXT_PUBLIC_SITE_URL set' : false };
@@ -24,8 +25,8 @@ describe('robots()', () => {
 describe('sitemap()', () => {
   const entries = sitemap();
 
-  it('has 4 static + 15 skill + 8 category entries', () => {
-    assert.equal(entries.length, 27);
+  it('has 4 static + one entry per skill + one per category', () => {
+    assert.equal(entries.length, 4 + getAllSkills().length + getCategories().length);
   });
 
   it('static routes include /guide', skipIfSiteUrlSet, () => {
@@ -46,8 +47,8 @@ describe('sitemap()', () => {
   });
 
   it('category entries are weekly with priority 0.7, ordered as getCategories()', skipIfSiteUrlSet, () => {
-    const cats = entries.slice(19);
-    assert.equal(cats[0].url, `${DEFAULT_SITE_URL}/categories/nms-world`);
+    const cats = entries.slice(4 + getAllSkills().length);
+    assert.equal(cats[0].url, `${DEFAULT_SITE_URL}/categories/${getCategories()[0].id}`);
     for (const c of cats) {
       assert.equal(c.changeFrequency, 'weekly');
       assert.equal(c.priority, 0.7);

@@ -31,6 +31,12 @@ featured: true
 
 ---
 
+## 替代方案
+
+不想碰 NMS／Netty 時，改用 PacketEvents 或 ProtocolLib 軟依賴：見 `paper-packetevents-filter`。不論哪條路都要 fail-open：出錯時讓封包照常通過、停用自己並只記錄一次。
+
+---
+
 ## 平台需求
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

@@ -529,11 +529,647 @@ skills:
       - "per-player boss bar"
       - "每人 boss bar"
 
+  - id: nms-fake-player
+    version: "1.0.0"
+    status: active
+    platform: paper-nms
+    category: nms-player
+    description: "以 NMS ServerPlayer 建立沒有客戶端的假玩家（原版戰鬥／移動、NMS 限定套件、版本守門） / Client-less fake players backed by NMS ServerPlayer with confined NMS and version guard"
+    skill_file: nms/nms-fake-player/SKILL.md
+    examples_file: nms/nms-fake-player/examples.md
+    inputs:
+      - name: package_name
+        description: "NMS 專用套件"
+        required: true
+      - name: supported_versions
+        description: "允許啟用的 MC 版本"
+        required: false
+      - name: name_rule
+        description: "假玩家名稱規則（≤16 字元）"
+        required: false
+    outputs:
+      - name: "NmsGuard.java"
+        description: "版本守門（不碰 NMS）"
+      - name: "EmptyConnection.java"
+        description: "沒有客戶端的連線"
+      - name: "FakePlayer.java"
+        description: "假玩家本體（對外只交 Bukkit 型別）"
+      - name: "BotService.java"
+        description: "Bukkit 端驅動與 LinkageError 降級"
+    tags: [nms, fake-player, bot, serverplayer, npc]
+    trigger_keywords:
+      - "假玩家"
+      - "fake player"
+      - "PvP bot"
+      - "機器人"
+      - "訓練假人"
+      - "ServerPlayer NPC"
+
+  - id: paper-brigadier-command
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-command
+    description: "以 Paper Brigadier API 註冊指令（內建與自訂 k/m/b 金額參數、權限、快照補全、reload 子指令） / Paper Brigadier commands with built-in and custom argument types, permission gates and snapshot-only suggestions"
+    skill_file: paper/paper-brigadier-command/SKILL.md
+    examples_file: paper/paper-brigadier-command/examples.md
+    inputs:
+      - name: command_package
+        description: "指令類別所在 package"
+        required: true
+      - name: root_literal
+        description: "根指令名稱"
+        required: true
+      - name: arguments
+        description: "參數名稱與型別（player、amount k/m/b…）"
+        required: false
+      - name: permission
+        description: "使用權限節點（宣告在 plugin.yml）"
+        required: true
+      - name: aliases
+        description: "別名"
+        required: false
+    outputs:
+      - name: "CommandSupport.java"
+        description: "權限 predicate、玩家檢查、MiniMessage 訊息、快照補全"
+      - name: "AmountArgumentType.java"
+        description: "自訂 k/m/b 金額 Brigadier 參數"
+      - name: "<Name>Command.java"
+        description: "build() 回傳 LiteralCommandNode 的指令類別"
+      - name: "<Name>Plugin.java"
+        description: "LifecycleEvents.COMMANDS 註冊（或 PluginBootstrap）"
+    tags: [paper-api, brigadier, command, argument-type, tab-completion]
+    trigger_keywords:
+      - "Brigadier"
+      - "指令補全"
+      - "tab completion"
+      - "LifecycleEvents.COMMANDS"
+      - "Commands.literal"
+      - "自訂參數型別"
+      - "金額 k m b"
+
+  - id: paper-chest-gui
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-ui
+    description: "以 Bukkit API 建立箱子介面 GUI（holder 標記、單一防刷監聽器、分頁、gui.yml 圖示、安全停用） / Chest-inventory GUIs with the Bukkit API: holder marker, single cancelling listener, paging, gui.yml icons, safe disable"
+    skill_file: paper/paper-chest-gui/SKILL.md
+    examples_file: paper/paper-chest-gui/examples.md
+    inputs:
+      - name: package
+        description: "GUI 類別所在 package"
+        required: true
+      - name: menu_kinds
+        description: "要做的選單種類（每種一個 holder）"
+        required: true
+      - name: rows
+        description: "列數（預設 6）"
+        required: false
+      - name: icons_file
+        description: "圖示設定檔（預設 gui.yml）"
+        required: false
+      - name: permission
+        description: "動作所需權限（每次點擊重新檢查）"
+        required: false
+    outputs:
+      - name: "ShopMenu.java"
+        description: "InventoryHolder 標記介面"
+      - name: "GuiListener.java"
+        description: "唯一的點擊／拖曳／關閉監聽器"
+      - name: "PagedListMenu.java"
+        description: "分頁清單 holder"
+      - name: "Menus.java"
+        description: "開啟、非同步回主執行緒、closeAll"
+      - name: "Icons.java"
+        description: "gui.yml 圖示與標題載入"
+      - name: "gui.yml"
+        description: "圖示與標題設定"
+    tags: [paper-api, inventory, gui, holder, paging]
+    trigger_keywords:
+      - "箱子 GUI"
+      - "chest GUI"
+      - "InventoryHolder"
+      - "createInventory"
+      - "分頁"
+      - "gui.yml"
+
+  - id: paper-client-side-effects
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-network
+    description: "只用 Paper API 做玩家端視覺效果（虛擬邊界紅框、個人時間天氣、hidePlayer、夜視 reconcile） / Per-player illusions with Paper API only: virtual border vignette, personal time/weather, hidePlayer, night vision reconcile"
+    skill_file: paper/paper-client-side-effects/SKILL.md
+    examples_file: paper/paper-client-side-effects/examples.md
+    inputs:
+      - name: base_package
+        description: "輸出 package"
+        required: true
+      - name: effects
+        description: "需要的效果：border, time, weather, night-vision, visibility"
+        required: true
+      - name: low_health_threshold
+        description: "低於此血量開始紅框"
+        required: false
+      - name: preference_source
+        description: "玩家偏好來源（見 paper-service-api）"
+        required: false
+    outputs:
+      - name: "EffectState.java"
+        description: "中央狀態與 reconcile()"
+      - name: "LowHealthBorderEffect.java"
+        description: "虛擬世界邊界套用／還原"
+      - name: "EffectListener.java"
+        description: "觸發 reconcile 的事件"
+      - name: "PlayerVisibilityService.java"
+        description: "外掛範圍的 hidePlayer／showPlayer"
+    tags: [paper-api, virtual-worldborder, player-time, hide-player, potion-effect]
+    trigger_keywords:
+      - "虛擬世界邊界"
+      - "virtual world border"
+      - "低血量紅框"
+      - "setPlayerTime"
+      - "hidePlayer"
+      - "EntityPotionEffectEvent"
+
+  - id: paper-combat-tag
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-gameplay
+    description: "PvP 戰鬥標記（純邏輯核心、傷害歸因矩陣、指令白名單、傳送封鎖、戰鬥登出處罰、CombatTagApi） / PvP combat tagging with Bukkit-free core, damage attribution, command whitelist, teleport block, combat-logout punishment and ServicesManager API"
+    skill_file: paper/paper-combat-tag/SKILL.md
+    examples_file: paper/paper-combat-tag/examples.md
+    inputs:
+      - name: base_package
+        description: "根 package（core / api / adapter）"
+        required: true
+      - name: duration_seconds
+        description: "標記持續秒數"
+        required: false
+      - name: command_whitelist
+        description: "戰鬥中允許的指令（正式名稱）"
+        required: false
+      - name: logout_mode
+        description: "KILL 或 DROP_ITEMS"
+        required: false
+    outputs:
+      - name: "CombatTagService.java"
+        description: "無 Bukkit 的核心標記服務"
+      - name: "AttackerResolver.java"
+        description: "傷害歸因（近戰/射擊物/TNT/水晶/錨/床/狼）"
+      - name: "*Listener.java"
+        description: "傷害、藥水、指令、傳送、踢出、登出、死亡 Listener"
+      - name: "CombatTagApi.java"
+        description: "ServicesManager 公開 API"
+    tags: [paper-api, pvp, combat-tag, services-manager]
+    trigger_keywords:
+      - "戰鬥標記"
+      - "combat tag"
+      - "combat log"
+      - "戰鬥中登出"
+      - "damage attribution"
+      - "CombatTagApi"
+
+  - id: paper-config-lang
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-data
+    description: "config.yml 解析成不可變 record、分層預設、MiniMessage lang.yml、非同步 reload 原子換快照 / Immutable validated config record, layered defaults, MiniMessage lang.yml and async reload with atomic snapshot swap"
+    skill_file: paper/paper-config-lang/SKILL.md
+    examples_file: paper/paper-config-lang/examples.md
+    inputs:
+      - name: base_package
+        description: "插件根 package"
+        required: true
+      - name: config_keys
+        description: "要開放的設定鍵、型別與合法範圍"
+        required: true
+      - name: lang_keys
+        description: "玩家會看到的訊息鍵"
+        required: false
+      - name: plugin_class
+        description: "負責接線的 JavaPlugin 類別"
+        required: false
+    outputs:
+      - name: "<Plugin>Config.java"
+        description: "不可變設定 record，from(Map) 驗證並回傳警告"
+      - name: "Lang.java"
+        description: "MiniMessage 訊息表（安全 placeholder、缺鍵後備）"
+      - name: "SettingsService.java"
+        description: "持有目前快照；非同步 reload、主執行緒原子換入"
+      - name: "config.yml / lang.yml"
+        description: "含 config-version 的出貨設定與訊息檔"
+      - name: "LangKeysTest.java"
+        description: "死鍵／缺鍵 JUnit 測試"
+    tags: [paper-api, config, lang, minimessage, reload]
+    trigger_keywords:
+      - "config.yml"
+      - "lang.yml"
+      - "reload"
+      - "config-version"
+      - "MiniMessage 訊息"
+      - "死鍵"
+
+  - id: paper-dialog-ui
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-ui
+    description: "Paper Dialog API 介面模式（確認／輸入表單／暫停選單、回呼切主執行緒） / Paper Dialog API UI patterns with main-thread callbacks, confirm-on-right and pause-screen registration"
+    skill_file: paper/paper-dialog-ui/SKILL.md
+    examples_file: paper/paper-dialog-ui/examples.md
+    inputs:
+      - name: package
+        description: "Dialog 類別所在 package"
+        required: true
+      - name: dialog_kind
+        description: "notice / confirm / multi / input / pause-screen"
+        required: true
+      - name: inputs
+        description: "表單欄位種類（text, boolean, number, option）"
+        required: false
+      - name: after_action
+        description: "CLOSE / NONE / WAIT_FOR_RESPONSE"
+        required: false
+    outputs:
+      - name: "Dialogs.java"
+        description: "薄包裝（回呼切主執行緒、輸入值讀取）"
+      - name: "ConfirmDialog.java"
+        description: "確認頁（確認鍵在右）與通知頁"
+      - name: "PreferencesDialog.java"
+        description: "文字／開關／數值／單選輸入表單"
+      - name: "PauseMenuBootstrap.java"
+        description: "bootstrap 階段註冊 Dialog 並加入 pause_screen_additions"
+    tags: [paper-api, dialog, ui, bootstrap]
+    trigger_keywords:
+      - "Dialog"
+      - "對話框"
+      - "Paper Dialog API"
+      - "showDialog"
+      - "確認視窗"
+      - "輸入表單"
+      - "暫停選單"
+      - "pause_screen_additions"
+
+  - id: paper-disposable-world
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-world
+    description: "拋棄式世界與可重置競技場（虛空生成器、模板複製、安全卸載刪除、預產生池、就地還原與殘留實體清掃） / Throw-away Paper worlds and resettable arenas with safe unload/delete and budgeted in-place reset"
+    skill_file: paper/paper-disposable-world/SKILL.md
+    examples_file: paper/paper-disposable-world/examples.md
+    inputs:
+      - name: base_package
+        description: "範本所在 package"
+        required: true
+      - name: template_folder
+        description: "模板世界資料夾（含 level.dat）"
+        required: false
+      - name: pool_size
+        description: "預先產生的閒置世界數"
+        required: false
+      - name: reset_mode
+        description: "swap（換世界）或 in-place（就地還原）"
+        required: true
+    outputs:
+      - name: "DisposableWorlds.java"
+        description: "建立／複製／卸載／刪除主流程（level.dat 守衛）"
+      - name: "WorldFolders.java"
+        description: "非同步複製模板與刪除資料夾"
+      - name: "ArenaPool.java"
+        description: "預產生世界池"
+      - name: "ChangeRecorder.java / ArenaResetService.java"
+        description: "變更格子基準表與預算式分批還原"
+      - name: "DebrisSweeper.java"
+        description: "殘留實體清掃"
+    tags: [paper-api, world, arena, reset, worldcreator]
+    trigger_keywords:
+      - "拋棄式世界"
+      - "disposable world"
+      - "競技場重置"
+      - "arena reset"
+      - "WorldCreator"
+      - "unloadWorld"
+      - "void generator"
+      - "殘留實體"
+
+  - id: paper-economy-ledger
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-gameplay
+    description: "插件內建經濟核心：long 最小單位、多幣種純 Ledger、交易紀錄、k/m/b 簡寫、例外安全託管、write-behind 持久化、內部 API 與選用 Vault 提供端 / In-plugin economy core with minor units, multi-currency Ledger, escrow, write-behind persistence and optional Vault provider"
+    skill_file: paper/paper-economy-ledger/SKILL.md
+    examples_file: paper/paper-economy-ledger/examples.md
+    inputs:
+      - name: base_package
+        description: "根 package（API 放 <base>.api，不可 relocate）"
+        required: true
+      - name: currencies
+        description: "幣種清單：id、符號、小數位數、顯示 pattern、起始餘額"
+        required: true
+      - name: vault_currency
+        description: "暴露給 Vault 的幣種 id"
+        required: false
+      - name: persistence
+        description: "持久層（sqlite 或記憶體）"
+        required: false
+    outputs:
+      - name: "Ledger.java"
+        description: "純帳本與 Transaction 交易紀錄"
+      - name: "Escrow.java"
+        description: "例外安全的託管（reserve → settle 或 refund）"
+      - name: "EconomyApi.java"
+        description: "只含 JDK 型別的對外 API"
+      - name: "VaultEconomyProvider.java"
+        description: "選用的 Vault Economy 提供端（Highest 優先權）"
+    tags: [paper-api, economy, ledger, vault, escrow]
+    trigger_keywords:
+      - "經濟"
+      - "economy"
+      - "ledger"
+      - "multi-currency"
+      - "escrow"
+      - "Vault Economy 提供端"
+      - "k m b"
+
+  - id: paper-embedded-http
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-integration
+    description: "在 Paper 插件內以 JDK HttpServer 提供唯讀 JSON／靜態頁面（loopback、有界執行緒池、主執行緒快照、限流） / Read-only JSON and static page endpoint using the JDK HttpServer with loopback bind, bounded pool, main-thread snapshots and rate limiting"
+    skill_file: paper/paper-embedded-http/SKILL.md
+    examples_file: paper/paper-embedded-http/examples.md
+    inputs:
+      - name: base_package
+        description: "HTTP 類別所在 package"
+        required: true
+      - name: port
+        description: "監聽埠（bind 預設 127.0.0.1）"
+        required: true
+      - name: routes
+        description: "要開放的唯讀 JSON 路徑"
+        required: true
+      - name: static_resource
+        description: "選用：jar 內的靜態頁面資源"
+        required: false
+    outputs:
+      - name: "EmbeddedHttpServer.java"
+        description: "HttpServer 生命週期（daemon 執行緒池、綁定失敗只停用功能）"
+      - name: "SnapshotStore.java"
+        description: "AtomicReference 不可變 JSON 快照"
+      - name: "RateLimiter.java"
+        description: "每 IP token bucket + ClientAddress（受信任代理才看 X-Forwarded-For）"
+      - name: "JsonHandler.java"
+        description: "GET/HEAD handler（503/304/200，零 Bukkit）"
+    tags: [paper-api, http, httpserver, json, rate-limit]
+    trigger_keywords:
+      - "embedded HTTP server"
+      - "內嵌 HTTP"
+      - "HttpServer"
+      - "web API"
+      - "JSON API"
+      - "rate limit"
+      - "反向代理"
+
+  - id: paper-packetevents-filter
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-network
+    description: "不碰 NMS 的封包過濾：PacketEvents（主）／ProtocolLib 軟依賴、Hook + Bridge、Netty 執行緒只讀快照、fail-open / Packet filtering without NMS via soft-dependent PacketEvents or ProtocolLib with Hook + Bridge and fail-open"
+    skill_file: paper/paper-packetevents-filter/SKILL.md
+    examples_file: paper/paper-packetevents-filter/examples.md
+    inputs:
+      - name: base_package
+        description: "產出類別所在 package"
+        required: true
+      - name: backend
+        description: "packetevents（預設）或 protocollib"
+        required: false
+      - name: recipes
+        description: "要啟用的配方：chat / lore / quiet"
+        required: true
+      - name: snapshot_fields
+        description: "主執行緒發布給 Netty 執行緒的快照欄位"
+        required: false
+    outputs:
+      - name: "FilterSnapshot.java / FilterState.java"
+        description: "不可變快照與 volatile 發布點"
+      - name: "FailOpenGuard.java"
+        description: "例外時停用過濾器並只記一次"
+      - name: "<Recipe>Filter.java"
+        description: "PacketEvents 監聽器（聊天／lore／粒子音效）"
+      - name: "PacketEventsHook.java / PacketEventsBridge.java"
+        description: "軟依賴接點與註冊點"
+      - name: "ProtocolLibLoreAdapter.java / ProtocolLibHook.java / ProtocolLibBridge.java"
+        description: "ProtocolLib 版本"
+    tags: [paper-api, packetevents, protocollib, packet, fail-open]
+    trigger_keywords:
+      - "PacketEvents"
+      - "packetevents"
+      - "ProtocolLib"
+      - "封包過濾"
+      - "packet filter"
+      - "SYSTEM_CHAT_MESSAGE"
+      - "per-viewer lore"
+
+  - id: paper-safe-teleport
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-gameplay
+    description: "安全隨機傳送（RTP）與安全落點傳送（非同步載入區塊、暖機、冷卻、落點池） / Safe random teleport and safe-location teleports with async chunk loading, warmup, cooldowns and a spot pool"
+    skill_file: paper/paper-safe-teleport/SKILL.md
+    examples_file: paper/paper-safe-teleport/examples.md
+    inputs:
+      - name: base_package
+        description: "產生類別的 package"
+        required: true
+      - name: world
+        description: "RTP 目標世界"
+        required: true
+      - name: min_radius
+        description: "以出生點為中心的最小半徑"
+        required: false
+      - name: max_radius
+        description: "以出生點為中心的最大半徑"
+        required: false
+      - name: warmup_ticks
+        description: "暖機 tick 數（0 = 不暖機）"
+        required: false
+      - name: cooldown
+        description: "冷卻時間（ISO-8601 Duration）"
+        required: false
+      - name: pool_size
+        description: "預找落點池容量（0 = 不使用）"
+        required: false
+    outputs:
+      - name: "SafeLocationRules.java"
+        description: "無狀態安全落點判定"
+      - name: "SafeSpotFinder.java"
+        description: "有上限的非同步找點"
+      - name: "SafeSpotPool.java"
+        description: "預找落點池（可選）"
+      - name: "SafeTeleportService.java"
+        description: "暖機、找點、重驗、teleportAsync"
+      - name: "TeleportCooldowns.java"
+        description: "UUID 時間戳冷卻"
+      - name: "TeleportGuard.java"
+        description: "傳送前閘門（戰鬥標記）"
+    tags: [paper-api, teleport, rtp, safe-location, warmup, cooldown]
+    trigger_keywords:
+      - "隨機傳送"
+      - "RTP"
+      - "safe teleport"
+      - "安全落點"
+      - "teleportAsync"
+      - "getChunkAtAsync"
+      - "傳送暖機"
+
+  - id: paper-service-api
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-integration
+    description: "透過 ServicesManager 發布與取用跨插件 API（只加不改、使用端容忍版本落差） / Cross-plugin API via ServicesManager with add-only interfaces and version-skew-tolerant hooks"
+    skill_file: paper/paper-service-api/SKILL.md
+    examples_file: paper/paper-service-api/examples.md
+    inputs:
+      - name: provider_plugin
+        description: "提供 API 的插件名稱"
+        required: true
+      - name: api_package
+        description: "API 介面所在 package（不可 relocate）"
+        required: true
+      - name: api_name
+        description: "介面名稱"
+        required: true
+      - name: consumer_package
+        description: "使用端 Hook 所在 package"
+        required: false
+    outputs:
+      - name: "<Api>.java"
+        description: "只含 JDK 型別、只加不改的 API 介面"
+      - name: "<Api>Impl.java"
+        description: "提供端實作（主執行緒檢查）"
+      - name: "<Provider>Plugin.java"
+        description: "ServicesManager 註冊／取消註冊"
+      - name: "<Provider>Hook.java"
+        description: "使用端 Hook（每次 load、接 LinkageError）"
+    tags: [paper-api, services-manager, cross-plugin, api]
+    trigger_keywords:
+      - "跨插件 API"
+      - "cross-plugin API"
+      - "ServicesManager"
+      - "service provider"
+      - "NoSuchMethodError"
+      - "api package"
+
+  - id: paper-softdepend-hook
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-integration
+    description: "安全使用 Vault、PlaceholderAPI、packetevents 等第三方軟依賴（Hook + Bridge、監聽器簽名規則、LinkageError、邊界測試） / Safe soft dependencies on third-party plugins with Hook + Bridge split and class-load boundary tests"
+    skill_file: paper/paper-softdepend-hook/SKILL.md
+    examples_file: paper/paper-softdepend-hook/examples.md
+    inputs:
+      - name: dependency
+        description: "第三方插件名稱（plugin.yml name，大小寫須一致）"
+        required: true
+      - name: integration_package
+        description: "Hook／Bridge／Port 所在 package"
+        required: true
+      - name: role
+        description: "consumer / provider / expansion / packet"
+        required: true
+      - name: port_name
+        description: "自家介面名稱（只含 JDK／Paper 型別）"
+        required: false
+    outputs:
+      - name: "<Dep>Hook.java"
+        description: "無第三方型別的 Hook（isPluginEnabled、接 LinkageError、警告一次）"
+      - name: "<Dep>Bridge.java"
+        description: "唯一碰第三方型別的 Bridge"
+      - name: "<Port>.java"
+        description: "自家介面與無依賴時的空實作"
+      - name: "<Id>Expansion.java"
+        description: "PlaceholderAPI expansion（讀不可變快照）"
+      - name: "SoftDependBoundaryTest.java"
+        description: "沒有第三方 jar 的 classpath 邊界測試"
+    tags: [paper-api, softdepend, vault, placeholderapi, packetevents, linkage-error]
+    trigger_keywords:
+      - "軟依賴"
+      - "softdepend"
+      - "Vault"
+      - "PlaceholderAPI"
+      - "packetevents"
+      - "NoClassDefFoundError"
+
+  - id: paper-sqlite-repository
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-data
+    description: "Paper 插件的 SQLite 持久化（遷移、Repository、write-behind） / SQLite persistence for Paper plugins with migrations, repository and write-behind flusher"
+    skill_file: paper/paper-sqlite-repository/SKILL.md
+    examples_file: paper/paper-sqlite-repository/examples.md
+    inputs:
+      - name: base_package
+        description: "插件根 package"
+        required: true
+      - name: domain_type
+        description: "領域型別（record，只用 JDK 型別）"
+        required: true
+      - name: table
+        description: "資料表名稱"
+        required: true
+      - name: db_file
+        description: "資料庫檔名（放在 getDataFolder()）"
+        required: false
+      - name: write_mode
+        description: "write-behind 或 write-through"
+        required: false
+    outputs:
+      - name: "SqliteDatabase.java"
+        description: "單一連線與 pragma"
+      - name: "SchemaMigrations.java"
+        description: "user_version 有序遷移"
+      - name: "<Domain>Repository.java"
+        description: "無 Bukkit 的 Repository 介面"
+      - name: "Sqlite<Domain>Repository.java"
+        description: "PreparedStatement 實作"
+      - name: "<Domain>Flusher.java"
+        description: "dirty map + 單一寫入執行緒"
+    tags: [paper-api, sqlite, repository, migration, write-behind]
+    trigger_keywords:
+      - "SQLite"
+      - "資料庫"
+      - "持久化"
+      - "schema 遷移"
+      - "user_version"
+      - "write-behind"
+      - "sqlite-jdbc"
+      - "SQLITE_BUSY"
+
 platforms:
   - id: paper-nms
     name: "Paper NMS"
     description: "Paper 1.21.11 / 26.x + Paperweight userdev + Mojang 官方命名"
     platform_file: paper-nms/PLATFORM.md
+    mc_versions: ["1.21.11", "26.2"]
+    java_version: "21 (1.21.11) / 25 (26.2)"
+    build_tool: gradle
+  - id: paper-api
+    name: "Paper API"
+    description: "Paper 1.21.11 / 26.x 純 Paper API（paper-api compileOnly，不需 Paperweight）"
+    platform_file: paper-api/PLATFORM.md
     mc_versions: ["1.21.11", "26.2"]
     java_version: "21 (1.21.11) / 25 (26.2)"
     build_tool: gradle
@@ -545,3 +1181,6 @@ shared:
   - id: nms-obfuscation
     file: _shared/nms-obfuscation.md
     description: "Mojang mappings 與 NMS 混淆說明"
+  - id: paper-threading
+    file: _shared/paper-threading.md
+    description: "Paper API 執行緒規則（主執行緒、非同步 IO、Dialog/PAPI/封包回呼、onDisable）"

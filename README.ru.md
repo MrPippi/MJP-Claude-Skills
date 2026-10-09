@@ -27,6 +27,10 @@ MJP-Claude-Skills предоставляет шаблоны NMS-навыков �
 
 ## Навыки
 
+30 навыков в двух направлениях: навыки **NMS** требуют Paperweight userdev; навыки **Paper API** требуют только `paper-api`. Все шаблоны проверены на компиляцию с Paper 1.21.11 и 26.2.
+
+### Навыки NMS (`Skills/nms/`)
+
 | ID навыка | Категория | Назначение |
 |----------|----------|---------|
 | [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | Отправка Clientbound-пакетов через `ServerPlayer.connection.send()` |
@@ -44,6 +48,26 @@ MJP-Claude-Skills предоставляет шаблоны NMS-навыков �
 | [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | Прямой доступ к `LevelChunk` / секциям и массовое изменение блоков |
 | [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | Доступ к NMS с кэшированием через `MethodHandle` без зависимости Paperweight на этапе компиляции |
 | [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | Интерфейс адаптера для нескольких версий с диспетчеризацией во время выполнения |
+| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | Фейковые игроки (боты) без клиента на основе настоящего NMS `ServerPlayer` |
+
+### Навыки Paper API (без NMS, `Skills/paper/`)
+
+| ID навыка | Категория | Назначение |
+|----------|----------|---------|
+| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | Экраны Paper Dialog API с колбэками, безопасными для главного потока |
+| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | GUI-сундуки на основе `InventoryHolder` с постраничным просмотром и защитой от кликов |
+| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | Репозитории SQLite, миграции через `user_version`, сброс данных единственным писателем |
+| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | Неизменяемые снимки конфигурации, `config-version`, языковые файлы MiniMessage |
+| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | API между плагинами через `ServicesManager`, устойчивые к рассинхронизации версий jar |
+| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | Hook/Bridge для мягких зависимостей, Vault, расширения PlaceholderAPI |
+| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | JSON API на встроенном JDK `HttpServer` (localhost, ограничение частоты, снимки) |
+| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | Фильтры пакетов PacketEvents / ProtocolLib (безопасны для потока Netty, fail-open) |
+| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | Иллюзии для отдельных игроков: граница мира, время, погода и видимость |
+| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | Боевая метка PvP с атрибуцией урона и обработкой выхода из игры |
+| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | Поиск безопасной точки, RTP, асинхронные телепортации, задержки подготовки и кулдауны |
+| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | Мультивалютная книга учёта, эскроу и провайдер Vault |
+| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | Команды Brigadier через `LifecycleEvents.COMMANDS` |
+| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | Одноразовые миры и сбрасываемые арены |
 
 ---
 
@@ -85,7 +109,7 @@ Claude Code читает соответствующий `SKILL.md`, [`PLATFORM.m
 | `com.gradleup.shadow` (необязательно) | `9.6.1` | Только для многомодульных / собираемых в один JAR сборок (см. `nms-version-adapter`) |
 | `paper-api` (модули только с рефлексией / core) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
-Канонические `build.gradle` и `paper-plugin.yml` находятся в [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md).
+Канонические `build.gradle` и `paper-plugin.yml` находятся в [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) (навыки NMS) и [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md) (навыки Paper API, с координатами мягких зависимостей: VaultAPI 1.7.1, PlaceholderAPI 2.11.6, packetevents 2.13.0, ProtocolLib 5.3.0, sqlite-jdbc 3.49.1.0).
 
 ### Сайт документации (`web/`)
 
@@ -97,12 +121,14 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 
 ```
 MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except paper-nms/)
+├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
 ├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← v6.0.0, 15 skills
-│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md
-│   ├── paper-nms/PLATFORM.md ← build.gradle / paper-plugin.yml templates, version table
-│   └── nms/<skill-id>/       ← SKILL.md + examples.md (15 skills)
+│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
+│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
+│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
 ├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
 ├── web/                      ← Next.js documentation site (static export → GitHub Pages)
 ├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
@@ -128,13 +154,13 @@ CI выполняет те же проверки для каждого pull requ
 
 ## Добавление новых навыков
 
-1. Создайте `Skills/nms/<slug>/SKILL.md` + `examples.md` (≥ 2 примера)
-2. Продублируйте в `.claude/skills/nms/<slug>/`
+1. Создайте `Skills/nms/<slug>/` или `Skills/paper/<slug>/` с `SKILL.md` + `examples.md` (≥ 2 примера)
+2. Продублируйте по тому же пути в `.claude/skills/`
 3. Добавьте запись в оба файла `skills-registry.yml`
 4. Добавьте `web/data/skills/<slug>.md` и обновите ожидаемый список в `web/tests/skills-api.data.test.ts`
-5. Перед слиянием скомпилируйте классы шаблона с текущим dev bundle
+5. Перед слиянием скомпилируйте классы шаблона с Paper 1.21.11 и 26.2
 
-Полный 8-шаговый процесс и инварианты см. в `CLAUDE.md`.
+Полный 9-шаговый процесс и инварианты см. в `CLAUDE.md`.
 
 ---
 

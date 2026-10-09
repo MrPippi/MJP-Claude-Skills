@@ -13,6 +13,11 @@ description: "透過 Netty ChannelDuplexHandler 注入玩家連線管線，攔�
 
 在玩家的 Netty 連線管線中注入自訂 `ChannelDuplexHandler`，於封包進入/離開伺服器時進行讀取、修改或取消。常用於反外掛、封包記錄、自訂通訊協議、偽造資訊等場景。
 
+### 替代方案 / Alternatives
+
+- **不想碰 NMS／Netty**：用 PacketEvents（或 ProtocolLib）當軟依賴，見 [`paper-packetevents-filter`](../../paper/paper-packetevents-filter/SKILL.md)。BlockoSMP、Bydsmp 都採這條路。
+- 不論哪條路，都遵守 **fail-open**：攔截器出錯時讓封包照常通過、停用自己並只記錄一次，不能讓玩家斷線或卡住。
+
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

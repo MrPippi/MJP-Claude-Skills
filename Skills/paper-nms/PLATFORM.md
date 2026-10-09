@@ -180,7 +180,21 @@ public class MyHandler { ... }
 
 ---
 
-## 8. 相關技能
+## 8. NMS 隔離與版本守門 / NMS Confinement & Version Guard
+
+NMS 是插件中最容易隨版本（甚至同版本不同 Paper build）壞掉的部分，所有 NMS 技能都遵守：
+
+| 規則 | 做法 |
+|------|------|
+| 單一套件 | 只有 `…/nms/` 套件可以 import `net.minecraft` / `org.bukkit.craftbukkit`；可用原始碼掃描測試守住（見 `nms-fake-player` 範例 3） |
+| 公開簽名不出現 NMS 型別 | 對外只交 Bukkit 型別，其他類別才能安全持有，版本不符時也不會在載入時失敗 |
+| 版本守門只關閉該功能 | 守門類別只比對 `Bukkit.getMinecraftVersion()`，不碰 NMS；第一次呼叫 NMS 時接 `LinkageError`，只停用該功能並記錄一次 |
+| jar 不含伺服器類別 | 加 `verifyNoServerClassesInJar` 之類的檢查，確保 `net/minecraft/`、`org/bukkit/craftbukkit/`、`com/mojang/` 沒被打包 |
+| 先找 Paper API | 能用 Paper API 或 PacketEvents 做到的事，不寫 NMS（見 `Skills/paper/`） |
+
+---
+
+## 9. 相關技能
 
 | 技能 ID | 用途 |
 |--------|------|
@@ -189,10 +203,13 @@ public class MyHandler { ... }
 | `nms-custom-entity` | 自定義 NMS 實體 + AI |
 | `nms-reflection-bridge` | 跨版本反射橋接 |
 | `nms-version-adapter` | 多版本 adapter 模式 |
+| `nms-fake-player` | 沒有客戶端的假玩家（機器人） |
+
+不需要 NMS 的常見需求（Dialog、SQLite、跨插件 API、封包過濾等）見 [`Skills/paper-api/PLATFORM.md`](../paper-api/PLATFORM.md)。
 
 ---
 
-## 9. 進階參考
+## 10. 進階參考
 
 - **Paperweight 文件**：https://github.com/PaperMC/paperweight
 - **Paper 開發指南**：https://docs.papermc.io/paper/dev/getting-started/paper-plugins

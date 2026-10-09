@@ -31,6 +31,12 @@ featured: true
 
 ---
 
+## 替代方案
+
+表單與確認視窗用 Paper Dialog（`paper-dialog-ui`）；一般箱子 GUI 用 `InventoryHolder`（`paper-chest-gui`）；只有需要自訂 `MenuType` 或伺服器端容器邏輯時才用本技能。
+
+---
+
 ## 平台需求
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
