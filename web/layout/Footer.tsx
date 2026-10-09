@@ -34,7 +34,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-[90rem] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[2fr_1fr_1fr]">
         <div className="max-w-sm">
           <Link href="/" className="inline-flex items-center gap-2">
-            <PixelIcon name="pickaxe" className="h-5 w-5" />
+            <PixelIcon name="pickaxe" className="h-8 w-8" />
             <span className="font-serif text-lg font-semibold text-fg">MJP Claude Skills</span>
           </Link>
           <p className="mt-3 text-sm leading-relaxed text-fg-2">{t.footer.tagline}</p>

@@ -17,7 +17,7 @@ export function PixelIcon({ name, className, title }: PixelIconProps) {
   const artwork = ITEM_ARTWORK[name];
   if (artwork) {
     // eslint-disable-next-line @next/next/no-img-element -- static export, tiny pixel art
-    return <img src={withBasePath(artwork)} alt={title ?? ''} className={`pixelated ${className ?? ''}`} loading="lazy" />;
+    return <img src={withBasePath(artwork)} alt={title ?? ''} className={`pixelated ${className ?? ''}`} width={16} height={16} loading="lazy" decoding="async" />;
   }
 
   const icon = PIXEL_ICONS[name];

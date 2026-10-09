@@ -143,7 +143,9 @@ export function SearchModal({ isOpen, onClose, searchData, docLinks }: SearchMod
                   onMouseEnter={() => setSelected(index)}
                   className={`flex items-center gap-3 rounded-md px-3 py-2.5 ${index === selected ? 'bg-surface' : ''}`}
                 >
-                  <PixelIcon name={item.icon} className="h-5 w-5 shrink-0" />
+                  <span className="mc-slot h-9 w-9">
+                    <PixelIcon name={item.icon} className="h-8 w-8" />
+                  </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-fg">{item.title}</span>
                     <span className="block truncate text-xs text-fg-3">{item.subtitle}</span>

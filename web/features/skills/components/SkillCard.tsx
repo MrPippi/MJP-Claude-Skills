@@ -17,8 +17,8 @@ export function SkillCard({ skill }: { skill: SkillMeta }) {
   return (
     <Link href={ROUTES.skill(skill.slug)} className="card group flex h-full flex-col p-5">
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[3px] border border-line bg-surface">
-          <PixelIcon name={categoryIconFor(skill.category)} className="h-6 w-6" />
+        <span className="mc-slot h-11 w-11">
+          <PixelIcon name={categoryIconFor(skill.category)} className="h-8 w-8" />
         </span>
         <div className="min-w-0">
           <h3 className="truncate font-medium text-fg group-hover:text-accent">{title}</h3>

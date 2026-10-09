@@ -5,7 +5,7 @@ import type { SkillMeta } from '@/shared/types/skill';
 import type { DocLink } from '@/features/docs/registry';
 import { SkillGrid } from '@/features/skills/components/SkillGrid';
 import { getPlatform, PLATFORMS } from '@/features/skills/lib/platform';
-import { HeroScene } from './HeroScene';
+import { HeroBackdrop, HeroLandscape } from './HeroScene';
 import { HeroTerminal } from './HeroTerminal';
 import { ROUTES } from '@/config/routes';
 import { GITHUB_CONTRIBUTE_URL } from '@/config/site';
@@ -51,8 +51,8 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-line">
-        <HeroScene />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-48 pt-16 sm:px-6 sm:pb-60 sm:pt-24 lg:grid-cols-[1.1fr_1fr]">
+        <HeroBackdrop />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-10 pt-16 sm:px-6 sm:pb-14 sm:pt-24 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <p className="inline-flex items-center gap-2 rounded-[3px] border border-line-strong bg-bg/70 px-2 py-1 font-pixel text-[10px] uppercase text-fg-2">
               <span className="h-1.5 w-1.5 bg-api" />
@@ -85,6 +85,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
           </div>
           <HeroTerminal />
         </div>
+        <HeroLandscape />
       </section>
 
       {/* Platforms */}
@@ -96,8 +97,8 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
             return (
               <div key={p.id} className={`card card-hover relative overflow-hidden p-6 ${isNms ? 'border-t-4 border-t-nms' : 'border-t-4 border-t-api'}`}>
                 <div className="flex items-center gap-4">
-                  <span className="grid h-14 w-14 place-items-center rounded-[3px] border border-line bg-surface">
-                    <PixelIcon name={p.icon} className="h-9 w-9" />
+                  <span className="mc-slot h-14 w-14">
+                    <PixelIcon name={p.icon} className="h-8 w-8" />
                   </span>
                   <div>
                     <h3 className="font-serif text-2xl font-semibold text-fg">{p.label}</h3>
@@ -126,8 +127,8 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
           <ol className="grid gap-8 md:grid-cols-3">
             {h.steps.map((step, i) => (
               <li key={step.title} className="flex gap-4">
-                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[3px] border border-line-strong bg-bg shadow-[0_3px_0_var(--color-line-strong)]">
-                  <PixelIcon name={STEP_ICONS[i] ?? 'grass'} className="h-7 w-7" />
+                <span className="mc-slot h-12 w-12">
+                  <PixelIcon name={STEP_ICONS[i] ?? 'grass'} className="h-8 w-8" />
                 </span>
                 <div>
                   <p className="font-pixel text-[11px] text-accent">0{i + 1}</p>
@@ -161,7 +162,9 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {referenceDocs.map((d) => (
             <Link key={d.href} href={d.href} className="card flex items-center gap-3 p-4">
-              <PixelIcon name={d.icon} className="h-7 w-7 shrink-0" />
+              <span className="mc-slot h-10 w-10">
+                <PixelIcon name={d.icon} className="h-8 w-8" />
+              </span>
               <span className="text-sm font-medium text-fg">{lang === 'en' ? d.title.en : d.title.zh}</span>
             </Link>
           ))}
@@ -171,7 +174,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       {/* Contribute */}
       <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
         <div className="flex flex-col items-start gap-6 rounded-md border border-line bg-surface p-8 sm:flex-row sm:items-center">
-          <PixelIcon name="creeper" className="h-14 w-14 shrink-0" />
+          <PixelIcon name="creeper" className="h-16 w-16 shrink-0" />
           <div className="flex-1">
             <h2 className="font-serif text-2xl font-semibold text-fg">{h.ctaTitle}</h2>
             <p className="mt-1 text-sm text-fg-2">{h.ctaDescription}</p>

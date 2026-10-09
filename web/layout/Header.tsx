@@ -43,8 +43,8 @@ export function Header({ onSearchOpen }: HeaderProps) {
     <header className="sticky top-0 z-40 border-b border-line bg-[color-mix(in_srgb,var(--color-bg)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-3 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 rounded-sm">
-          <span className="grid h-8 w-8 place-items-center rounded-[3px] border border-line-strong bg-surface shadow-[0_3px_0_var(--color-line-strong)]">
-            <PixelIcon name="pickaxe" className="h-5 w-5" />
+          <span className="mc-slot h-9 w-9">
+            <PixelIcon name="pickaxe" className="h-8 w-8" />
           </span>
           <span className="flex items-baseline gap-1.5">
             <span className="font-serif text-lg font-semibold tracking-tight text-fg">MJP</span>
