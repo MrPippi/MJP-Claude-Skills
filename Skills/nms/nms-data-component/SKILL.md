@@ -15,7 +15,7 @@ description: "操作 Minecraft DataComponentType（1.20.5+） 物品組件系統
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 26.2（DataComponent 為 1.20.5+ 新增）
+- Paper 1.21.11 / 26.2（DataComponent 為 1.20.5+ 新增）
 - Paperweight userdev 2.0.0-beta.24+
 - Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 

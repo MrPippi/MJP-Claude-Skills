@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**一套精心整理的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 库，面向 Paper 26.x（使用 Mojang 官方命名）的 Minecraft NMS（net.minecraft.server）底层开发。**
+**一套精心整理的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 库，面向 Paper 1.21.11 / 26.x（使用 Mojang 官方命名）的 Minecraft NMS（net.minecraft.server）底层开发。**
 
 MJP-Claude-Skills 提供经过编译验证的 NMS 技能模板，Claude Code 在生成插件代码前会先读取这些模板，涵盖数据包、Netty 拦截、自定义实体、NBT / 数据组件、GUI、计分板、Boss 血条、粒子、区块、基于反射的访问以及多版本适配器。
 
@@ -14,11 +14,11 @@ MJP-Claude-Skills 提供经过编译验证的 NMS 技能模板，Claude Code 在
 
 | 项目 | 详情 |
 |------|------|
-| **MC 版本** | 26.2（Paper stable） |
-| **Paper dev bundle** | `26.2.build.132-stable` |
+| **MC 版本** | 1.21.11 / 26.2 |
+| **Paper dev bundle** | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` |
 | **NMS 命名** | Mojang 官方名称（自 26.1 起 Minecraft 不再混淆） |
 | **构建工具** | Gradle 8.11.2+（已验证 9.8.1）+ Paperweight userdev `2.0.0-beta.24` |
-| **Java** | 25（toolchain；Paper 26.x 最低要求） |
+| **Java** | 21 (1.21.11) / 25 (26.2) |
 | **技能运行时** | `.claude/skills/`（Claude Code） |
 
 > 从 1.21.x 模板升级？请参阅 [CHANGELOG.md](CHANGELOG.md) 以及 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 第 5 节中的迁移说明。
@@ -77,13 +77,13 @@ Claude Code 会在生成代码前读取匹配的 `SKILL.md`、[`PLATFORM.md`](Sk
 
 | 依赖 | 版本 | 说明 |
 |------|------|------|
-| Paper 服务器 | 26.2 | 模板已针对 build 132 完成编译验证 |
-| Paper dev bundle（`paperweight.paperDevBundle`） | `26.2.build.132-stable` | 26.x 格式：`<mc>.build.<n>-<channel>`（[列表](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)） |
+| Paper 服务器 | 1.21.11 / 26.2 | 模板已针对 build 132 完成编译验证 |
+| Paper dev bundle（`paperweight.paperDevBundle`） | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | 26.x 格式：`<mc>.build.<n>-<channel>`（[列表](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)） |
 | `io.papermc.paperweight.userdev` | `2.0.0-beta.24` | 预发布版本；无需 `reobfJar` |
 | Gradle | 8.11.2+ | 已使用 9.8.1 验证 |
 | JDK | 25 | Toolchain 与 `options.release` |
 | `com.gradleup.shadow`（可选） | `9.6.1` | 仅用于多模块/打包构建（参见 `nms-version-adapter`） |
-| `paper-api`（仅反射 / core 模块） | `26.2.build.132-stable` | `compileOnly` |
+| `paper-api`（仅反射 / core 模块） | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
 标准的 `build.gradle` 与 `paper-plugin.yml` 位于 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)。
 

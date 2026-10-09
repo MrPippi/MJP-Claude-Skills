@@ -1,6 +1,6 @@
 # NMS Network & Netty Pipeline 速查表 / NMS Network Reference
 
-適用版本：Paper 26.2（Mojang 官方命名；26.1 起原版不再混淆）
+適用版本：Paper 1.21.11 / 26.2（Mojang 官方命名；26.1 起原版不再混淆）。兩版寫法不同處以 `// @1.21.11:` 行尾標註或 `// @only <版本>` 區塊區分
 套件根：`net.minecraft.network`, `io.netty.channel`
 
 > 封包攔截用法見 `Skills/nms/nms-packet-interceptor/SKILL.md`

@@ -15,7 +15,7 @@ description: "多版本 NMS 相容性 Adapter 模式：抽象介面 + 版本特�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- 支援範圍：Paper 26.x（範例以 26.2 / 26.3 兩個 adapter 示範）
+- 支援範圍：Paper 1.21.11 / 26.x（範例以 26.2 / 26.3 兩個 adapter 示範；1.21.11 adapter 寫法相同，dev bundle 改為 `1.21.11-R0.1-SNAPSHOT`、Java 21）
 - 建議搭配 `nms-reflection-bridge` 或 multi-module Gradle build
 - Adapter 實作可選 Paperweight（需 multi-module）或純反射
 

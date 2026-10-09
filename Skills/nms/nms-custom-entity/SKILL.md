@@ -15,7 +15,7 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 26.2
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
 - 須使用 `paper-plugin.yml`（確保早於 Bukkit plugin 載入）
 
@@ -167,7 +167,7 @@ public class FollowClosestPlayerGoal extends Goal {
 package com.example.entities;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityTypes; // @1.21.11: import net.minecraft.world.entity.EntityType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 
@@ -182,8 +182,8 @@ public final class EntitySpawner {
     public static org.bukkit.entity.Entity spawnCustomZombie(Location loc) {
         ServerLevel level = ((CraftWorld) loc.getWorld()).getHandle();
 
-        // 26.x：原版 EntityType 常數移至 EntityTypes；moveTo() 改名為 snapTo()
-        CustomZombie zombie = new CustomZombie(EntityTypes.ZOMBIE, level);
+        // 26.x：原版 EntityType 常數移至 EntityTypes（1.21.11 仍在 EntityType）
+        CustomZombie zombie = new CustomZombie(EntityTypes.ZOMBIE, level); // @1.21.11: CustomZombie zombie = new CustomZombie(EntityType.ZOMBIE, level);
         zombie.snapTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
 
         // 設定自訂名稱（顯示在頭上）

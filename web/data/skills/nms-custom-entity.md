@@ -33,7 +33,7 @@ featured: true
 
 ## 平台需求
 
-- Paper 26.2
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
 - `paper-plugin.yml`（確保 NMS 早於 Bukkit plugin 載入）
 

@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**Una biblioteca curada de [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) para el desarrollo de bajo nivel con NMS (net.minecraft.server) de Minecraft en Paper 26.x con los nombres oficiales de Mojang.**
+**Una biblioteca curada de [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) para el desarrollo de bajo nivel con NMS (net.minecraft.server) de Minecraft en Paper 1.21.11 / 26.x con los nombres oficiales de Mojang.**
 
 MJP-Claude-Skills ofrece plantillas de skills NMS verificadas por compilación que Claude Code lee antes de generar código de plugins: paquetes, intercepción con Netty, entidades personalizadas, NBT / componentes de datos, GUI, scoreboards, boss bars, partículas, chunks, acceso basado en reflexión y adaptadores multiversión.
 
@@ -14,11 +14,11 @@ MJP-Claude-Skills ofrece plantillas de skills NMS verificadas por compilación q
 
 | Elemento | Detalles |
 |------|---------|
-| **Versión de MC** | 26.2 (Paper stable) |
-| **Paper dev bundle** | `26.2.build.132-stable` |
+| **Versión de MC** | 1.21.11 / 26.2 |
+| **Paper dev bundle** | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` |
 | **Nomenclatura NMS** | Nombres oficiales de Mojang (Minecraft no está ofuscado desde 26.1) |
 | **Herramienta de compilación** | Gradle 8.11.2+ (verificado con 9.8.1) + Paperweight userdev `2.0.0-beta.24` |
-| **Java** | 25 (toolchain; mínimo para Paper 26.x) |
+| **Java** | 21 (1.21.11) / 25 (26.2) |
 | **Runtime de skills** | `.claude/skills/` (Claude Code) |
 
 > ¿Actualizas desde las plantillas de 1.21.x? Consulta [CHANGELOG.md](CHANGELOG.md) y las notas de migración en [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) (sección 5).
@@ -77,13 +77,13 @@ Claude Code lee el `SKILL.md` correspondiente, [`PLATFORM.md`](Skills/paper-nms/
 
 | Dependencia | Versión | Notas |
 |------------|---------|-------|
-| Servidor Paper | 26.2 | Las plantillas están verificadas por compilación con la build 132 |
-| Paper dev bundle (`paperweight.paperDevBundle`) | `26.2.build.132-stable` | Formato 26.x: `<mc>.build.<n>-<channel>` ([lista](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)) |
+| Servidor Paper | 1.21.11 / 26.2 | Las plantillas están verificadas por compilación con la build 132 |
+| Paper dev bundle (`paperweight.paperDevBundle`) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | Formato 26.x: `<mc>.build.<n>-<channel>` ([lista](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)) |
 | `io.papermc.paperweight.userdev` | `2.0.0-beta.24` | Versión preliminar; no se necesita `reobfJar` |
 | Gradle | 8.11.2+ | Verificado con 9.8.1 |
 | JDK | 25 | Toolchain y `options.release` |
 | `com.gradleup.shadow` (opcional) | `9.6.1` | Solo para compilaciones multimódulo / empaquetadas (ver `nms-version-adapter`) |
-| `paper-api` (solo reflexión / módulos core) | `26.2.build.132-stable` | `compileOnly` |
+| `paper-api` (solo reflexión / módulos core) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
 El `build.gradle` y el `paper-plugin.yml` canónicos se encuentran en [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md).
 

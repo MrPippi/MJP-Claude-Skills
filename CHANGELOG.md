@@ -10,8 +10,9 @@ PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper
 
 ### ⚠️ Breaking
 
-- **目標平台由 Minecraft 1.21 – 1.21.3 改為 Paper 26.2**（#15）
-  - Java 21 → **25**；dev bundle `1.21.1-R0.1-SNAPSHOT` → **`26.2.build.132-stable`**（26.x 版本格式為 `<mc>.build.<n>-<channel>`）
+- **目標平台由 Minecraft 1.21 – 1.21.3 改為 Paper 1.21.11 與 26.2 雙版本**（#15）
+  - 所有範本同時對 `1.21.11-R0.1-SNAPSHOT`（Java 21）與 `26.2.build.132-stable`（Java 25）編譯驗證；預設寫 26.2 API，1.21.11 不同處以行尾 `// @1.21.11:` 或區塊 `// @only <版本>` 標註
+  - 26.x dev bundle 版本格式為 `<mc>.build.<n>-<channel>`
   - Minecraft 26.1 起原版不再混淆；文件改稱「Mojang 官方名稱」，Spigot 命名的外掛在 26.x 無法執行
   - 1.21.x 版範本不再維護，保留於 git 歷史
 - **範本 API 跟隨 26.x 變更**（#15），既有依 1.21 範本產生的程式碼需比對調整：

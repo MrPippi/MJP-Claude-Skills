@@ -118,7 +118,7 @@ public class EntityListener implements Listener {
 
         // 用自定義版本取代
         ServerLevel nmsLevel = ((CraftWorld) loc.getWorld()).getHandle();
-        StrongerZombie custom = new StrongerZombie(EntityTypes.ZOMBIE, nmsLevel);
+        StrongerZombie custom = new StrongerZombie(EntityTypes.ZOMBIE, nmsLevel); // @1.21.11: StrongerZombie custom = new StrongerZombie(EntityType.ZOMBIE, nmsLevel);
         custom.snapTo(loc.getX(), loc.getY(), loc.getZ());
         nmsLevel.addFreshEntity(custom, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }

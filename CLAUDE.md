@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套專注於 **Paper NMS（net.minecraft.server）底層開發** 的 Claude Code Agent Skills 集合。
 
-目標 MC 版本：**26.2**（Paper stable）
+目標 MC 版本：**1.21.11** 與 **26.2**（兩版皆編譯驗證；範本預設 26.2，差異以 `// @1.21.11:` 標註）
 目標命名：**Mojang 官方名稱**（Minecraft 26.1 起不再混淆；透過 Paperweight userdev）
 執行時目錄：**`.claude/skills/`**（Claude Code 專用）
 規範來源：**`Skills/`**（authoritative source，與 `.claude/skills/` 內容相同）
@@ -75,13 +75,13 @@ MJP-Claude-Skills/
 
 | 項目 | 內容 |
 |------|------|
-| MC 版本 | 26.2 |
-| Paper Dev Bundle | `26.2.build.132-stable`（26.3 目前為 beta：`26.3.build.<n>-beta`） |
+| MC 版本 | 1.21.11、26.2 |
+| Paper Dev Bundle | `26.2.build.132-stable`（預設）、`1.21.11-R0.1-SNAPSHOT`（26.3 目前為 beta） |
 | Paperweight | `io.papermc.paperweight.userdev` 2.0.0-beta.24+ |
 | 命名 | Mojang 官方名稱（26.1 起原版不再混淆；Paper runtime 直接使用） |
-| Java | 25（toolchain；Paper 26.x 最低需求） |
+| Java | 25（26.2）／21（1.21.11） |
 | 建置工具 | Gradle 8.11.2+（Groovy DSL；Paperweight 2.x 需求） |
-| Javadoc | https://jd.papermc.io/paper/26.2/ |
+| Javadoc | https://jd.papermc.io/paper/26.2/ 、 https://jd.papermc.io/paper/1.21.11/ |
 | 平台檔案 | `Skills/paper-nms/PLATFORM.md` |
 
 ---
@@ -114,9 +114,9 @@ MJP-Claude-Skills/
 
 ### 環境與版本
 
-- **MC 版本**：26.2
+- **MC 版本**：1.21.11、26.2
 - **建置工具**：Gradle（Groovy DSL）— 不用 Maven
-- **Java**：25（toolchain）
+- **Java**：25（26.2）／21（1.21.11）
 - **Paperweight**：預設所有 NMS skill 使用 Paperweight userdev
 - **描述檔**：預設 `paper-plugin.yml`（非 `plugin.yml`）以確保 NMS 載入順序
 - **註解**：所有存取 NMS 的類別加 `@SuppressWarnings("UnstableApiUsage")`
@@ -274,7 +274,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 2. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 
-3. **MC 版本**：所有技能以 Paper 26.2 為目標並經編譯驗證；升級版本時更新 `Skills/paper-nms/PLATFORM.md` 的對照表並重新編譯驗證範本。
+3. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
 
 4. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
 

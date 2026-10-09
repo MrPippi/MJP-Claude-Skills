@@ -1,6 +1,6 @@
 # Bukkit ↔ NMS 橋接速查表 / Bukkit ↔ NMS Bridge Reference
 
-適用版本：Paper 26.2（Mojang 官方命名；26.1 起原版不再混淆）
+適用版本：Paper 1.21.11 / 26.2（Mojang 官方命名；26.1 起原版不再混淆）。兩版寫法不同處以 `// @1.21.11:` 行尾標註或 `// @only <版本>` 區塊區分
 橋接套件：`org.bukkit.craftbukkit.*`
 
 > Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。

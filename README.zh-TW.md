@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**專為 Paper 26.x（Mojang 官方命名）NMS 底層開發設計的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 函式庫。**
+**專為 Paper 1.21.11 / 26.x（Mojang 官方命名）NMS 底層開發設計的 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 函式庫。**
 
 MJP-Claude-Skills 提供經編譯驗證的 NMS 技能範本，Claude Code 在產生插件代碼前會先讀取這些範本，涵蓋封包、Netty 攔截、自定義實體、NBT／資料組件、GUI、計分板、Boss Bar、粒子、區塊存取、反射式存取與多版本 Adapter。
 
@@ -14,11 +14,11 @@ MJP-Claude-Skills 提供經編譯驗證的 NMS 技能範本，Claude Code 在產
 
 | 項目 | 說明 |
 |------|------|
-| **MC 版本** | 26.2（Paper stable） |
-| **Paper dev bundle** | `26.2.build.132-stable` |
+| **MC 版本** | 1.21.11 / 26.2 |
+| **Paper dev bundle** | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` |
 | **NMS 命名** | Mojang 官方名稱（Minecraft 26.1 起不再混淆） |
 | **建置工具** | Gradle 8.11.2+（已驗證 9.8.1）+ Paperweight userdev `2.0.0-beta.24` |
-| **Java** | 25（toolchain；Paper 26.x 最低需求） |
+| **Java** | 21 (1.21.11) / 25 (26.2) |
 | **技能執行時** | `.claude/skills/`（Claude Code 專用） |
 
 > 從 1.21.x 版範本升級？請參考 [CHANGELOG.md](CHANGELOG.md) 與 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 第 5 節的遷移重點。
@@ -77,13 +77,13 @@ Claude Code 會先讀取對應的 `SKILL.md`、[`PLATFORM.md`](Skills/paper-nms/
 
 | 依賴 | 版本 | 說明 |
 |------|------|------|
-| Paper 伺服器 | 26.2 | 範本以 build 132 編譯驗證 |
-| Paper dev bundle（`paperweight.paperDevBundle`） | `26.2.build.132-stable` | 26.x 格式：`<mc>.build.<n>-<channel>`（[版本列表](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)） |
+| Paper 伺服器 | 1.21.11 / 26.2 | 範本以 build 132 編譯驗證 |
+| Paper dev bundle（`paperweight.paperDevBundle`） | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | 26.x 格式：`<mc>.build.<n>-<channel>`（[版本列表](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)） |
 | `io.papermc.paperweight.userdev` | `2.0.0-beta.24` | Pre-release；不需 `reobfJar` |
 | Gradle | 8.11.2+ | 已驗證 9.8.1 |
 | JDK | 25 | toolchain 與 `options.release` |
 | `com.gradleup.shadow`（選用） | `9.6.1` | 僅多模組／打包依賴時需要（見 `nms-version-adapter`） |
-| `paper-api`（純反射或 core 模組） | `26.2.build.132-stable` | `compileOnly` |
+| `paper-api`（純反射或 core 模組） | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
 標準 `build.gradle` 與 `paper-plugin.yml` 範本見 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)。
 

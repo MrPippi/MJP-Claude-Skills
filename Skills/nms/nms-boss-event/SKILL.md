@@ -15,7 +15,7 @@ description: "透過 NMS ServerBossEvent 操作 Boss Bar 進度條、顏色、�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 26.2
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
 - Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
@@ -78,13 +78,8 @@ public class NmsBossBar {
      */
     public NmsBossBar(String title, BossEvent.BossBarColor color,
                       BossEvent.BossBarOverlay overlay) {
-        // 26.x 起建構子需明確傳入 boss bar UUID
-        this.bossEvent = new ServerBossEvent(
-            UUID.randomUUID(),
-            Component.literal(title),
-            color,
-            overlay
-        );
+        // 26.x 起建構子需明確傳入 boss bar UUID（1.21.11 無此參數，見行尾標註）
+        this.bossEvent = new ServerBossEvent(UUID.randomUUID(), Component.literal(title), color, overlay); // @1.21.11: this.bossEvent = new ServerBossEvent(Component.literal(title), color, overlay);
     }
 
     /** 設定進度（0.0 - 1.0）。 */

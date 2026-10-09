@@ -15,7 +15,7 @@ description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 26.2
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
 - Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 

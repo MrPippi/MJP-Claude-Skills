@@ -1,6 +1,6 @@
 # MJP-Claude-Skills — Minecraft NMS Claude Code Skills
 
-**공식 Mojang 이름을 사용하는 Paper 26.x 기반의 저수준 Minecraft NMS(net.minecraft.server) 개발을 위한 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 큐레이션 라이브러리입니다.**
+**공식 Mojang 이름을 사용하는 Paper 1.21.11 / 26.x 기반의 저수준 Minecraft NMS(net.minecraft.server) 개발을 위한 [Claude Code Agent Skills](https://docs.anthropic.com/en/docs/claude-code) 큐레이션 라이브러리입니다.**
 
 MJP-Claude-Skills는 Claude Code가 플러그인 코드를 생성하기 전에 읽는, 컴파일 검증이 완료된 NMS 스킬 템플릿을 제공합니다. 패킷, Netty 가로채기, 커스텀 엔티티, NBT / 데이터 컴포넌트, GUI, 스코어보드, 보스바, 파티클, 청크, 리플렉션 기반 접근 및 멀티 버전 어댑터를 다룹니다.
 
@@ -14,11 +14,11 @@ MJP-Claude-Skills는 Claude Code가 플러그인 코드를 생성하기 전에 �
 
 | 항목 | 상세 |
 |------|---------|
-| **MC 버전** | 26.2 (Paper stable) |
-| **Paper dev bundle** | `26.2.build.132-stable` |
+| **MC 버전** | 1.21.11 / 26.2 |
+| **Paper dev bundle** | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` |
 | **NMS 명명** | 공식 Mojang 이름 (Minecraft는 26.1부터 난독화되지 않습니다) |
 | **빌드 도구** | Gradle 8.11.2+ (9.8.1에서 검증) + Paperweight userdev `2.0.0-beta.24` |
-| **Java** | 25 (toolchain; Paper 26.x 최소 요구 사항) |
+| **Java** | 21 (1.21.11) / 25 (26.2) |
 | **스킬 런타임** | `.claude/skills/` (Claude Code) |
 
 > 1.21.x 템플릿에서 업그레이드하시나요? [CHANGELOG.md](CHANGELOG.md)와 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)의 마이그레이션 노트(5절)를 참고하십시오.
@@ -77,13 +77,13 @@ Claude Code는 코드를 생성하기 전에 일치하는 `SKILL.md`, [`PLATFORM
 
 | 의존성 | 버전 | 비고 |
 |------------|---------|-------|
-| Paper 서버 | 26.2 | 템플릿은 빌드 132 기준으로 컴파일 검증되었습니다 |
-| Paper dev bundle (`paperweight.paperDevBundle`) | `26.2.build.132-stable` | 26.x 형식: `<mc>.build.<n>-<channel>` ([목록](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)) |
+| Paper 서버 | 1.21.11 / 26.2 | 템플릿은 빌드 132 기준으로 컴파일 검증되었습니다 |
+| Paper dev bundle (`paperweight.paperDevBundle`) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | 26.x 형식: `<mc>.build.<n>-<channel>` ([목록](https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml)) |
 | `io.papermc.paperweight.userdev` | `2.0.0-beta.24` | 프리 릴리스; `reobfJar` 불필요 |
 | Gradle | 8.11.2+ | 9.8.1에서 검증 |
 | JDK | 25 | Toolchain 및 `options.release` |
 | `com.gradleup.shadow` (선택 사항) | `9.6.1` | 멀티 모듈 / 번들 빌드에서만 사용 (`nms-version-adapter` 참조) |
-| `paper-api` (리플렉션 전용 / 코어 모듈) | `26.2.build.132-stable` | `compileOnly` |
+| `paper-api` (리플렉션 전용 / 코어 모듈) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
 표준 `build.gradle`과 `paper-plugin.yml`은 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)에 있습니다.
 

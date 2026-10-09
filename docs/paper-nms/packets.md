@@ -1,6 +1,6 @@
 # NMS Packet 速查表 / NMS Packet Reference
 
-適用版本：Paper 26.2（Mojang 官方命名；26.1 起原版不再混淆）
+適用版本：Paper 1.21.11 / 26.2（Mojang 官方命名；26.1 起原版不再混淆）。兩版寫法不同處以 `// @1.21.11:` 行尾標註或 `// @only <版本>` 區塊區分
 套件根：`net.minecraft.network.protocol`
 
 > 封包發送用法見 `Skills/nms/nms-packet-sender/SKILL.md`
@@ -328,13 +328,15 @@ if (msg instanceof ServerboundMovePlayerPacket.PosRot move) {
 ### Interaction / 互動
 
 #### `ServerboundInteractPacket` / `ServerboundAttackPacket`
+**26.2**：`ServerboundInteractPacket` 改為 record，攻擊拆成獨立的 `ServerboundAttackPacket`。
+
 ```java
+// @only 26.2
 import net.minecraft.network.protocol.game.ServerboundAttackPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
 
-// 26.x：ServerboundInteractPacket 改為 record，攻擊拆成獨立的 ServerboundAttackPacket
 if (msg instanceof ServerboundInteractPacket interact) {
     int entityId = interact.entityId();
     InteractionHand hand = interact.hand();      // MAIN_HAND / OFF_HAND
@@ -342,6 +344,25 @@ if (msg instanceof ServerboundInteractPacket interact) {
     boolean sneaking = interact.usingSecondaryAction();
 } else if (msg instanceof ServerboundAttackPacket attack) {
     int entityId = attack.entityId();
+}
+```
+
+**1.21.11**：同一個 `ServerboundInteractPacket` 涵蓋互動與攻擊，透過 `dispatch(Handler)` 區分。
+
+```java
+// @only 1.21.11
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.Vec3;
+
+if (msg instanceof ServerboundInteractPacket interact) {
+    int entityId = interact.getEntityId();
+    boolean sneaking = interact.isUsingSecondaryAction();
+    interact.dispatch(new ServerboundInteractPacket.Handler() {
+        @Override public void onInteraction(InteractionHand hand) { /* 右鍵實體 */ }
+        @Override public void onInteraction(InteractionHand hand, Vec3 location) { /* 右鍵實體（含互動點） */ }
+        @Override public void onAttack() { /* 左鍵攻擊 */ }
+    });
 }
 ```
 

@@ -1,6 +1,6 @@
 version: "6.0.0"
 updated: "2026-04-30"
-description: "MJP-Claude-Skills — Minecraft NMS Claude Code Skills / NMS 技能索引（Paper 26.x + Mojang 官方命名）"
+description: "MJP-Claude-Skills — Minecraft NMS Claude Code Skills / NMS 技能索引（Paper 1.21.11 / 26.x + Mojang 官方命名）"
 
 skills:
   - id: nms-packet-sender
@@ -532,10 +532,10 @@ skills:
 platforms:
   - id: paper-nms
     name: "Paper NMS"
-    description: "Paper 26.x + Paperweight userdev + Mojang 官方命名"
+    description: "Paper 1.21.11 / 26.x + Paperweight userdev + Mojang 官方命名"
     platform_file: paper-nms/PLATFORM.md
-    mc_versions: ["26.2"]
-    java_version: 25
+    mc_versions: ["1.21.11", "26.2"]
+    java_version: "21 (1.21.11) / 25 (26.2)"
     build_tool: gradle
 
 shared:
