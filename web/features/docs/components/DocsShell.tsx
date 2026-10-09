@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { DocsSidebar } from './DocsSidebar';
 import { flattenNav, type NavGroup, type NavItem } from '../lib/nav';
@@ -22,6 +22,8 @@ export function DocsShell({ nav, children }: DocsShellProps) {
   const { t, lang } = useLanguage();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const flat = useMemo(() => flattenNav(nav), [nav]);
   const current = flat.find((i) => i.href === pathname.replace(/\/+$/, ''));
 
@@ -29,12 +31,32 @@ export function DocsShell({ nav, children }: DocsShellProps) {
 
   useEffect(() => {
     if (!drawerOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawerOpen(false);
+    const drawer = drawerRef.current;
+    const focusables = () => [...(drawer?.querySelectorAll<HTMLElement>('a[href], button, summary') ?? [])];
+    focusables()[0]?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false);
+      if (e.key !== 'Tab') return;
+      // Keep Tab inside the modal drawer.
+      const items = focusables();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
+    const trigger = triggerRef.current;
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
+      trigger?.focus();
     };
   }, [drawerOpen]);
 
@@ -46,7 +68,14 @@ export function DocsShell({ nav, children }: DocsShellProps) {
         </aside>
 
         <div className="sticky top-[calc(6rem+1px)] z-30 flex items-center gap-2 border-b border-line bg-bg/95 px-4 py-2 backdrop-blur md:top-14 lg:hidden">
-          <button type="button" onClick={() => setDrawerOpen(true)} className="flex items-center gap-2 text-sm text-fg-2" aria-expanded={drawerOpen}>
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex items-center gap-2 text-sm text-fg-2"
+            aria-expanded={drawerOpen}
+            aria-controls="docs-drawer"
+          >
             <MenuIcon className="h-4 w-4" />
             {t.docs.menu}
           </button>
@@ -54,7 +83,7 @@ export function DocsShell({ nav, children }: DocsShellProps) {
         </div>
 
         {drawerOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t.docs.menu}>
+          <div id="docs-drawer" ref={drawerRef} className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t.docs.menu}>
             <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-fg)_30%,transparent)]" onClick={() => setDrawerOpen(false)} />
             <div className="absolute inset-y-0 left-0 w-[min(20rem,85vw)] overflow-y-auto border-r border-line bg-bg px-4 py-4">
               <button type="button" onClick={() => setDrawerOpen(false)} className="icon-btn mb-2 ml-auto" aria-label={t.docs.closeMenu}>

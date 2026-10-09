@@ -30,9 +30,9 @@ describe('formatDate', () => {
     assert.equal(formatDate('not-a-date'), 'Invalid Date');
   });
 
-  it('parses date-only strings as UTC: shows previous day in negative-offset zones', () => {
+  it('formats date-only strings in UTC so build output and every viewer agree', () => {
     process.env.TZ = 'America/Los_Angeles';
-    assert.equal(formatDate('2026-04-30'), '2026年4月29日');
+    assert.equal(formatDate('2026-04-30'), '2026年4月30日');
   });
 });
 

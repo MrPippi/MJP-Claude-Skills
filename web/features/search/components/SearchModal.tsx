@@ -82,6 +82,8 @@ export function SearchModal({ isOpen, onClose, searchData, docLinks }: SearchMod
   );
 
   const onKeyDown = (e: React.KeyboardEvent) => {
+    // Enter while an IME candidate is open (zh-TW input) only commits the text.
+    if (e.nativeEvent.isComposing) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelected((i) => Math.min(i + 1, results.length - 1));

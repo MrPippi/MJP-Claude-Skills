@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import type { Category, SkillMeta } from '@/shared/types/skill';
 import { getPlatform, isPlatformId, PLATFORMS, type PlatformId } from '../lib/platform';
 import { SkillGrid } from './SkillGrid';
@@ -27,24 +26,47 @@ function chipClass(active: boolean): string {
   }`;
 }
 
+interface Filter {
+  platform: PlatformId | null;
+  category: string | null;
+}
+
+const NO_FILTER: Filter = { platform: null, category: null };
+
+function readFilter(categories: Category[]): Filter {
+  const params = new URLSearchParams(window.location.search);
+  const platform = params.get('platform');
+  const category = params.get('category');
+  return {
+    platform: isPlatformId(platform) ? platform : null,
+    category: categories.some((c) => c.id === category) ? category : null,
+  };
+}
+
+/**
+ * Filters live in the query string but are read from window.location after mount, so the
+ * static export prerenders the full, unfiltered list (no useSearchParams Suspense bail-out).
+ */
 export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
   const { t, lang } = useLanguage();
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useSearchParams();
-  const rawPlatform = params.get('platform');
-  const platform: PlatformId | null = isPlatformId(rawPlatform) ? rawPlatform : null;
-  const category = categories.some((c) => c.id === params.get('category')) ? params.get('category') : null;
+  const [{ platform, category }, setFilterState] = useState<Filter>(NO_FILTER);
   const [text, setText] = useState('');
 
-  const setFilter = (next: { platform?: PlatformId | null; category?: string | null }) => {
+  useEffect(() => {
+    const sync = () => setFilterState(readFilter(categories));
+    sync();
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, [categories]);
+
+  const setFilter = (next: Partial<Filter>) => {
+    const merged: Filter = { platform, category, ...next };
     const query = new URLSearchParams();
-    const p = next.platform === undefined ? platform : next.platform;
-    const c = next.category === undefined ? category : next.category;
-    if (p) query.set('platform', p);
-    if (c) query.set('category', c);
+    if (merged.platform) query.set('platform', merged.platform);
+    if (merged.category) query.set('category', merged.category);
     const qs = query.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+    setFilterState(merged);
   };
 
   const visibleCategories = useMemo(
@@ -66,11 +88,11 @@ export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
       <div className="mb-6 space-y-4 rounded-md border border-line bg-surface p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow mr-1 text-fg-3">{t.skills.filterPlatform}</span>
-          <button type="button" className={chipClass(!platform)} onClick={() => setFilter({ platform: null, category: null })}>
+          <button type="button" aria-pressed={!platform} className={chipClass(!platform)} onClick={() => setFilter({ platform: null, category: null })}>
             {t.skills.filterAll}
           </button>
           {PLATFORMS.map((p) => (
-            <button key={p.id} type="button" className={chipClass(platform === p.id)} onClick={() => setFilter({ platform: p.id, category: null })}>
+            <button key={p.id} type="button" aria-pressed={platform === p.id} className={chipClass(platform === p.id)} onClick={() => setFilter({ platform: p.id, category: null })}>
               <PixelIcon name={p.icon} className="h-3.5 w-3.5" />
               {p.label}
             </button>
@@ -80,7 +102,7 @@ export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow mr-1 text-fg-3">{t.skills.filterCategory}</span>
           {visibleCategories.map((c) => (
-            <button key={c.id} type="button" className={chipClass(category === c.id)} onClick={() => setFilter({ category: category === c.id ? null : c.id })}>
+            <button key={c.id} type="button" aria-pressed={category === c.id} className={chipClass(category === c.id)} onClick={() => setFilter({ category: category === c.id ? null : c.id })}>
               {lang === 'en' ? c.labelEn : c.label}
               <span className="font-pixel text-[10px] opacity-70">{c.count}</span>
             </button>

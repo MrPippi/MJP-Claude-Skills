@@ -16,7 +16,7 @@ export interface DocPage extends DocSource {
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
 const CJK = /[㐀-鿿]/;
-const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#|\/)/i;
+const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
 
 export function splitBilingualTitle(title: string): BilingualText {
   const parts = title.split(' / ').map((p) => p.trim());
@@ -30,6 +30,7 @@ export function createLinkResolver(sourceFile: string): (href: string) => string
   const sourceDir = path.posix.dirname(sourceFile);
   return (href) => {
     if (EXTERNAL.test(href)) return href;
+    if (href.startsWith('/')) return withBasePath(href);
     const [target, hash] = href.split('#');
     const repoPath = path.posix.normalize(path.posix.join(sourceDir, target));
     const anchor = hash ? `#${hash}` : '';

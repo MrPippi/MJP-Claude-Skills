@@ -27,6 +27,11 @@ describe('createLinkResolver', () => {
     assert.equal(resolve('../../README.md'), `${GITHUB_REPO_URL}/blob/main/README.md`);
     assert.equal(resolve('https://jd.papermc.io/'), 'https://jd.papermc.io/');
     assert.equal(resolve('#section'), '#section');
+    assert.equal(resolve('//cdn.example.com/x'), '//cdn.example.com/x');
+  });
+
+  it('keeps root-absolute site links (prefixed with the base path at build time)', () => {
+    assert.equal(resolve('/docs/skills'), '/docs/skills');
   });
 });
 
