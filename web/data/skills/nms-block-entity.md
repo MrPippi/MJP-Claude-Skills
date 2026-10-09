@@ -74,10 +74,10 @@ public class CustomBlockEntity extends BlockEntity {
 
 ```java
 // 在指定位置取得自定義 BlockEntity
-Optional<CustomBlockEntity> be = BlockEntityHelper.get(world, pos, CustomBlockEntity.class);
+Optional<CustomBlockEntity> be = BlockEntityHelper.getCustom(location);
 
 // 標記已修改（觸發 NBT 儲存與客戶端同步）
-BlockEntityHelper.markDirtyAndSync(level, blockEntity);
+be.ifPresent(CustomBlockEntity::markDirtyAndSync);
 ```
 
 ---

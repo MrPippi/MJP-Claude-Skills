@@ -53,23 +53,24 @@ double hp = AttributeUtil.getValue(player, Attributes.MAX_HEALTH);
 
 // 新增加法 modifier（+10 攻擊力）
 AttributeUtil.addModifier(player, Attributes.ATTACK_DAMAGE,
-    ModifierBuilder.additive("sword-bonus", 10.0));
+    ModifierBuilder.addition("myplugin", "sword_bonus", 10.0));
 
-// 移除指定 modifier
-AttributeUtil.removeModifier(player, Attributes.ATTACK_DAMAGE, "sword-bonus");
+// 移除指定 modifier（1.21 起 id 為 ResourceLocation）
+AttributeUtil.removeModifier(player, Attributes.ATTACK_DAMAGE,
+    ResourceLocation.fromNamespaceAndPath("myplugin", "sword_bonus"));
 ```
 
 ### ModifierBuilder.java（建立器）
 
 ```java
-// 加法（+value）
-AttributeModifier mod = ModifierBuilder.additive("buff-id", 5.0);
+// 加法（baseValue + amount）
+AttributeModifier mod = ModifierBuilder.addition("myplugin", "buff_id", 5.0);
 
-// 倍乘基底（baseValue * value）
-AttributeModifier mod = ModifierBuilder.multiplyBase("speed-boost", 0.2);
+// 倍乘基底（baseValue + baseValue * amount）
+AttributeModifier mod = ModifierBuilder.multiplyBase("myplugin", "speed_boost", 0.2);
 
-// 倍乘全部（finalValue * value）
-AttributeModifier mod = ModifierBuilder.multiplyTotal("debuff", -0.1);
+// 倍乘全部（totalValue * (1 + amount)）
+AttributeModifier mod = ModifierBuilder.multiplyTotal("myplugin", "debuff", -0.1);
 ```
 
 ---
