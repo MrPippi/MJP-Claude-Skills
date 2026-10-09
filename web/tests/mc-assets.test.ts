@@ -29,6 +29,13 @@ describe('mc-assets config', () => {
     assert.ok(exists(HERO_ARTWORK.day) && exists(HERO_ARTWORK.night));
   });
 
+  it('favicons come from the extracted texture (scripts/mc-art.py), not hand-drawn SVG', () => {
+    const appDir = path.join(__dirname, '..', 'app');
+    assert.ok(fs.existsSync(path.join(appDir, 'icon.png')));
+    assert.ok(fs.existsSync(path.join(appDir, 'apple-icon.png')));
+    assert.ok(!fs.existsSync(path.join(appDir, 'icon.svg')), 'stale icon.svg would take precedence');
+  });
+
   it('artwork is served from the committed public/art folder, not the raw dump', () => {
     for (const url of [...Object.values(ITEM_ARTWORK), ...Object.values(BLOCK_TEXTURES)]) {
       assert.ok(url.startsWith('/art/'), url);

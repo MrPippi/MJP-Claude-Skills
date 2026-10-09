@@ -1,41 +1,63 @@
-/** Pure particle maths for the XP-orb burst; DOM wiring lives in ParticleBurst.tsx. */
+/** Pure particle physics for the XP-orb burst; DOM wiring lives in MotionLayer.tsx. */
 
 export const XP_COLORS: readonly string[] = ['#c6f74a', '#7fdc2a', '#f2e14b', '#e6ff8a'];
 export const PARTICLE_SIZES: readonly number[] = [4, 6];
 export const MAX_PARTICLES = 24;
+/** Downward acceleration in px/s². */
+export const GRAVITY = 2200;
 
 export interface Particle {
-  /** Offset (px) from the click point at the top of the arc. */
-  peakX: number;
-  peakY: number;
-  /** Offset (px) where the particle fades out after falling. */
-  endX: number;
-  endY: number;
+  /** Launch velocity in px/s (vy < 0 is upward). */
+  vx: number;
+  vy: number;
+  /** Distance in px from the launch point down to where the particle touches the floor. */
+  floor: number;
   size: number;
   color: string;
+  /** Flight time until the floor, in ms. */
   duration: number;
+}
+
+export interface Frame {
+  x: number;
+  y: number;
+  offset: number;
 }
 
 const between = (random: () => number, min: number, max: number) => min + random() * (max - min);
 const pick = <T,>(random: () => number, list: readonly T[]): T => list[Math.floor(random() * list.length) % list.length];
 
-/** Throws particles up and outward in a fan (±70° from vertical), then lets them fall. */
-export function createBurst(count: number, random: () => number = Math.random): Particle[] {
+/** Seconds until y(t) = vy·t + ½·g·t² reaches `distance` (positive = below the origin). */
+export function timeToFloor(vy: number, distance: number): number {
+  const d = Math.max(0, distance);
+  return (-vy + Math.sqrt(vy * vy + 2 * GRAVITY * d)) / GRAVITY;
+}
+
+/**
+ * Throws particles up and outward, then lets them fall freely to the floor.
+ * `floorDistance` is how far below the click the floor is (e.g. viewport bottom − clientY).
+ */
+export function createBurst(count: number, floorDistance: number, random: () => number = Math.random): Particle[] {
   const n = Math.max(0, Math.min(MAX_PARTICLES, Math.floor(count)));
   return Array.from({ length: n }, () => {
-    const angle = between(random, -70, 70) * (Math.PI / 180);
-    const distance = between(random, 28, 56);
-    const peakX = Math.round(Math.sin(angle) * distance);
-    const peakY = -Math.round(Math.cos(angle) * distance) - 6;
-    const drift = between(random, 1.2, 1.6);
+    const size = pick(random, PARTICLE_SIZES);
+    const vx = Math.round(between(random, -260, 260));
+    const vy = -Math.round(between(random, 420, 720));
+    const floor = Math.max(0, Math.round(floorDistance - size));
+    return { vx, vy, floor, size, color: pick(random, XP_COLORS), duration: Math.round(timeToFloor(vy, floor) * 1000) };
+  });
+}
+
+/** Samples the parabola as linear keyframes (Web Animations can't ease x and y separately). */
+export function trajectory(particle: Particle, steps = 18): Frame[] {
+  const total = particle.duration / 1000;
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const t = (total * i) / steps;
+    const last = i === steps;
     return {
-      peakX,
-      peakY,
-      endX: Math.round(peakX * drift),
-      endY: Math.round(peakY + between(random, 30, 60)),
-      size: pick(random, PARTICLE_SIZES),
-      color: pick(random, XP_COLORS),
-      duration: Math.round(between(random, 520, 820)),
+      x: Math.round(particle.vx * t),
+      y: last ? particle.floor : Math.round(particle.vy * t + 0.5 * GRAVITY * t * t),
+      offset: i / steps,
     };
   });
 }
