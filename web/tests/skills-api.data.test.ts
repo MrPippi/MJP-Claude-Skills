@@ -36,6 +36,7 @@ const EXPECTED_SLUGS = [
   'nms-reflection-bridge',
   'nms-scoreboard',
   'nms-version-adapter',
+  'paper-service-api',
 ];
 
 describe('getAllSkills (real data)', () => {
@@ -44,7 +45,7 @@ describe('getAllSkills (real data)', () => {
     assert.equal(getAllSkills().length, mdCount);
   });
 
-  it('contains the 15 NMS skills in title order', () => {
+  it('contains the 16 skills in title order', () => {
     assert.deepEqual(getAllSkills().map((s) => s.slug), EXPECTED_SLUGS);
   });
 
@@ -62,7 +63,7 @@ describe('getAllSkills (real data)', () => {
 });
 
 describe('getCategories (real data)', () => {
-  it('returns 8 categories sorted by count desc', () => {
+  it('returns 9 categories sorted by count desc', () => {
     assert.deepEqual(getCategories(), [
       { id: 'nms-world', label: 'NMS 世界', labelEn: 'NMS World', count: 3 },
       { id: 'nms-entity', label: 'NMS 實體', labelEn: 'NMS Entity', count: 2 },
@@ -72,6 +73,7 @@ describe('getCategories (real data)', () => {
       { id: 'nms-bridge', label: 'NMS 橋接', labelEn: 'NMS Bridge', count: 2 },
       { id: 'nms-ui', label: 'NMS UI', labelEn: 'NMS UI', count: 1 },
       { id: 'nms-player', label: 'NMS 玩家', labelEn: 'NMS Player', count: 1 },
+      { id: 'paper-integration', label: 'Paper 整合', labelEn: 'Paper Integration', count: 1 },
     ]);
   });
 

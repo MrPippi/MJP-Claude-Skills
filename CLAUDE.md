@@ -6,7 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is This Repository
 
-MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套專注於 **Paper NMS（net.minecraft.server）底層開發** 的 Claude Code Agent Skills 集合。
+MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套 Paper 插件開發的 Claude Code Agent Skills 集合，分兩個平台：
+
+- **NMS 技能**（`Skills/nms/`）：Paper NMS（net.minecraft.server）底層開發，需 Paperweight userdev
+- **Paper API 技能**（`Skills/paper/`）：純 Paper API（`paper-api` compileOnly），涵蓋 Dialog、SQLite、跨插件 API、軟依賴、封包過濾等插件集常見模式
 
 目標 MC 版本：**1.21.11** 與 **26.2**（兩版皆編譯驗證；範本預設 26.2，差異以 `// @1.21.11:` 標註）
 目標命名：**Mojang 官方名稱**（Minecraft 26.1 起不再混淆；透過 Paperweight userdev）
@@ -35,10 +38,14 @@ MJP-Claude-Skills/
 │   ├── skills-registry.yml              ← v6.0.0，15 個 NMS 技能
 │   ├── _shared/
 │   │   ├── nms-threading.md
-│   │   └── nms-obfuscation.md
+│   │   ├── nms-obfuscation.md
+│   │   └── paper-threading.md           ← Paper API 執行緒規則
 │   ├── paper-nms/
-│   │   └── PLATFORM.md                  ← Paperweight + Mojang 建置設定
-│   └── nms/                             ← 15 個技能（每個含 SKILL.md + examples.md）
+│   │   └── PLATFORM.md                  ← Paperweight + Mojang 建置設定（NMS 技能）
+│   ├── paper-api/
+│   │   └── PLATFORM.md                  ← paper-api compileOnly 建置設定（Paper API 技能）
+│   ├── nms/                             ← NMS 技能（每個含 SKILL.md + examples.md）
+│   └── paper/                           ← Paper API 技能（每個含 SKILL.md + examples.md）
 ├── .cursor/                             ← 歷史殘留，不再維護
 ├── docs/
 │   └── paper-nms/                       ← NMS API 速查表（深度參考資料）
@@ -54,14 +61,15 @@ MJP-Claude-Skills/
 
 ## How to Use This Skills Library
 
-當使用者要求產生 NMS 代碼時，一律遵循：
+當使用者要求產生插件代碼時，一律遵循：
 
-1. **檢查 `.claude/skills/skills-registry.yml`** — 找出 `trigger_keywords` 匹配請求的技能
-2. **讀取對應的 `SKILL.md`** — `.claude/skills/nms/<id>/SKILL.md`
+1. **檢查 `.claude/skills/skills-registry.yml`** — 找出 `trigger_keywords` 匹配請求的技能，並看其 `platform`（`paper-nms` 或 `paper-api`）
+2. **讀取對應的 `SKILL.md`** — `.claude/skills/nms/<id>/SKILL.md` 或 `.claude/skills/paper/<id>/SKILL.md`
 3. **查看 `examples.md`** — 理解多種使用情境（同目錄）
-4. **讀取 `Skills/paper-nms/PLATFORM.md`** — 確認正確的 `build.gradle` 與依賴聲明
-5. **閱讀 `Skills/_shared/nms-threading.md` 與 `Skills/_shared/nms-obfuscation.md`** — 理解執行緒與映射規則
-6. **深度 API 查詢**：若 SKILL.md 範本無法涵蓋需求，查閱 `docs/paper-nms/`：
+4. **讀取平台設定** — NMS 技能讀 `Skills/paper-nms/PLATFORM.md`；Paper API 技能讀 `Skills/paper-api/PLATFORM.md`
+5. **閱讀執行緒規則** — NMS：`Skills/_shared/nms-threading.md`、`nms-obfuscation.md`；Paper API：`Skills/_shared/paper-threading.md`
+6. **專案規範優先** — 目標專案（例如 BlockoSMP、Bydsmp）有自己的 `CLAUDE.md`、`docs/`、`.claude/rules/` 時，範本與其衝突一律以專案規範為準
+7. **深度 API 查詢**：若 SKILL.md 範本無法涵蓋需求，查閱 `docs/paper-nms/`：
    - `docs/paper-nms/packets.md` — 封包類名與建構子簽名
    - `docs/paper-nms/entities.md` — 實體 AI、Goal 系統、Attribute 常數
    - `docs/paper-nms/network.md` — Netty pipeline 與執行緒模型
@@ -182,8 +190,8 @@ java {
 
 `Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml` **兩個檔案內容必須相同**，包含：
 
-- `skills` 陣列：15 個 NMS 技能條目（`id`, `version`, `status`, `platform`, `category`, `skill_file`, `examples_file`, `inputs`, `outputs`, `tags`, `trigger_keywords`）
-- `platforms` 陣列：`paper-nms` 平台定義
+- `skills` 陣列：所有技能條目（`id`, `version`, `status`, `platform`, `category`, `skill_file`, `examples_file`, `inputs`, `outputs`, `tags`, `trigger_keywords`）
+- `platforms` 陣列：`paper-nms`、`paper-api` 平台定義
 - `shared` 陣列：指向 `_shared/` 下的共享參考文件
 
 ### SKILL.md 結構
@@ -209,16 +217,19 @@ description: "中英雙語描述（含 NMS Paperweight 要求）"
 ## 失敗回退 / Fallback
 ```
 
-### 新增技能流程（8 步）
+Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-{skill-id}`、版本段落為「Paper 版本需求 / Paper Version Requirements」、建置段落為「建置設定 / Build Setup」並引用 `Skills/paper-api/PLATFORM.md`。範本只能 import Paper API 與 `PLATFORM.md` 列出的軟依賴，不可出現 `net.minecraft` / `org.bukkit.craftbukkit`。
 
-1. 在 `Skills/nms/<slug>/` 建立目錄
+### 新增技能流程（9 步）
+
+1. 在 `Skills/nms/<slug>/`（NMS）或 `Skills/paper/<slug>/`（Paper API）建立目錄
 2. 撰寫 `SKILL.md`（含 YAML frontmatter：`name`, `description`）
 3. 撰寫 `examples.md`（**至少 2 個範例**，涵蓋不同使用情境）
-4. 同步至 `.claude/skills/nms/<slug>/`
+4. 同步至 `.claude/skills/nms/<slug>/` 或 `.claude/skills/paper/<slug>/`
 5. 將新條目加入 `Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml`
 6. 若涉及新平台，建立 `Skills/<platform>/PLATFORM.md`
 7. 驗證觸發關鍵字無與既有技能衝突
 8. 在 `web/data/skills/<slug>.md` 新增網站頁面，並更新 `web/tests/skills-api.data.test.ts` 的預期清單
+9. 範本對 1.21.11 與 26.2 實際編譯驗證（NMS 技能用 dev bundle；Paper API 技能只用 `paper-api` 與 PLATFORM.md 列出的依賴）
 
 ---
 
@@ -270,7 +281,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 ## Key Invariants
 
-1. **雙路徑同步**：`Skills/nms/<path>/`、`Skills/_shared/` 與 `.claude/skills/nms/<path>/`、`.claude/skills/_shared/` 內容必須相同（`diff -rq Skills .claude/skills` 只應顯示 `Only in Skills: paper-nms`）。`skills-registry.yml` 兩份同理。
+1. **雙路徑同步**：`Skills/nms/`、`Skills/paper/`、`Skills/_shared/` 與 `.claude/skills/` 下對應目錄內容必須相同（`diff -rq Skills .claude/skills` 只應顯示 `Only in Skills: paper-api` 與 `Only in Skills: paper-nms`）。`skills-registry.yml` 兩份同理。
 
 2. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 

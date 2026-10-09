@@ -3,8 +3,27 @@ interface CategoryIconProps {
   className?: string;
 }
 
+/** NMS / Paper API 技能分類對應到既有圖示。 */
+const CATEGORY_ICON_ALIASES: Record<string, string> = {
+  'nms-packet': 'events',
+  'paper-network': 'events',
+  'nms-data': 'database',
+  'paper-data': 'database',
+  'nms-ui': 'api-integration',
+  'paper-ui': 'api-integration',
+  'nms-display': 'scaffolding',
+  'nms-world': 'devops',
+  'paper-world': 'devops',
+  'nms-bridge': 'integrations',
+  'paper-integration': 'integrations',
+  'paper-command': 'commands',
+  'nms-entity': 'permission',
+  'nms-player': 'permission',
+  'paper-gameplay': 'permission',
+};
+
 export function CategoryIcon({ category, className = 'h-5 w-5' }: CategoryIconProps) {
-  switch (category) {
+  switch (CATEGORY_ICON_ALIASES[category] ?? category) {
     case 'api-integration':
       return (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

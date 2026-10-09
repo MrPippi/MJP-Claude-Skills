@@ -70,7 +70,8 @@ describe('search (real data)', () => {
   });
 
   it('boss ranks nms-custom-entity above nms-boss-event', () => {
-    assert.deepEqual(slugs('boss'), ['nms-custom-entity', 'nms-boss-event', 'nms-reflection-bridge']);
+    // 只鎖定前兩名：新增技能時模糊比對的尾端結果會變動
+    assert.deepEqual(slugs('boss').slice(0, 2), ['nms-custom-entity', 'nms-boss-event']);
   });
 
   it('no match returns []', () => {

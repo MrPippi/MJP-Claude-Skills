@@ -529,11 +529,57 @@ skills:
       - "per-player boss bar"
       - "每人 boss bar"
 
+  - id: paper-service-api
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-integration
+    description: "透過 ServicesManager 發布與取用跨插件 API（只加不改、使用端容忍版本落差） / Cross-plugin API via ServicesManager with add-only interfaces and version-skew-tolerant hooks"
+    skill_file: paper/paper-service-api/SKILL.md
+    examples_file: paper/paper-service-api/examples.md
+    inputs:
+      - name: provider_plugin
+        description: "提供 API 的插件名稱"
+        required: true
+      - name: api_package
+        description: "API 介面所在 package（不可 relocate）"
+        required: true
+      - name: api_name
+        description: "介面名稱"
+        required: true
+      - name: consumer_package
+        description: "使用端 Hook 所在 package"
+        required: false
+    outputs:
+      - name: "<Api>.java"
+        description: "只含 JDK 型別、只加不改的 API 介面"
+      - name: "<Api>Impl.java"
+        description: "提供端實作（主執行緒檢查）"
+      - name: "<Provider>Plugin.java"
+        description: "ServicesManager 註冊／取消註冊"
+      - name: "<Provider>Hook.java"
+        description: "使用端 Hook（每次 load、接 LinkageError）"
+    tags: [paper-api, services-manager, cross-plugin, api]
+    trigger_keywords:
+      - "跨插件 API"
+      - "cross-plugin API"
+      - "ServicesManager"
+      - "service provider"
+      - "NoSuchMethodError"
+      - "api package"
+
 platforms:
   - id: paper-nms
     name: "Paper NMS"
     description: "Paper 1.21.11 / 26.x + Paperweight userdev + Mojang 官方命名"
     platform_file: paper-nms/PLATFORM.md
+    mc_versions: ["1.21.11", "26.2"]
+    java_version: "21 (1.21.11) / 25 (26.2)"
+    build_tool: gradle
+  - id: paper-api
+    name: "Paper API"
+    description: "Paper 1.21.11 / 26.x 純 Paper API（paper-api compileOnly，不需 Paperweight）"
+    platform_file: paper-api/PLATFORM.md
     mc_versions: ["1.21.11", "26.2"]
     java_version: "21 (1.21.11) / 25 (26.2)"
     build_tool: gradle
@@ -545,3 +591,6 @@ shared:
   - id: nms-obfuscation
     file: _shared/nms-obfuscation.md
     description: "Mojang mappings 與 NMS 混淆說明"
+  - id: paper-threading
+    file: _shared/paper-threading.md
+    description: "Paper API 執行緒規則（主執行緒、非同步 IO、Dialog/PAPI/封包回呼、onDisable）"
