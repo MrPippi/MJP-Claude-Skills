@@ -15,7 +15,7 @@ description: "多版本 NMS 相容性 Adapter 模式：抽象介面 + 版本特�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- 支援範圍：Paper 1.21 – 1.21.3
+- 支援範圍：Paper 1.21.11 / 26.x（範例以 26.2 / 26.3 兩個 adapter 示範；1.21.11 adapter 寫法相同，dev bundle 改為 `1.21.11-R0.1-SNAPSHOT`、Java 21）
 - 建議搭配 `nms-reflection-bridge` 或 multi-module Gradle build
 - Adapter 實作可選 Paperweight（需 multi-module）或純反射
 
@@ -31,14 +31,14 @@ description: "多版本 NMS 相容性 Adapter 模式：抽象介面 + 版本特�
 |------|------|------|
 | `package_name` | `com.example.nms` | 產出類別所在 package |
 | `adapter_interface` | `NmsAdapter` | 抽象介面名稱 |
-| `supported_versions` | `1.21, 1.21.1, 1.21.3` | 需支援的 MC 版本列表 |
+| `supported_versions` | `26.2, 26.3` | 需支援的 MC 版本列表 |
 
 ## 輸出產物 / Outputs
 
 - `NmsAdapter.java` — 共通抽象介面
 - `AdapterRegistry.java` — 版本偵測與 adapter 選擇器
-- `V1_21_Adapter.java` — Paper 1.21/1.21.1 實作
-- `V1_21_3_Adapter.java` — Paper 1.21.3 實作
+- `V26_2_Adapter.java` — Paper 26.2 實作
+- `V26_3_Adapter.java` — Paper 26.3 實作
 - `NmsVersion.java` — 版本列舉
 
 ## Paperweight 建置設定 / Build Setup
@@ -49,8 +49,8 @@ description: "多版本 NMS 相容性 Adapter 模式：抽象介面 + 版本特�
 my-plugin/
 ├── build.gradle
 ├── core/                  # 版本無關邏輯 + NmsAdapter 介面
-├── adapter-v1_21/         # 使用 paperweight 1.21 編譯
-├── adapter-v1_21_3/       # 使用 paperweight 1.21.3 編譯
+├── adapter-v26_2/         # 使用 26.2 dev bundle 編譯
+├── adapter-v26_3/       # 使用 26.3 dev bundle 編譯
 └── plugin/                # 整合所有 adapter 並打包
 ```
 
@@ -64,17 +64,19 @@ package com.example.nms;
 import org.bukkit.Bukkit;
 
 public enum NmsVersion {
-    V1_21,
-    V1_21_1,
-    V1_21_3,
+    V26_1,
+    V26_2,
+    V26_3,
     UNSUPPORTED;
 
     public static NmsVersion detect() {
-        String version = Bukkit.getMinecraftVersion(); // e.g. "1.21.1"
-        return switch (version) {
-            case "1.21" -> V1_21;
-            case "1.21.1" -> V1_21_1;
-            case "1.21.3" -> V1_21_3;
+        // 26.x 起版本號為「年份.drop[.hotfix]」，例如 "26.2"、"26.1.2"；以前兩段比對
+        String[] parts = Bukkit.getMinecraftVersion().split("\\.");
+        String majorMinor = parts.length >= 2 ? parts[0] + "." + parts[1] : parts[0];
+        return switch (majorMinor) {
+            case "26.1" -> V26_1;
+            case "26.2" -> V26_2;
+            case "26.3" -> V26_3;
             default -> UNSUPPORTED;
         };
     }
@@ -153,15 +155,15 @@ public final class AdapterRegistry {
 }
 ```
 
-### `V1_21_Adapter.java`（範例實作）
+### `V26_2_Adapter.java`（範例實作）
 
 ```java
-package com.example.nms.v1_21;
+package com.example.nms.v26_2;
 
 import com.example.nms.NmsAdapter;
 import com.example.nms.NmsVersion;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -169,21 +171,17 @@ import org.bukkit.entity.Player;
 import org.bukkit.Location;
 
 @SuppressWarnings("UnstableApiUsage")
-public class V1_21_Adapter implements NmsAdapter {
+public class V26_2_Adapter implements NmsAdapter {
 
     @Override
     public NmsVersion version() {
-        return NmsVersion.V1_21_1;
+        return NmsVersion.V26_2;
     }
 
     @Override
     public void sendActionBar(Player player, Component message) {
-        String json = GsonComponentSerializer.gson().serialize(message);
-        net.minecraft.network.chat.Component nmsComp =
-            net.minecraft.network.chat.Component.Serializer.fromJson(
-                json, net.minecraft.core.RegistryAccess.EMPTY);
-
-        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(nmsComp);
+        ClientboundSetActionBarTextPacket packet =
+            new ClientboundSetActionBarTextPacket(PaperAdventure.asVanilla(message));
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
         if (nms.connection != null) nms.connection.send(packet);
     }
@@ -195,13 +193,13 @@ public class V1_21_Adapter implements NmsAdapter {
 
     @Override
     public void spawnParticleClient(Location loc, String particleKey, int count) {
-        // 1.21 版本實作：使用 ClientboundLevelParticlesPacket
+        // 26.2 版本實作：使用 ClientboundLevelParticlesPacket
         // ...
     }
 
     @Override
     public void forceTickEntity(org.bukkit.entity.Entity entity) {
-        // 1.21 版本實作
+        // 26.2 版本實作
         // ...
     }
 }
@@ -212,8 +210,8 @@ public class V1_21_Adapter implements NmsAdapter {
 ```java
 @Override
 public void onEnable() {
-    AdapterRegistry.register(new V1_21_Adapter());
-    AdapterRegistry.register(new V1_21_3_Adapter());
+    AdapterRegistry.register(new V26_2_Adapter());
+    AdapterRegistry.register(new V26_3_Adapter());
     AdapterRegistry.initialize();
 
     getLogger().info("Using NMS adapter: " + AdapterRegistry.get().version());
@@ -238,10 +236,10 @@ src/main/java/com/example/
     ├── NmsAdapter.java
     ├── NmsVersion.java
     ├── AdapterRegistry.java
-    └── v1_21/
-        └── V1_21_Adapter.java
-    └── v1_21_3/
-        └── V1_21_3_Adapter.java
+    └── v26_2/
+        └── V26_2_Adapter.java
+    └── v26_3/
+        └── V26_3_Adapter.java
 ```
 
 ## 執行緒安全注意事項 / Thread Safety
@@ -258,5 +256,5 @@ src/main/java/com/example/
 | `IllegalStateException: Unsupported MC version` | 在未支援版本上啟動 | 在 `NmsVersion.detect()` 加 fallback 分支（嘗試最接近的版本） |
 | `ClassNotFoundException` / `NoClassDefFoundError` | adapter 引用的 NMS 類別在目前版本不存在 | 在 `register()` 外層用 try-catch，若失敗則不註冊該 adapter |
 | `AbstractMethodError` | adapter 介面新增方法但舊 adapter 未實作 | 為介面方法加 `default` 實作 |
-| Multi-module 打包遺漏 | shadowJar 未包含 adapter module | 在 `plugin/build.gradle` 加 `shadow project(':adapter-v1_21')` |
-| 不同版本 NMS 簽名差異 | 1.21.1 方法移除或改名 | 用 reflection 在 adapter 內做版本分支（結合 `nms-reflection-bridge`） |
+| Multi-module 打包遺漏 | shadowJar 未包含 adapter module | 在 `plugin/build.gradle` 加 `shadow project(':adapter-v26_2')` |
+| 不同版本 NMS 簽名差異 | 新版本方法移除或改名 | 用 reflection 在 adapter 內做版本分支（結合 `nms-reflection-bridge`） |

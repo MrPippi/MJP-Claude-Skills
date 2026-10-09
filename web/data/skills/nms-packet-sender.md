@@ -2,7 +2,7 @@
 id: nms-packet-sender
 title: NMS Packet Sender
 titleZh: NMS 封包發送器
-description: Generate a packet sender utility to push Clientbound NMS packets via ServerPlayer.connection on Paper 1.21.x with Mojang mappings.
+description: Generate a packet sender utility to push Clientbound NMS packets via ServerPlayer.connection on Paper 26.x with official Mojang names.
 descriptionZh: 產生封包發送工具類，透過 ServerPlayer.connection 將 Clientbound 封包推送至客戶端（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -33,10 +33,10 @@ featured: true
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 21（1.21.11）／25（26.2）
 
 ---
 
@@ -74,7 +74,7 @@ ClientboundSetActionBarTextPacket actionBar(Component message)
 ClientboundSetTitleTextPacket title(Component title)
 
 // Plugin Message
-ClientboundCustomPayloadPacket customPayload(ResourceLocation channel, byte[] data)
+ClientboundCustomPayloadPacket customPayload(Identifier channel, byte[] data)
 ```
 
 ---

@@ -15,9 +15,9 @@ description: "透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效�
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -45,7 +45,7 @@ description: "透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效�
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -80,14 +80,15 @@ public final class ParticleEffect {
      * @param count     粒子數量
      * @param offsetX/Y/Z 隨機偏移範圍
      * @param speed     粒子速度（0 = 不移動）
-     * @param override  true = 強制顯示（無視客戶端粒子設定）
+     * @param override  true = 強制顯示：overrideLimiter（遠距離也渲染）+ alwaysShow（無視客戶端「粒子：減少」設定）
      */
     public static void send(Player player, ParticleOptions particle, Location loc,
                             int count, double offsetX, double offsetY, double offsetZ,
                             double speed, boolean override) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
+        // 1.21.4+ 建構子：(particle, overrideLimiter, alwaysShow, x, y, z, dx, dy, dz, speed, count)
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
-            particle, override,
+            particle, override, override,
             loc.getX(), loc.getY(), loc.getZ(),
             (float) offsetX, (float) offsetY, (float) offsetZ,
             (float) speed, count
@@ -100,7 +101,7 @@ public final class ParticleEffect {
                                Location loc, int count, double offsetX, double offsetY,
                                double offsetZ, double speed) {
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
-            particle, false,
+            particle, false, false,
             loc.getX(), loc.getY(), loc.getZ(),
             (float) offsetX, (float) offsetY, (float) offsetZ,
             (float) speed, count

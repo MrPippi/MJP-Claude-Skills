@@ -1,6 +1,6 @@
 # Bukkit ↔ NMS 橋接速查表 / Bukkit ↔ NMS Bridge Reference
 
-適用版本：Paper 1.21 – 1.21.3（Mojang mappings）
+適用版本：Paper 1.21.11 / 26.2（Mojang 官方命名；26.1 起原版不再混淆）。兩版寫法不同處以 `// @1.21.11:` 行尾標註或 `// @only <版本>` 區塊區分
 橋接套件：`org.bukkit.craftbukkit.*`
 
 > Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
@@ -27,7 +27,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 | `Entity`（通用） | `Entity`（NMS） | `((CraftEntity) entity).getHandle()` |
 | `World` | `ServerLevel` | `((CraftWorld) world).getHandle()` |
 | `ItemStack`（Bukkit） | `ItemStack`（NMS） | `CraftItemStack.asNMSCopy(item)` |
-| `ItemStack`（Bukkit，可能為 CraftItemStack） | `ItemStack`（NMS，shared） | `CraftItemStack.asNMSMirror(item)` |
+| `ItemStack`（Bukkit，可能為 CraftItemStack） | `ItemStack`（NMS，shared） | `CraftItemStack.unwrap(item)` |
 
 ### NMS → Bukkit（getBukkitEntity）
 
@@ -98,8 +98,8 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 org.bukkit.inventory.ItemStack bukkit = player.getInventory().getItemInMainHand();
 ItemStack nms = CraftItemStack.asNMSCopy(bukkit);
 
-// Bukkit → NMS（共用引用，若是 CraftItemStack 則 zero-copy）
-ItemStack nmsShared = CraftItemStack.asNMSMirror(bukkit);
+// Bukkit → NMS（共用引用，若是 CraftItemStack 則 zero-copy；否則回傳副本）
+ItemStack nmsShared = CraftItemStack.unwrap(bukkit);
 
 // NMS → Bukkit（副本）
 org.bukkit.inventory.ItemStack back = CraftItemStack.asBukkitCopy(nms);
@@ -112,25 +112,20 @@ boolean isEmpty = nms.isEmpty(); // 優先用 NMS isEmpty()
 
 ### Adventure Component ↔ NMS Component
 
-Paper 1.21 推薦使用 Adventure API，但 NMS 封包需要 NMS Component。
+Paper 推薦使用 Adventure API，但 NMS 封包需要 NMS Component。`net.minecraft.network.chat.Component.Serializer`（JSON）已移除，
+改用 Paper 內建的 `PaperAdventure` 直接轉換（不需經過 JSON，也不需 RegistryAccess）。
 
 ```java
+import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.core.RegistryAccess;
 
 // Adventure → NMS（用於封包建構）
 Component adventure = Component.text("Hello").color(net.kyori.adventure.text.format.NamedTextColor.GREEN);
-String json = GsonComponentSerializer.gson().serialize(adventure);
-MutableComponent nmsComponent = net.minecraft.network.chat.Component.Serializer
-    .fromJson(json, RegistryAccess.EMPTY);
+net.minecraft.network.chat.Component nmsComponent = PaperAdventure.asVanilla(adventure);
 
 // NMS → Adventure（從封包讀取文字）
-MutableComponent fromPacket = /* packet.getText() */;
-String backJson = net.minecraft.network.chat.Component.Serializer.toJson(
-    fromPacket, RegistryAccess.EMPTY);
-Component backAdventure = GsonComponentSerializer.gson().deserialize(backJson);
+net.minecraft.network.chat.Component fromPacket = /* packet.text() */;
+Component backAdventure = PaperAdventure.asAdventure(fromPacket);
 ```
 
 > ⚠️ `RegistryAccess.EMPTY` 適合純文字與格式代碼，若需要 hover/click event 或特殊資料包文字，需使用伺服器的完整 `RegistryAccess`：
@@ -168,11 +163,12 @@ public static Object getHandle(Player player) throws ReflectiveOperationExceptio
 
 ## 版本號對照
 
-| MC 版本 | CraftBukkit 套件（Paper） | CraftBukkit 套件（Spigot） | Paper Dev Bundle |
-|--------|------------------------|--------------------------|-----------------|
-| 1.21 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R1` | `1.21-R0.1-SNAPSHOT` |
-| 1.21.1 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R1` | `1.21.1-R0.1-SNAPSHOT` |
-| 1.21.3 | `org.bukkit.craftbukkit` | `org.bukkit.craftbukkit.v1_21_R2` | `1.21.3-R0.1-SNAPSHOT` |
+| MC 版本 | CraftBukkit 套件（Paper） | Paper Dev Bundle |
+|--------|------------------------|-----------------|
+| 26.2 | `org.bukkit.craftbukkit` | `26.2.build.132-stable` |
+| 26.3 | `org.bukkit.craftbukkit` | `26.3.build.<n>-beta` |
+
+> Spigot 等其他伺服器的 CraftBukkit 套件名可能不同，跨平台時用上方的 `getCraftBukkitPackage()` 動態取得。
 
 ---
 
@@ -240,7 +236,7 @@ for (ServerPlayer viewer : serverLevel.players()) {
 
 | 方法 | 狀態 | 替代方案 |
 |------|------|---------|
-| `CraftItemStack.asNMSMirror(null)` | NPE 風險 | 先檢查 item != null |
+| `CraftItemStack.unwrap(null)` | NPE 風險 | 先檢查 item != null |
 | import `org.bukkit.craftbukkit.v1_21_R1.*` | Paper 1.20.5+ 不存在此套件，編譯失敗 | 改用 `org.bukkit.craftbukkit.*`（Paperweight userdev） |
 | `Bukkit.getUnsafe().serialize()` | 不穩定 | 使用 Adventure 序列化 |
 

@@ -6,13 +6,13 @@
 ```
 package_name: com.example.nms
 adapter_interface: NmsAdapter
-supported_versions: 1.21.1
+supported_versions: 26.2
 ```
 
 **使用端：雖只支援單版本，但透過 adapter 未來升級更容易:**
 ```java
 // onEnable
-AdapterRegistry.register(new V1_21_Adapter());
+AdapterRegistry.register(new V26_2_Adapter());
 AdapterRegistry.initialize();
 
 // 業務代碼
@@ -22,21 +22,21 @@ AdapterRegistry.get().sendActionBar(player, msg);
 
 ---
 
-## 範例 2：支援 1.21.1 與 1.21.3（Try-catch 註冊）
+## 範例 2：支援 26.2 與 26.3（Try-catch 註冊）
 
 **Input:**
 ```
 package_name: com.example.nms
 adapter_interface: NmsAdapter
-supported_versions: 1.21.1, 1.21.3
+supported_versions: 26.2, 26.3
 ```
 
 **使用端：安全註冊（執行環境若不含某 adapter class 也不崩潰）:**
 ```java
 @Override
 public void onEnable() {
-    tryRegister("com.example.nms.v1_21.V1_21_Adapter");
-    tryRegister("com.example.nms.v1_21_3.V1_21_3_Adapter");
+    tryRegister("com.example.nms.v26_2.V26_2_Adapter");
+    tryRegister("com.example.nms.v26_3.V26_3_Adapter");
 
     try {
         AdapterRegistry.initialize();
@@ -66,8 +66,8 @@ private void tryRegister(String className) {
 rootProject.name = 'my-plugin'
 
 include 'core'
-include 'adapter-v1_21'
-include 'adapter-v1_21_3'
+include 'adapter-v26_2'
+include 'adapter-v26_3'
 include 'plugin'
 ```
 
@@ -76,13 +76,13 @@ include 'plugin'
 plugins { id 'java' }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable'
 }
 
-java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
+java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
 ```
 
-**adapter-v1_21/build.gradle:**
+**adapter-v26_2/build.gradle:**
 ```groovy
 plugins {
     id 'java'
@@ -90,14 +90,14 @@ plugins {
 }
 
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
     compileOnly project(':core')
 }
 
-java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
+java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
 ```
 
-**adapter-v1_21_3/build.gradle:**
+**adapter-v26_3/build.gradle:**
 ```groovy
 plugins {
     id 'java'
@@ -105,25 +105,25 @@ plugins {
 }
 
 dependencies {
-    paperweight.paperDevBundle('1.21.3-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.3.build.166-beta')
     compileOnly project(':core')
 }
 
-java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
+java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
 ```
 
 **plugin/build.gradle（整合打包）:**
 ```groovy
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '8.3.0'
+    id 'com.gradleup.shadow' version '9.6.1'
 }
 
 dependencies {
     implementation project(':core')
-    implementation project(':adapter-v1_21')
-    implementation project(':adapter-v1_21_3')
-    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation project(':adapter-v26_2')
+    implementation project(':adapter-v26_3')
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable'
 }
 
 shadowJar {

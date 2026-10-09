@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套專注於 **Paper NMS（net.minecraft.server）底層開發** 的 Claude Code Agent Skills 集合。
 
-目標 MC 版本：**1.21 – 1.21.3**
-目標映射：**Mojang mappings**（透過 Paperweight userdev）
+目標 MC 版本：**1.21.11** 與 **26.2**（兩版皆編譯驗證；範本預設 26.2，差異以 `// @1.21.11:` 標註）
+目標命名：**Mojang 官方名稱**（Minecraft 26.1 起不再混淆；透過 Paperweight userdev）
 執行時目錄：**`.claude/skills/`**（Claude Code 專用）
 規範來源：**`Skills/`**（authoritative source，與 `.claude/skills/` 內容相同）
 
@@ -20,7 +20,9 @@ Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 已含全部 15 �
 ```
 MJP-Claude-Skills/
 ├── CLAUDE.md                            ← 本檔（Claude Code 入口）
-├── README.md / README.zh-TW.md
+├── README.md                            ← 英文 README（翻譯來源）
+├── README.{zh-TW,zh-CN,ja,ko,es,pt-BR,ru}.md ← 多語 README（修改 README.md 時同步更新）
+├── CHANGELOG.md
 ├── .github/workflows/
 │   ├── nextjs.yml                       ← main push：tsc + test + build + 部署 GitHub Pages
 │   └── ci.yml                           ← PR：tsc + test + build（不部署）
@@ -73,13 +75,13 @@ MJP-Claude-Skills/
 
 | 項目 | 內容 |
 |------|------|
-| MC 版本 | 1.21 – 1.21.3 |
-| Paper Dev Bundle | `1.21.1-R0.1-SNAPSHOT`（預設）、`1.21.3-R0.1-SNAPSHOT` |
+| MC 版本 | 1.21.11、26.2 |
+| Paper Dev Bundle | `26.2.build.132-stable`（預設）、`1.21.11-R0.1-SNAPSHOT`（26.3 目前為 beta） |
 | Paperweight | `io.papermc.paperweight.userdev` 2.0.0-beta.24+ |
-| Mapping | Mojang mappings（Paper 1.20.5+ runtime 原生支援） |
-| Java | 21（toolchain） |
+| 命名 | Mojang 官方名稱（26.1 起原版不再混淆；Paper runtime 直接使用） |
+| Java | 25（26.2）／21（1.21.11） |
 | 建置工具 | Gradle 8.11.2+（Groovy DSL；Paperweight 2.x 需求） |
-| Javadoc | https://jd.papermc.io/paper/1.21/ |
+| Javadoc | https://jd.papermc.io/paper/26.2/ 、 https://jd.papermc.io/paper/1.21.11/ |
 | 平台檔案 | `Skills/paper-nms/PLATFORM.md` |
 
 ---
@@ -102,7 +104,7 @@ MJP-Claude-Skills/
 | `nms-particle-effect` | nms-world | ClientboundLevelParticlesPacket 粒子效果 | ✅ |
 | `nms-attribute-modifier` | nms-entity | AttributeMap/AttributeModifier 動態屬性 | ✅ |
 | `nms-block-entity` | nms-world | 自定義 BlockEntity（NBT + Tick + 同步） | ✅ |
-| `nms-data-component` | nms-data | 1.21 DataComponentType 物品組件系統 | ✅ |
+| `nms-data-component` | nms-data | DataComponentType 物品組件系統 | ✅ |
 | `nms-chunk-access` | nms-world | LevelChunk 直接方塊/ChunkSection 存取 | ✅ |
 | `nms-boss-event` | nms-display | ServerBossEvent Boss Bar 每人獨立控制 | ✅ |
 
@@ -112,9 +114,9 @@ MJP-Claude-Skills/
 
 ### 環境與版本
 
-- **MC 版本範圍**：1.21 – 1.21.3
+- **MC 版本**：1.21.11、26.2
 - **建置工具**：Gradle（Groovy DSL）— 不用 Maven
-- **Java**：21（toolchain）
+- **Java**：25（26.2）／21（1.21.11）
 - **Paperweight**：預設所有 NMS skill 使用 Paperweight userdev
 - **描述檔**：預設 `paper-plugin.yml`（非 `plugin.yml`）以確保 NMS 載入順序
 - **註解**：所有存取 NMS 的類別加 `@SuppressWarnings("UnstableApiUsage")`
@@ -123,7 +125,7 @@ MJP-Claude-Skills/
 
 | 情境 | 執行緒 |
 |------|-------|
-| 實體建立、世界寫入、`moveTo()`、`addFreshEntity()` | **Main thread** |
+| 實體建立、世界寫入、`snapTo()`、`addFreshEntity()` | **Main thread** |
 | `ServerPlayer.connection.send(packet)` | Any thread（Netty 自動排入 write queue） |
 | 封包內容建構（依賴實體/世界狀態） | **Main thread** |
 | Netty `channelRead` / `write` 內部 | **Netty IO thread**（禁呼叫 Bukkit API） |
@@ -149,8 +151,9 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 
 ### 映射與混淆
 
-- **一律使用 Mojang mappings**（由 Paperweight 提供）
-- Paper 1.20.5+ runtime 原生使用 Mojang mappings，無需 remap
+- **一律使用 Mojang 官方名稱**（Paperweight dev bundle 提供）
+- Minecraft 26.1 起原版不再混淆；Paper runtime 直接使用官方名稱，無需 remap
+- Spigot 命名（混淆／reobf）的外掛在 26.x **無法執行**
 - CraftBukkit 套件在 Paper 1.20.5+ 固定為 `org.bukkit.craftbukkit`（**不帶** `v1_21_R1` 版本號）；需相容 Spigot / 舊版時用 `nms-reflection-bridge`
 - 詳見 `Skills/_shared/nms-obfuscation.md`
 
@@ -163,11 +166,11 @@ plugins {
 }
 
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 ```
 
@@ -271,9 +274,9 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 2. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 
-3. **MC 版本範圍**：所有技能預設支援 1.21 – 1.21.3；若需擴展版本，更新 `Skills/paper-nms/PLATFORM.md` 的對照表。
+3. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
 
-4. **Mojang mappings 強制**：不產生 Spigot/CraftBukkit 混淆映射的代碼。
+4. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
 
 5. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
 

@@ -15,9 +15,9 @@ description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與
 
 ## NMS 版本需求 / NMS Version Requirements
 
-- Paper 1.21 – 1.21.3
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（已由 Paper 1.20.5+ 原生支援）
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
 
 ## 觸發條件 / Triggers
 
@@ -45,7 +45,7 @@ description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與
 
 ```groovy
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 ```
 
@@ -56,13 +56,16 @@ dependencies {
 ```java
 package com.example.npc;
 
+import com.google.common.collect.ImmutableMultimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.NameAndId;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.entity.Player;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import net.minecraft.server.level.ServerPlayer;
+import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
@@ -85,13 +88,13 @@ public final class ProfileBuilder {
      *
      * @param name      顯示名稱（建議 ≤16 字元）
      * @param textureValue   Base64 編碼的 texture JSON
-     * @param textureSignature Mojang 簽名（可為 null，但 1.21 online 模式需要）
+     * @param textureSignature Mojang 簽名（可為 null，但 online 模式需要）
      */
     public static GameProfile withSkin(String name, String textureValue, String textureSignature) {
-        GameProfile profile = new GameProfile(UUID.randomUUID(), name);
-        profile.getProperties().put("textures",
-            new Property("textures", textureValue, textureSignature));
-        return profile;
+        // authlib 7+：GameProfile 是 record、PropertyMap 不可變，properties 需在建構時傳入
+        PropertyMap properties = new PropertyMap(ImmutableMultimap.of(
+            "textures", new Property("textures", textureValue, textureSignature)));
+        return new GameProfile(UUID.randomUUID(), name, properties);
     }
 
     /**
@@ -102,14 +105,13 @@ public final class ProfileBuilder {
     }
 
     /**
-     * 從伺服器 user cache 查詢已知玩家的 Profile（含 skin）。
-     * 只對曾加入過此伺服器的玩家有效。
+     * 從伺服器 user cache（usercache.json）查詢已知玩家的 UUID + 名稱，不發出網路請求。
+     * 只對曾加入過此伺服器的玩家有效；回傳的 Profile 不含 skin，需要 skin 時用 SkinFetcher。
      */
     public static GameProfile fromCache(String playerName) {
         var minecraftServer = ((CraftServer) Bukkit.getServer()).getServer();
-        var profileResult = minecraftServer.getProfileCache()
-            .get(playerName);
-        return profileResult.map(com.mojang.authlib.GameProfile.class::cast).orElse(null);
+        NameAndId cached = minecraftServer.services().nameToIdCache().getIfCached(playerName);
+        return cached != null ? cached.toUncompletedGameProfile() : null;
     }
 }
 ```
@@ -141,17 +143,11 @@ public final class SkinFetcher {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 var minecraftServer = ((CraftServer) Bukkit.getServer()).getServer();
-                var sessionService = minecraftServer.getSessionService();
-
-                // Step 1: 透過 profileCache 取得 UUID
-                var profileOpt = minecraftServer.getProfileCache().get(playerName);
-                if (profileOpt.isEmpty()) return null;
-
-                GameProfile profile = profileOpt.get();
-
-                // Step 2: 填充 texture 屬性
-                return sessionService.fetchProfile(profile.getId(), true)
-                    .profile();
+                // ProfileResolver：名稱 → UUID（user cache / Mojang API）→ session server 取得含 texture 的 Profile
+                // 會發出阻塞的網路請求，因此只能在非同步執行緒呼叫
+                return minecraftServer.services().profileResolver()
+                    .fetchByName(playerName)
+                    .orElse(null);
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to fetch skin for " + playerName + ": " + e.getMessage());
                 return null;
@@ -161,14 +157,14 @@ public final class SkinFetcher {
 
     /** 取得 GameProfile 的 texture value（Base64 JSON）。 */
     public static String getTextureValue(GameProfile profile) {
-        var textures = profile.getProperties().get("textures");
+        var textures = profile.properties().get("textures");
         if (textures.isEmpty()) return null;
         return textures.iterator().next().value();
     }
 
     /** 取得 GameProfile 的 texture signature。 */
     public static String getTextureSignature(GameProfile profile) {
-        var textures = profile.getProperties().get("textures");
+        var textures = profile.properties().get("textures");
         if (textures.isEmpty()) return null;
         return textures.iterator().next().signature();
     }
@@ -198,7 +194,7 @@ public final class SkullBuilder {
      */
     public static org.bukkit.inventory.ItemStack withProfile(GameProfile profile) {
         ItemStack nms = new ItemStack(Items.PLAYER_HEAD);
-        nms.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        nms.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return CraftItemStack.asBukkitCopy(nms);
     }
 }

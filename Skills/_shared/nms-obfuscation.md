@@ -1,6 +1,7 @@
 # NMS 混淆與 Mojang 映射 / NMS Obfuscation & Mojang Mappings
 
-Paper NMS 開發的映射系統說明。本專案**一律使用 Mojang mappings**（透過 Paperweight userdev），不支援 Spigot/CraftBukkit 混淆映射。
+Paper NMS 開發的命名系統說明。**Minecraft 26.1 起 Mojang 不再混淆 Java 版**，伺服器 jar 直接使用官方名稱；
+本專案一律使用 Mojang 官方名稱（透過 Paperweight userdev），不支援 Spigot/混淆映射。
 
 ---
 
@@ -9,10 +10,10 @@ Paper NMS 開發的映射系統說明。本專案**一律使用 Mojang mappings*
 | 映射 | 範例類名 | 範例方法名 | 用途 |
 |------|----------|-----------|------|
 | **Mojang（官方）** | `net.minecraft.server.level.ServerPlayer` | `connection.send(packet)` | 開發時可讀 |
-| **Spigot（歷史）** | `net.minecraft.server.v1_21_R1.EntityPlayer` | `b.a(packet)` | 已淘汰，不可用 |
+| **Spigot（歷史）** | `net.minecraft.server.v1_21_R1.EntityPlayer` | `b.a(packet)` | 已淘汰；26.x 執行不了 Spigot 命名的外掛 |
 | **Intermediary（Fabric）** | `class_3222` | `method_14369` | 僅 Fabric 使用 |
 
-Paper 1.20.5+ 伺服器 runtime **已原生使用 Mojang mappings**，因此 Paperweight 產出的 plugin **無需 remap**，部署後直接可用。
+Paper 1.20.5+ 伺服器 runtime 即使用 Mojang 名稱；26.1 起原版本身已不混淆。Paperweight 產出的 plugin **無需 remap**，部署後直接可用。
 
 ---
 
@@ -21,7 +22,7 @@ Paper 1.20.5+ 伺服器 runtime **已原生使用 Mojang mappings**，因此 Pap
 `io.papermc.paperweight.userdev` Gradle plugin 提供：
 
 1. **`paperweight.paperDevBundle(version)`** — 以 Mojang-mapped 形式暴露 Paper + NMS API
-2. **`reobfJar` task**（**非必要**）— 只有發布至舊版 Spigot runtime 才需要；Paper 1.20.5+ 可直接使用 `assemble`/`shadowJar` 產物
+2. **不需要 `reobfJar`** — 26.x 沒有混淆可還原；直接使用 `assemble` / `shadowJar` 產物
 3. **自動下載** Paper Dev Bundle（含完整 NMS sources）
 
 ```gradle
@@ -31,11 +32,11 @@ plugins {
 }
 
 dependencies {
-    paperweight.paperDevBundle('1.21.1-R0.1-SNAPSHOT')
+    paperweight.paperDevBundle('26.2.build.132-stable')
 }
 
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(25)
 }
 ```
 
@@ -107,7 +108,7 @@ net.minecraft.world.item.ItemStack nmsItem =
 
 1. **Paperweight changelog** — https://github.com/PaperMC/Paper/blob/master/build-data/paper.yml
 2. **NMS diff** — 用 IDE 比對 `~/.gradle/caches/paperweight/` 下不同版本的 sources
-3. **Mojang obfuscation maps** — https://launcher.mojang.com/v1/objects/.../server_mappings.txt
+3. **Mojang obfuscation maps** — 僅 1.21.11 以前需要；26.1 起原版不混淆、不再提供 mappings
 4. **Paper MiscChangeLog** — https://papermc.io/downloads/paper
 
 ---

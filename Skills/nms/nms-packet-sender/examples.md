@@ -89,7 +89,7 @@ public static void sendLater(Plugin plugin, Player player, Packet<?> packet, lon
 
 **使用端：20 tick（1 秒）後發送一個自定義 channel 封包:**
 ```java
-ResourceLocation channel = ResourceLocation.fromNamespaceAndPath("myplugin", "sync_data");
+Identifier channel = Identifier.fromNamespaceAndPath("myplugin", "sync_data");
 byte[] payload = serializer.encode(data);
 Packet<?> packet = PacketBuilder.customPayload(channel, payload);
 

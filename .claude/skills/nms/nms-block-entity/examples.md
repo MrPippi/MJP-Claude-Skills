@@ -60,7 +60,7 @@ has_ticker: true
 @Nullable
 public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
         Level level, BlockState state, BlockEntityType<T> type) {
-    if (level.isClientSide) return null;
+    if (level.isClientSide()) return null;
     return createTickerHelper(type, MY_BLOCK_ENTITY_TYPE, new CustomBlockEntityTicker());
 }
 ```

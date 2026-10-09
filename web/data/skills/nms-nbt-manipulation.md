@@ -2,7 +2,7 @@
 id: nms-nbt-manipulation
 title: NMS NBT Manipulation
 titleZh: NMS NBT 操作
-description: Read and write NBT data on items, entities, and block entities via CompoundTag on Paper 1.21.x with Mojang mappings.
+description: Read and write NBT data on items, entities, and block entities via CompoundTag on Paper 26.x with official Mojang names.
 descriptionZh: 直接操作 CompoundTag 讀寫物品、實體、方塊實體的 NBT 資料（Paper NMS + Mojang mappings）。
 version: "1.0.0"
 status: active
@@ -34,10 +34,10 @@ featured: true
 
 ## 平台需求
 
-- Paper 1.21 – 1.21.3
+- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang mappings（Paper 1.20.5+ 原生支援）
-- Java 21
+- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Java 21（1.21.11）／25（26.2）
 
 ---
 

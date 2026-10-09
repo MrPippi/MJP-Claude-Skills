@@ -1,6 +1,6 @@
 # NMS 實體 & AI 速查表 / NMS Entity & AI Reference
 
-適用版本：Paper 1.21 – 1.21.3（Mojang mappings）
+適用版本：Paper 1.21.11 / 26.2（Mojang 官方命名；26.1 起原版不再混淆）。兩版寫法不同處以 `// @1.21.11:` 行尾標註或 `// @only <版本>` 區塊區分
 套件根：`net.minecraft.world.entity`
 
 > 自定義實體用法見 `Skills/nms/nms-custom-entity/SKILL.md`
@@ -245,23 +245,23 @@ public static AttributeSupplier.Builder createAttributes() {
 
 ## EntityType 常數速查
 
-`net.minecraft.world.entity.EntityType<?>` — 常用值：
+`net.minecraft.world.entity.EntityTypes`（26.x 起原版常數由 `EntityType` 移至 `EntityTypes`，型別仍為 `EntityType<?>`；**1.21.11 請改用 `EntityType.XXX`**）— 常用值：
 
 | 常數 | 實體 | 對應 Bukkit |
 |------|------|------------|
-| `EntityType.ZOMBIE` | 殭屍 | `EntityType.ZOMBIE` |
-| `EntityType.SKELETON` | 骷髏 | `EntityType.SKELETON` |
-| `EntityType.CREEPER` | 苦力怕 | `EntityType.CREEPER` |
-| `EntityType.ENDERMAN` | 末影人 | `EntityType.ENDERMAN` |
-| `EntityType.SPIDER` | 蜘蛛 | `EntityType.SPIDER` |
-| `EntityType.IRON_GOLEM` | 鐵傀儡 | `EntityType.IRON_GOLEM` |
-| `EntityType.VILLAGER` | 村民 | `EntityType.VILLAGER` |
-| `EntityType.WITHER` | 凋靈 | `EntityType.WITHER` |
-| `EntityType.ARMOR_STAND` | 盔甲架 | `EntityType.ARMOR_STAND` |
-| `EntityType.ITEM` | 掉落物 | `EntityType.DROPPED_ITEM` |
-| `EntityType.EXPERIENCE_ORB` | 經驗球 | `EntityType.EXPERIENCE_ORB` |
-| `EntityType.FIREBALL` | 火球 | `EntityType.FIREBALL` |
-| `EntityType.ARROW` | 箭 | `EntityType.ARROW` |
+| `EntityTypes.ZOMBIE` | 殭屍 | `EntityType.ZOMBIE` |
+| `EntityTypes.SKELETON` | 骷髏 | `EntityType.SKELETON` |
+| `EntityTypes.CREEPER` | 苦力怕 | `EntityType.CREEPER` |
+| `EntityTypes.ENDERMAN` | 末影人 | `EntityType.ENDERMAN` |
+| `EntityTypes.SPIDER` | 蜘蛛 | `EntityType.SPIDER` |
+| `EntityTypes.IRON_GOLEM` | 鐵傀儡 | `EntityType.IRON_GOLEM` |
+| `EntityTypes.VILLAGER` | 村民 | `EntityType.VILLAGER` |
+| `EntityTypes.WITHER` | 凋靈 | `EntityType.WITHER` |
+| `EntityTypes.ARMOR_STAND` | 盔甲架 | `EntityType.ARMOR_STAND` |
+| `EntityTypes.ITEM` | 掉落物 | `EntityType.ITEM` |
+| `EntityTypes.EXPERIENCE_ORB` | 經驗球 | `EntityType.EXPERIENCE_ORB` |
+| `EntityTypes.FIREBALL` | 火球 | `EntityType.FIREBALL` |
+| `EntityTypes.ARROW` | 箭 | `EntityType.ARROW` |
 
 ---
 
@@ -289,7 +289,7 @@ level.addFreshEntity(mob, CreatureSpawnEvent.SpawnReason.CUSTOM);
 ```java
 // 生成
 ServerLevel level = ((CraftWorld) world).getHandle();
-mob.moveTo(x, y, z, yaw, pitch);
+mob.snapTo(x, y, z, yaw, pitch); // 26.x：Entity.moveTo() 改名為 snapTo()
 level.addFreshEntity(mob, CreatureSpawnEvent.SpawnReason.CUSTOM);
 
 // 標記持久化（不因 chunk 卸載消失）

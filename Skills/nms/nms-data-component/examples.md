@@ -86,7 +86,7 @@ ItemComponentUtil.getEnchantments(sword).ifPresent(enchantments -> {
     enchantments.entrySet().forEach(entry -> {
         // entry.getKey() 是 Holder<Enchantment>，.value() 取得 Enchantment
         // entry.getIntValue() 是附魔等級
-        player.sendMessage("§f- " + entry.getKey().value().getDescriptionId()
+        player.sendMessage("§f- " + entry.getKey().value().description().getString()
             + " §e" + entry.getIntValue());
     });
 });

@@ -13,7 +13,7 @@ const zhTW: Translations = {
     menuAriaLabel: '選單',
   },
   footer: {
-    description: 'Paper 1.21.x NMS 底層開發的 Claude Code Agent Skills 函式庫，基於 Paperweight + Mojang mappings。',
+    description: 'Paper 1.21.11 / 26.x NMS 底層開發的 Claude Code Agent Skills 函式庫，基於 Paperweight + Mojang mappings。',
     nav: '導覽',
     resources: '資源',
     home: '首頁',
@@ -28,7 +28,7 @@ const zhTW: Translations = {
   home: {
     openSource: 'Open Source · Claude Code Agent Skills',
     heroDescription:
-      'Paper 1.21.x NMS 底層開發的 Claude Code Agent Skills 函式庫——涵蓋封包發送、Netty 攔截、自定義實體 AI、反射式橋接與多版本 Adapter 模式。',
+      'Paper 1.21.11 / 26.x NMS 底層開發的 Claude Code Agent Skills 函式庫——涵蓋封包發送、Netty 攔截、自定義實體 AI、反射式橋接與多版本 Adapter 模式。',
     browseAllSkills: '瀏覽所有 Skills',
     statsSkills: '個 Skills',
     statsPublished: '個已發布',
@@ -141,7 +141,7 @@ const zhTW: Translations = {
       },
       {
         q: 'Skills 支援哪些 Minecraft 版本？',
-        a: '所有 Skills 預設以 Paper 1.21.x 為目標，透過 Paperweight userdev 與 Mojang mappings 存取 NMS。大多數非 NMS 工具類 Skill 同樣相容 Paper 1.20+。',
+        a: '所有 Skills 預設以 Paper 1.21.11 / 26.x 為目標，透過 Paperweight userdev 與 Mojang mappings 存取 NMS。大多數非 NMS 工具類 Skill 同樣相容 Paper 1.20+。',
       },
       {
         q: 'Skills 會自動修改我的檔案嗎？',
@@ -189,7 +189,7 @@ const en: Translations = {
   },
   footer: {
     description:
-      'Claude Code Agent Skills library for Paper 1.21.x NMS development, powered by Paperweight + Mojang mappings.',
+      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x NMS development, powered by Paperweight + Mojang mappings.',
     nav: 'Navigation',
     resources: 'Resources',
     home: 'Home',
@@ -204,7 +204,7 @@ const en: Translations = {
   home: {
     openSource: 'Open Source · Claude Code Agent Skills',
     heroDescription:
-      'Claude Code Agent Skills library for Paper 1.21.x NMS development — covering packet sending, Netty interception, custom entity AI, reflection bridging, and multi-version adapters.',
+      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x NMS development — covering packet sending, Netty interception, custom entity AI, reflection bridging, and multi-version adapters.',
     browseAllSkills: 'Browse All Skills',
     statsSkills: 'Skills',
     statsPublished: 'Published',
@@ -318,7 +318,7 @@ const en: Translations = {
       },
       {
         q: 'Which Minecraft versions are supported?',
-        a: 'All Skills target Paper 1.21.x with NMS access via Paperweight userdev and Mojang mappings. Most non-NMS utility Skills are also compatible with Paper 1.20+.',
+        a: 'All Skills target Paper 1.21.11 / 26.x with NMS access via Paperweight userdev and Mojang mappings. Most non-NMS utility Skills are also compatible with Paper 1.20+.',
       },
       {
         q: 'Will Skills modify my files automatically?',
