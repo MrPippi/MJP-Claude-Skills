@@ -275,6 +275,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | Framework | Next.js 16.4.0（App Router） |
 | UI | React 19.3.0, TypeScript 6.0（strict） |
 | Styling | Tailwind CSS v4（`app/globals.css` 的 `@theme static` token；淺色 Claude 象牙白 + 陶土橘、深色暖炭；`data-theme` 手動切換） |
+| Fonts | 標題 Source Serif 4、內文 Inter + 系統中文字、程式碼 JetBrains Mono、像素點綴 **俐方體 11 號**（Cubic 11，自訂子集 `shared/fonts/`） |
 | Markdown | unified：remark-parse → remark-gfm → remark-rehype → rehype-sanitize → rehype-slug → Shiki（建置時雙主題高亮） |
 | Search | Fuse.js v7.5.0（Skills）+ 文件頁標題比對 |
 | Test | `node:test` + tsx |
@@ -298,6 +299,13 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 - `web/public/art/`：網站實際使用的 13 個物品圖示與 5 張方塊貼圖（已提交，約 22 KB），由 `python web/scripts/mc-art.py` 從資源包擷取（需 Pillow；箱子正面、Creeper／Steve 臉從實體貼圖集裁切，橡樹葉以平原葉色上色）
 - `web/config/mc-assets.ts`：`ITEM_ARTWORK`（圖示鍵 → PNG，缺的退回 `shared/ui/pixel-icons.ts` SVG）、`BLOCK_TEXTURES`（首頁地景）、`HERO_ARTWORK`（選用的場景截圖）；`tests/mc-assets.test.ts` 檢查檔案存在
 - PNG 圖示只用整數倍尺寸（16／32／48／96px，`h-4`／`h-8`／`h-12`／`h-24`），否則像素粗細不均；外框用 `.mc-slot`（物品欄格子凹陷效果）
+
+### 像素字型（俐方體 11 號）
+
+- 用於 `font-pixel`、`.eyebrow`、徽章、數字、程式碼語言標籤；內文與程式碼不用
+- 字型格線為每 em 12 格：只用 **12／24／36／48px**（`text-[12px]`、`text-[24px]`…），其他尺寸會模糊
+- `shared/fonts/cubic-11-subset.woff2` 只含介面用字（約 630 字、28 KB），由 `python web/scripts/pixel-font.py <Cubic_11.ttf> <OFL.txt>` 產生（需 fonttools、brotli；原字型自 https://github.com/ACh-K/Cubic-11 下載）
+- 修改 `shared/i18n/locales/`、技能 frontmatter 或文件標題後，若 `tests/pixel-font.test.ts` 失敗就重跑腳本；子集是衍生作品，`Cubic-11-OFL.txt` 必須一併保留
 
 ### 關鍵路徑
 

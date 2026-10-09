@@ -30,7 +30,7 @@ export function GettingStarted() {
         <ol className="!list-none !pl-0 space-y-8">
           {g.steps.map((step) => (
             <li key={step.number} className="relative pl-14">
-              <span className="absolute left-0 top-0 grid h-10 w-10 place-items-center rounded-[3px] bg-accent font-pixel text-sm text-accent-ink shadow-[0_3px_0_var(--color-accent-deep)]">
+              <span className="absolute left-0 top-0 grid h-10 w-10 place-items-center rounded-[3px] bg-accent font-pixel text-[24px] text-accent-ink shadow-[0_3px_0_var(--color-accent-deep)]">
                 {step.number}
               </span>
               <h3 id={`step-${step.number}`} className="!mt-0">{step.title}</h3>
@@ -76,7 +76,7 @@ export function GettingStarted() {
             <details key={faq.q} className="group rounded-md border border-line bg-surface px-4 py-3 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium text-fg">
                 {faq.q}
-                <span className="font-pixel text-xs text-accent transition-transform group-open:rotate-45">+</span>
+                <span className="font-pixel text-[12px] text-accent transition-transform group-open:rotate-45">+</span>
               </summary>
               <p className="mt-2 text-sm">{faq.a}</p>
             </details>

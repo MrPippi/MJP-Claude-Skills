@@ -54,7 +54,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
         <HeroBackdrop />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-10 pt-16 sm:px-6 sm:pb-14 sm:pt-24 lg:grid-cols-[1.1fr_1fr]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-[3px] border border-line-strong bg-bg/70 px-2 py-1 font-pixel text-[10px] uppercase text-fg-2">
+            <p className="inline-flex items-center gap-2 rounded-[3px] border border-line-strong bg-bg/70 px-2 py-1 font-pixel text-[12px] uppercase text-fg-2">
               <span className="h-1.5 w-1.5 bg-api" />
               {skills.length} skills · {MC_VERSIONS.join(' · ')}
             </p>
@@ -102,7 +102,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
                   </span>
                   <div>
                     <h3 className="font-serif text-2xl font-semibold text-fg">{p.label}</h3>
-                    <p className={`font-pixel text-[11px] ${isNms ? 'text-nms' : 'text-api'}`}>{format(h.platformSkills, { count: countFor(p.id) })}</p>
+                    <p className={`font-pixel text-[12px] ${isNms ? 'text-nms' : 'text-api'}`}>{format(h.platformSkills, { count: countFor(p.id) })}</p>
                   </div>
                 </div>
                 <p className="mt-4 text-sm leading-relaxed text-fg-2">{isNms ? h.platformNmsDesc : h.platformApiDesc}</p>
@@ -131,7 +131,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
                   <PixelIcon name={STEP_ICONS[i] ?? 'grass'} className="h-8 w-8" />
                 </span>
                 <div>
-                  <p className="font-pixel text-[11px] text-accent">0{i + 1}</p>
+                  <p className="font-pixel text-[12px] text-accent">0{i + 1}</p>
                   <h3 className="mt-1 font-serif text-xl font-semibold text-fg">{step.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-fg-2">{step.body}</p>
                 </div>

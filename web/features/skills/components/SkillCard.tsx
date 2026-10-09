@@ -29,7 +29,7 @@ export function SkillCard({ skill }: { skill: SkillMeta }) {
       <div className="mt-4 flex items-center gap-2 text-xs text-fg-3">
         <PlatformBadge platform={getPlatform(skill)} />
         <span className="truncate">{category}</span>
-        <span className="ml-auto font-pixel text-[10px]">v{String(skill.version)}</span>
+        <span className="ml-auto font-pixel text-[12px]">v{String(skill.version)}</span>
       </div>
     </Link>
   );
