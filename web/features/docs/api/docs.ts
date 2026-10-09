@@ -3,12 +3,9 @@ import path from 'path';
 import { renderMarkdown, type Heading } from '@/shared/markdown/render';
 import { GITHUB_REPO_URL } from '@/config/site';
 import { withBasePath } from '@/config/routes';
-import { DOC_SOURCES, docHref, type DocSection, type DocSource } from '../registry';
+import { DOC_SOURCES, docHref, type BilingualText, type DocLink, type DocSection, type DocSource } from '../registry';
 
-export interface BilingualText {
-  en: string;
-  zh: string;
-}
+export type { BilingualText };
 
 export interface DocPage extends DocSource {
   title: BilingualText;
@@ -90,9 +87,15 @@ export function getAllDocPages(): Promise<DocPage[]> {
 }
 
 /** Titles only (no rendering) — cheap enough for the search index and sidebar. */
-export function getDocTitles(): Array<DocSource & { title: BilingualText }> {
+export function getDocLinks(): DocLink[] {
   return DOC_SOURCES.map((source) => {
     const h1 = readSource(source).match(/^# (.+)$/m);
-    return { ...source, title: splitBilingualTitle(h1 ? h1[1].trim() : source.slug) };
+    return {
+      section: source.section,
+      slug: source.slug,
+      href: docHref(source.section, source.slug),
+      icon: source.icon,
+      title: splitBilingualTitle(h1 ? h1[1].trim() : source.slug),
+    };
   });
 }

@@ -1,45 +1,24 @@
-import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { getAllSkills, getSkillBySlug, SkillDetail } from '@/features/skills';
+import { Redirect } from '@/shared/ui/Redirect';
+import { getAllSkills } from '@/features/skills';
+import { ROUTES } from '@/config/routes';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateStaticParams() {
-  const skills = getAllSkills();
-  return skills.map((skill) => ({ slug: skill.slug }));
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return getAllSkills().map((skill) => ({ slug: skill.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const skill = await getSkillBySlug(slug);
-
-  if (!skill) {
-    return { title: 'Skill Not Found' };
-  }
-
-  return {
-    title: skill.titleZh,
-    description: skill.descriptionZh,
-    openGraph: {
-      title: `${skill.titleZh} | MJP-Claude-Skills`,
-      description: skill.descriptionZh,
-    },
-  };
+  return { robots: { index: false }, alternates: { canonical: ROUTES.skill(slug) } };
 }
 
-export default async function SkillPage({ params }: Props) {
+export default async function LegacySkillPage({ params }: Props) {
   const { slug } = await params;
-  const skill = await getSkillBySlug(slug);
-
-  if (!skill) {
-    notFound();
-  }
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <SkillDetail skill={skill} />
-    </div>
-  );
+  return <Redirect to={ROUTES.skill(slug)} />;
 }

@@ -18,9 +18,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLangState] = useState<Language>('zh-TW');
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (stored === 'en' || stored === 'zh-TW') {
-      setLangState(stored);
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'en' || stored === 'zh-TW') setLangState(stored);
+    } catch {
+      // Storage blocked (private mode, sandboxed preview): keep the default language.
     }
   }, []);
 
@@ -30,7 +32,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLang = useCallback((newLang: Language) => {
     setLangState(newLang);
-    localStorage.setItem(STORAGE_KEY, newLang);
+    try {
+      localStorage.setItem(STORAGE_KEY, newLang);
+    } catch {
+      // Preference just won't persist.
+    }
   }, []);
 
   return (

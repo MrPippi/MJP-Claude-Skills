@@ -260,6 +260,17 @@ const creeper: PixelIconData = {
   rows: ['GgGGGgGG', 'GGGgGGGg', 'GKKGgKKG', 'GKKGGKKG', 'gGGKKGGG', 'GGKKKKgG', 'GgKKKKGG', 'GGKGGKGg'],
 };
 
+/** Monochrome UI glyphs drawn in currentColor. */
+const sun: PixelIconData = {
+  palette: { X: 'currentColor' },
+  rows: ['...XX...', '.X....X.', '..XXXX..', 'X.XXXX.X', 'X.XXXX.X', '..XXXX..', '.X....X.', '...XX...'],
+};
+
+const moon: PixelIconData = {
+  palette: { X: 'currentColor' },
+  rows: ['..XXX...', '.XXX....', 'XXX.....', 'XXX.....', 'XXX.....', 'XXX....X', '.XXXXXX.', '..XXXX..'],
+};
+
 export const PIXEL_ICONS = {
   grass,
   pickaxe,
@@ -274,6 +285,8 @@ export const PIXEL_ICONS = {
   head,
   sign,
   creeper,
+  sun,
+  moon,
 } as const satisfies Record<string, PixelIconData>;
 
 export type PixelIconName = keyof typeof PIXEL_ICONS;

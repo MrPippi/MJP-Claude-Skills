@@ -2,6 +2,20 @@ import type { PixelIconName } from '@/shared/ui/pixel-icons';
 
 export type DocSection = 'platforms' | 'concepts' | 'reference';
 
+export interface BilingualText {
+  en: string;
+  zh: string;
+}
+
+/** Serializable docs entry passed from server layouts to client navigation. */
+export interface DocLink {
+  section: DocSection;
+  slug: string;
+  href: string;
+  title: BilingualText;
+  icon: PixelIconName;
+}
+
 export interface DocSource {
   section: DocSection;
   slug: string;

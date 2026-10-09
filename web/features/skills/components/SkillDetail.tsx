@@ -1,214 +1,78 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import type { SkillFull } from '@/shared/types/skill';
 import { SkillBadge } from './SkillBadge';
-import { formatDate } from '@/shared/lib/utils';
+import { PlatformBadge } from './PlatformBadge';
+import { categoryIconFor, getPlatform, PLATFORMS } from '../lib/platform';
+import { translateHeadingsHtml, translateHeadingText } from '../lib/heading-translations';
+import { DocArticle } from '@/features/docs/components/DocArticle';
+import { docHref } from '@/features/docs/registry';
+import { ROUTES } from '@/config/routes';
 import { GITHUB_REPO_URL } from '@/config/site';
-import { CategoryIcon } from '@/features/categories';
+import { formatDate } from '@/shared/lib/utils';
 import { useLanguage } from '@/shared/i18n';
 
-const HEADING_TRANSLATIONS: Record<string, string> = {
-  '目的': 'Purpose',
-  '平台需求': 'Platform Requirements',
-  '產生的代碼': 'Generated Code',
-  '觸發條件': 'Triggers',
-  '輸入參數': 'Inputs',
-  '輸出產物': 'Outputs',
-  'NMS 版本需求': 'NMS Version Requirements',
-  'Paperweight 建置設定': 'Build Setup',
-  '代碼範本': 'Code Template',
-  '推薦目錄結構': 'Recommended Directory Structure',
-  '執行緒安全注意事項': 'Thread Safety',
-  '失敗回退': 'Fallback',
-  '技能名稱': 'Skill Name',
-  '使用情境': 'Use Cases',
-  '注意事項': 'Notes',
-  '範例': 'Examples',
-  '依賴宣告': 'Dependency Declaration',
-};
-
-function translateHeadings(html: string, lang: string): string {
-  if (lang !== 'en') return html;
-  return html.replace(/<(h[23])>([^<]+)<\/(h[23])>/g, (_match, openTag, text, closeTag) => {
-    const translated = HEADING_TRANSLATIONS[text.trim()] ?? text;
-    return `<${openTag}>${translated}</${closeTag}>`;
-  });
-}
-
-interface Heading {
-  id: string;
-  text: string;
-  level: number;
-}
-
-interface SkillDetailProps {
-  skill: SkillFull;
-}
-
-const CHEVRON = (
-  <svg className="h-3.5 w-3.5 text-[var(--color-text-muted)] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-  </svg>
-);
-
-export function SkillDetail({ skill }: SkillDetailProps) {
+export function SkillDetail({ skill }: { skill: SkillFull }) {
   const { t, lang } = useLanguage();
-  const githubUrl = skill.githubPath
-    ? `${GITHUB_REPO_URL}/blob/main/${skill.githubPath}`
-    : GITHUB_REPO_URL;
+  const isEn = lang === 'en';
+  const platform = getPlatform(skill);
+  const platformInfo = PLATFORMS.find((p) => p.id === platform);
+  const html = useMemo(() => (isEn ? translateHeadingsHtml(skill.contentHtml) : skill.contentHtml), [isEn, skill.contentHtml]);
+  const githubUrl = skill.githubPath ? `${GITHUB_REPO_URL}/blob/main/${skill.githubPath}` : GITHUB_REPO_URL;
 
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [headings, setHeadings] = useState<Heading[]>([]);
-  const [activeId, setActiveId] = useState('');
-
-  useEffect(() => {
-    if (!contentRef.current) return;
-    const els = contentRef.current.querySelectorAll('h2, h3');
-    const parsed: Heading[] = Array.from(els).map((el) => {
-      if (!el.id) {
-        el.id = (el.textContent || '')
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^\w-]/g, '');
-      }
-      return {
-        id: el.id,
-        text: el.textContent || '',
-        level: el.tagName === 'H2' ? 2 : 3,
-      };
-    }).filter((h) => h.id);
-    setHeadings(parsed);
-  }, [skill.contentHtml, lang]);
-
-  useEffect(() => {
-    if (headings.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.find((e) => e.isIntersecting);
-        if (visible) setActiveId(visible.target.id);
-      },
-      { rootMargin: '-20% 0px -70% 0px' }
-    );
-    headings.forEach(({ id }) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, [headings]);
-
-  const displayHtml = translateHeadings(skill.contentHtml, lang);
-
-  return (
-    <div className="flex gap-12">
-      {/* Main content */}
-      <div className="flex-1 min-w-0">
-        {/* Breadcrumb with chevrons */}
-        <nav className="mb-6 flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
-          <Link href="/" className="hover:text-[var(--color-accent)] transition-colors focus-ring rounded">
-            {t.skillDetail.home}
-          </Link>
-          {CHEVRON}
-          <Link href="/skills" className="hover:text-[var(--color-accent)] transition-colors focus-ring rounded">
-            Skills
-          </Link>
-          {CHEVRON}
-          <span className="text-[var(--color-text-secondary)] truncate max-w-[200px]">
-            {lang === 'en' ? skill.title : skill.titleZh}
+  const meta = (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2 text-xs text-fg-3">
+        <PlatformBadge platform={platform} />
+        <SkillBadge status={skill.status} />
+        <span className="rounded-[3px] border border-line px-1.5 py-0.5 font-pixel text-[10px]">v{String(skill.version)}</span>
+        <code className="font-mono text-fg-3">{skill.id}</code>
+        {skill.updatedAt && (
+          <span className="ml-auto">
+            {t.skillDetail.updatedAt} {formatDate(String(skill.updatedAt), isEn ? 'en-US' : 'zh-TW')}
           </span>
-        </nav>
-
-        {/* Hero area */}
-        <div className="mb-10 pb-8 border-b border-[var(--color-border)]">
-          <div className="mb-4 flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_25%,transparent)] bg-[color-mix(in_srgb,var(--color-accent)_8%,transparent)] px-2.5 py-1 text-xs text-[var(--color-accent)]">
-              <CategoryIcon category={skill.category} className="h-3.5 w-3.5" />
-              {lang === 'en' ? skill.categoryLabelEn : skill.categoryLabel}
-            </span>
-            <span className="rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-muted)] font-mono">
-              v{skill.version}
-            </span>
-            <SkillBadge status={skill.status} />
-          </div>
-
-          <h1 className="text-4xl font-extrabold text-[var(--color-text)] leading-tight">
-            {lang === 'en' ? skill.title : skill.titleZh}
-          </h1>
-          <p className="mt-1.5 text-base text-[var(--color-text-muted)] font-mono">
-            {lang === 'en' ? skill.titleZh : skill.title}
-          </p>
-
-          <p className="mt-4 text-base leading-relaxed text-[var(--color-text-secondary)]">
-            {lang === 'en' ? skill.description : skill.descriptionZh}
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <div className="flex flex-wrap gap-1.5">
-              {skill.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-text-secondary)] font-mono"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <div className="ml-auto flex flex-wrap items-center gap-4 text-xs text-[var(--color-text-muted)]">
-              {skill.updatedAt && (
-                <span>{t.skillDetail.updatedAt}{formatDate(skill.updatedAt, lang === 'en' ? 'en-US' : 'zh-TW')}</span>
-              )}
-              <a
-                href={githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-3 py-1.5 text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-text-muted)] hover:text-[var(--color-text)] focus-ring"
-              >
-                <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12c0-6.63-5.37-12-12-12" />
-                </svg>
-                GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-
-        <div
-          ref={contentRef}
-          className="skill-prose"
-          dangerouslySetInnerHTML={{ __html: displayHtml }}
-        />
+        )}
       </div>
 
-      {/* Sticky TOC sidebar (desktop only) */}
-      {headings.length > 0 && (
-        <aside className="hidden lg:block w-48 shrink-0">
-          <div className="sticky top-24">
-            <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">
-              {t.skillDetail.toc}
-            </p>
-            <ul className="space-y-1">
-              {headings.map((h) => (
-                <li key={h.id}>
-                  <a
-                    href={`#${h.id}`}
-                    className={`block text-xs leading-relaxed transition-colors rounded focus-ring ${
-                      h.level === 3 ? 'pl-3' : ''
-                    } ${
-                      activeId === h.id
-                        ? 'text-[var(--color-accent)]'
-                        : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]'
-                    }`}
-                  >
-                    {h.text}
-                  </a>
-                </li>
-              ))}
-            </ul>
+      {skill.triggerKeywords.length > 0 && (
+        <div className="rounded-md border border-line bg-surface p-3">
+          <p className="eyebrow mb-2 text-fg-3">{t.skillDetail.triggers}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {skill.triggerKeywords.map((kw) => (
+              <code key={kw} className="rounded-[3px] border border-line bg-bg px-1.5 py-0.5 font-mono text-xs text-fg-2">
+                {kw}
+              </code>
+            ))}
           </div>
-        </aside>
+        </div>
       )}
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        {platformInfo && (
+          <Link href={docHref('platforms', platformInfo.docSlug)} className="text-accent hover:underline">
+            {t.skillDetail.platformDoc} →
+          </Link>
+        )}
+        <Link href={ROUTES.skillsFiltered({ category: skill.category })} className="text-fg-2 hover:text-accent">
+          {isEn ? skill.categoryLabelEn : skill.categoryLabel} →
+        </Link>
+      </div>
     </div>
+  );
+
+  return (
+    <DocArticle
+      eyebrow={`${platformInfo?.label ?? ''} · ${isEn ? skill.categoryLabelEn : skill.categoryLabel}`}
+      title={isEn ? skill.title : skill.titleZh}
+      icon={categoryIconFor(skill.category)}
+      description={isEn ? skill.description : skill.descriptionZh}
+      meta={meta}
+      html={html}
+      headings={skill.headings}
+      tocLabel={isEn ? translateHeadingText : undefined}
+      githubUrl={githubUrl}
+    />
   );
 }

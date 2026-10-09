@@ -1,4 +1,6 @@
 import { PIXEL_ICONS, toRects, type PixelIconName } from './pixel-icons';
+import { ITEM_ARTWORK } from '@/config/mc-assets';
+import { withBasePath } from '@/config/routes';
 
 interface PixelIconProps {
   name: PixelIconName;
@@ -12,11 +14,16 @@ const RECTS = Object.fromEntries(
 ) as Record<PixelIconName, ReturnType<typeof toRects>>;
 
 export function PixelIcon({ name, className, title }: PixelIconProps) {
+  const artwork = ITEM_ARTWORK[name];
+  if (artwork) {
+    // eslint-disable-next-line @next/next/no-img-element -- static export, tiny pixel art
+    return <img src={withBasePath(artwork)} alt={title ?? ''} className={`pixelated ${className ?? ''}`} loading="lazy" />;
+  }
+
   const icon = PIXEL_ICONS[name];
-  const size = icon.rows.length;
   return (
     <svg
-      viewBox={`0 0 ${icon.rows[0].length} ${size}`}
+      viewBox={`0 0 ${icon.rows[0].length} ${icon.rows.length}`}
       className={className}
       shapeRendering="crispEdges"
       role={title ? 'img' : undefined}
