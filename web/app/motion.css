@@ -1,0 +1,127 @@
+/*
+ * Motion. Every rule is scoped to html.motion-ok, which the <head> script adds only when
+ * the visitor does not prefer reduced motion — so reduced-motion users, no-JS visitors and
+ * crawlers get the static page. Only transform / opacity / clip-path are animated.
+ */
+
+/* ── Scroll reveal (MotionLayer adds .is-visible) ── */
+.motion-ok [data-reveal] {
+  transition:
+    opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms),
+    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms);
+}
+.motion-ok [data-reveal]:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(16px);
+}
+/* Safety net before hydration only: if the app script never runs, show content after 3s. */
+.motion-ok:not(.reveal-ready) [data-reveal]:not(.is-visible) {
+  animation: reveal-fallback 0s 3s forwards;
+}
+@keyframes reveal-fallback {
+  to { opacity: 1; transform: none; }
+}
+
+/* ── Hero: terminal typing (one shot) ── */
+.type-line { display: block; min-height: 1lh; }
+.motion-ok .type-line {
+  clip-path: inset(0 100% 0 0);
+  animation: type-in 0.45s steps(18, end) var(--line-delay, 0s) forwards;
+}
+@keyframes type-in {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+/* ── Hero: drifting clouds, bobbing sun/moon, swaying leaves (SVG user units) ── */
+.motion-ok .hero-clouds { animation: cloud-drift 120s linear infinite; }
+@keyframes cloud-drift {
+  to { transform: translateX(calc(var(--scene-width) * -1px)); }
+}
+.motion-ok .hero-sun { animation: sun-bob 6s steps(2, jump-none) infinite alternate; }
+@keyframes sun-bob {
+  to { transform: translateY(-1px); }
+}
+.motion-ok .hero-canopy {
+  animation: leaf-sway 4s steps(2, jump-none) infinite alternate;
+  animation-delay: var(--sway-delay, 0s);
+}
+@keyframes leaf-sway {
+  to { transform: translateX(0.5px); }
+}
+
+/* ── Hero: pollen (light) / fireflies (dark) ── */
+.hero-mote {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #fff6c9;
+  opacity: 0;
+  pointer-events: none;
+}
+:root[data-theme="dark"] .hero-mote { background: #d8ff6b; box-shadow: 0 0 6px 2px rgba(200, 255, 90, 0.55); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-mote { background: #d8ff6b; box-shadow: 0 0 6px 2px rgba(200, 255, 90, 0.55); }
+}
+.motion-ok .hero-mote { animation: mote-float var(--mote-duration, 9s) ease-in-out var(--mote-delay, 0s) infinite; }
+@keyframes mote-float {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 0.9; }
+  50% { transform: translate(var(--mote-dx, 24px), -28px); }
+  80% { opacity: 0.8; }
+  100% { opacity: 0; transform: translate(calc(var(--mote-dx, 24px) * 2), -56px); }
+}
+
+/* ── Interaction: item bob + slot highlight on card hover (like picking up an item) ── */
+.mc-slot { position: relative; }
+.mc-slot::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: #ffffff;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+a.card:hover .mc-slot::after,
+.card-hover:hover .mc-slot::after,
+a:hover > .mc-slot::after { opacity: 0.22; }
+.motion-ok a.card:hover .mc-slot > img,
+.motion-ok .card-hover:hover .mc-slot > img,
+.motion-ok a:hover > .mc-slot > img { animation: item-bob 0.9s steps(2, jump-none) infinite alternate; }
+@keyframes item-bob {
+  to { transform: translateY(-3px); }
+}
+
+/* ── Interaction: copy button pop ── */
+.motion-ok .copy-btn.is-copied { animation: copy-pop 320ms cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes copy-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* ── Interaction: XP-orb particles (spawned by MotionLayer) ── */
+.xp-orb {
+  position: fixed;
+  box-shadow: inset -1px -1px 0 rgba(0, 0, 0, 0.25), 0 0 4px rgba(198, 247, 74, 0.6);
+  image-rendering: pixelated;
+  will-change: transform, opacity;
+}
+
+/* ── Theme switch: circular day/night reveal from the toggle (View Transitions API) ── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-reveal 520ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes theme-reveal {
+  from { clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 0)); }
+  to { clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 50%) var(--vt-y, 0)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-new(root) { animation: none; }
+}

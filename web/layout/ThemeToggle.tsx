@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { PixelIcon } from '@/shared/ui/PixelIcon';
 import { useLanguage } from '@/shared/i18n';
 import { THEME_STORAGE_KEY } from './theme-script';
+import { prefersReducedMotion } from '@/shared/motion/particles';
 
 type Theme = 'light' | 'dark';
 
@@ -25,8 +26,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
     return () => media.removeEventListener('change', onChange);
   }, []);
 
-  const toggle = () => {
-    const next: Theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
+  const apply = (next: Theme) => {
     document.documentElement.dataset.theme = next;
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
@@ -34,6 +34,24 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       // Choice applies for this page view only.
     }
     setTheme(next);
+  };
+
+  const toggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const next: Theme = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    if (!document.startViewTransition || prefersReducedMotion()) {
+      apply(next);
+      return;
+    }
+    // Circular day/night reveal growing from the toggle (see ::view-transition-new in motion.css).
+    const box = event.currentTarget.getBoundingClientRect();
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    const radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    const root = document.documentElement.style;
+    root.setProperty('--vt-x', `${x}px`);
+    root.setProperty('--vt-y', `${y}px`);
+    root.setProperty('--vt-r', `${radius}px`);
+    document.startViewTransition(() => apply(next));
   };
 
   const label = theme === 'dark' ? t.header.themeToLight : t.header.themeToDark;

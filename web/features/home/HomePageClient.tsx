@@ -13,6 +13,7 @@ import { PixelIcon } from '@/shared/ui/PixelIcon';
 import type { PixelIconName } from '@/shared/ui/pixel-icons';
 import { ArrowRightIcon } from '@/shared/ui/icons';
 import { format, useLanguage } from '@/shared/i18n';
+import { revealDelay } from '@/shared/motion/reveal';
 
 interface HomePageClientProps {
   skills: SkillMeta[];
@@ -26,7 +27,7 @@ const FEATURED_LIMIT = 6;
 
 function SectionHeading({ label, title, action }: { label: string; title: string; action?: React.ReactNode }) {
   return (
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div data-reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="eyebrow">{label}</p>
         <h2 className="mt-2 font-serif text-3xl font-semibold text-fg">{title}</h2>
@@ -92,10 +93,11 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <SectionHeading label={h.platformsLabel} title={h.platformsTitle} />
         <div className="grid gap-5 md:grid-cols-2">
-          {PLATFORMS.map((p) => {
+          {PLATFORMS.map((p, i) => {
             const isNms = p.id === 'paper-nms';
             return (
-              <div key={p.id} className={`card card-hover relative overflow-hidden p-6 ${isNms ? 'border-t-4 border-t-nms' : 'border-t-4 border-t-api'}`}>
+              <div key={p.id} data-reveal style={revealDelay(i)}>
+              <div className={`card card-hover relative overflow-hidden p-6 ${isNms ? 'border-t-4 border-t-nms' : 'border-t-4 border-t-api'}`}>
                 <div className="flex items-center gap-4">
                   <span className="mc-slot h-14 w-14">
                     <PixelIcon name={p.icon} className="h-8 w-8" />
@@ -115,6 +117,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
                   </Link>
                 </div>
               </div>
+              </div>
             );
           })}
         </div>
@@ -126,7 +129,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
           <SectionHeading label={h.stepsLabel} title={h.stepsTitle} />
           <ol className="grid gap-8 md:grid-cols-3">
             {h.steps.map((step, i) => (
-              <li key={step.title} className="flex gap-4">
+              <li key={step.title} data-reveal style={revealDelay(i)} className="flex gap-4">
                 <span className="mc-slot h-12 w-12">
                   <PixelIcon name={STEP_ICONS[i] ?? 'grass'} className="h-8 w-8" />
                 </span>
@@ -152,28 +155,30 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
             </Link>
           }
         />
-        <SkillGrid skills={featuredSkills.slice(0, FEATURED_LIMIT)} />
+        <SkillGrid skills={featuredSkills.slice(0, FEATURED_LIMIT)} reveal />
       </section>
 
       {/* Reference */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
         <SectionHeading label={h.referenceLabel} title={h.referenceTitle} />
-        <p className="-mt-4 mb-8 max-w-2xl text-sm text-fg-2">{h.referenceSubtitle}</p>
+        <p data-reveal className="-mt-4 mb-8 max-w-2xl text-sm text-fg-2">{h.referenceSubtitle}</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {referenceDocs.map((d) => (
-            <Link key={d.href} href={d.href} className="card flex items-center gap-3 p-4">
+          {referenceDocs.map((d, i) => (
+            <div key={d.href} data-reveal style={revealDelay(i)}>
+            <Link href={d.href} className="card flex h-full items-center gap-3 p-4">
               <span className="mc-slot h-10 w-10">
                 <PixelIcon name={d.icon} className="h-8 w-8" />
               </span>
               <span className="text-sm font-medium text-fg">{lang === 'en' ? d.title.en : d.title.zh}</span>
             </Link>
+            </div>
           ))}
         </div>
       </section>
 
       {/* Contribute */}
       <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
-        <div className="flex flex-col items-start gap-6 rounded-md border border-line bg-surface p-8 sm:flex-row sm:items-center">
+        <div data-reveal className="flex flex-col items-start gap-6 rounded-md border border-line bg-surface p-8 sm:flex-row sm:items-center">
           <PixelIcon name="creeper" className="h-16 w-16 shrink-0" />
           <div className="flex-1">
             <h2 className="font-serif text-2xl font-semibold text-fg">{h.ctaTitle}</h2>

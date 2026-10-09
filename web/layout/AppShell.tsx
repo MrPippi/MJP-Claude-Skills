@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { SearchModal } from '@/features/search';
+import { MotionLayer } from '@/shared/motion/MotionLayer';
 import { LanguageProvider } from '@/shared/i18n';
 import type { SearchIndex } from '@/shared/types/skill';
 import type { DocLink } from '@/features/docs/registry';
@@ -45,6 +46,7 @@ export function AppShell({ children, searchData, docLinks }: AppShellProps) {
         </main>
         <Footer />
         <SearchModal isOpen={searchOpen} onClose={closeSearch} searchData={searchData} docLinks={docLinks} />
+        <MotionLayer />
       </div>
     </LanguageProvider>
   );

@@ -307,6 +307,14 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 - `shared/fonts/cubic-11-subset.woff2` 只含介面用字（約 630 字、28 KB），由 `python web/scripts/pixel-font.py <Cubic_11.ttf> <OFL.txt>` 產生（需 fonttools、brotli；原字型自 https://github.com/ACh-K/Cubic-11 下載）
 - 修改 `shared/i18n/locales/`、技能 frontmatter 或文件標題後，若 `tests/pixel-font.test.ts` 失敗就重跑腳本；子集是衍生作品，`Cubic-11-OFL.txt` 必須一併保留
 
+### 動態效果
+
+- 全部樣式在 `web/app/motion.css`，只在 `html.motion-ok` 下生效；`motion-ok` 由 `<head>` 腳本（`layout/theme-script.ts`）在**未**偏好減少動態效果時加入 → 減少動態效果、停用 JS、爬蟲都看到靜態完整內容
+- `shared/motion/MotionLayer.tsx`（掛在 AppShell）：捲動進場（`data-reveal` + `revealDelay(i)` 錯開）與主要按鈕的經驗值球粒子（`.btn-primary` 或 `[data-burst]`）；粒子數學在 `shared/motion/particles.ts`（有單元測試）
+- 只用於靜態清單：篩選中的清單（技能瀏覽器）不要加 `data-reveal`，否則每次篩選都會重新隱藏
+- 主題切換用 View Transitions API 從按鈕圓形擴散；不支援時直接切換
+- 只動畫 `transform` / `opacity` / `clip-path`
+
 ### 關鍵路徑
 
 | Path | Purpose |

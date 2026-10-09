@@ -7,6 +7,7 @@ import { ROUTES } from '@/config/routes';
 import { PixelIcon } from '@/shared/ui/PixelIcon';
 import type { PixelIconName } from '@/shared/ui/pixel-icons';
 import { format, useLanguage } from '@/shared/i18n';
+import { revealDelay } from '@/shared/motion/reveal';
 
 interface DocsIndexProps {
   docLinks: DocLink[];
@@ -35,10 +36,10 @@ export function DocsIndex({ docLinks, skillCount }: DocsIndexProps) {
   return (
     <DocArticle eyebrow={t.docs.overviewLabel} title={t.docs.overviewTitle} icon="sign" description={t.docs.overviewDescription}>
       <div className="grid gap-4 sm:grid-cols-2">
-        {CARD_ORDER.map(({ key, icon }) => {
+        {CARD_ORDER.map(({ key, icon }, i) => {
           const links = linksFor(key);
           return (
-            <section key={key} className="card p-5">
+            <section key={key} data-reveal style={revealDelay(i)} className="card p-5">
               <div className="flex items-center gap-3">
                 <PixelIcon name={icon} className="h-8 w-8" />
                 <h2 className="font-serif text-lg font-semibold text-fg">{t.docs.sections[key]}</h2>
