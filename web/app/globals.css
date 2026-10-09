@@ -29,7 +29,7 @@
   --font-sans: var(--font-inter), "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
   --font-serif: var(--font-serif-src), "Songti TC", "Noto Serif TC", Georgia, serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "Cascadia Code", Consolas, monospace;
-  --font-pixel: var(--font-silkscreen), var(--font-jetbrains), monospace;
+  --font-pixel: var(--font-cubic), "PingFang TC", "Microsoft JhengHei", monospace;
 }
 
 @layer base {
@@ -142,7 +142,8 @@
   top: 0.4rem;
   right: 0.5rem;
   font-family: var(--font-pixel);
-  font-size: 0.65rem;
+  font-size: 12px;
+  line-height: 1;
   color: var(--color-fg-3);
   border: 1px solid var(--color-line);
   background: var(--color-bg);
@@ -207,14 +208,24 @@
 
   .eyebrow {
     font-family: var(--font-pixel);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-accent);
   }
 }
 
 .pixelated { image-rendering: pixelated; }
+
+/* Pixel font: skip greyscale smoothing where the platform allows it (macOS). */
+[class~="font-pixel"],
+.eyebrow,
+.copy-btn,
+.doc-prose pre[data-lang]::before {
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
 
 /* ── Hero landscape (textured blocks) ── */
 .hero-cloud { fill: #ffffff; opacity: 0.85; }
@@ -322,8 +333,8 @@
   top: 0.55rem;
   left: 1rem;
   font-family: var(--font-pixel);
-  font-size: 0.65rem;
-  letter-spacing: 0.05em;
+  font-size: 12px;
+  line-height: 1;
   text-transform: uppercase;
   color: var(--color-fg-3);
 }

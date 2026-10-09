@@ -124,7 +124,7 @@ export function SearchModal({ isOpen, onClose, searchData, docLinks }: SearchMod
             className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-3 outline-none"
             aria-label={t.search.placeholder}
           />
-          <kbd className="rounded-[3px] border border-line-strong px-1.5 font-pixel text-[10px] text-fg-3">ESC</kbd>
+          <kbd className="rounded-[3px] border border-line-strong px-1.5 font-pixel text-[12px] text-fg-3">ESC</kbd>
         </div>
 
         <div className="max-h-[min(60vh,420px)] overflow-y-auto p-1.5">
@@ -157,9 +157,9 @@ export function SearchModal({ isOpen, onClose, searchData, docLinks }: SearchMod
         </div>
 
         <div className="flex gap-4 border-t border-line px-4 py-2 text-[11px] text-fg-3">
-          <span><kbd className="font-pixel">↑↓</kbd> {t.search.navHint}</span>
-          <span><kbd className="font-pixel">↵</kbd> {t.search.openHint}</span>
-          <span><kbd className="font-pixel">ESC</kbd> {t.search.closeHint}</span>
+          <span><kbd className="font-pixel text-[12px]">↑↓</kbd> {t.search.navHint}</span>
+          <span><kbd className="font-pixel text-[12px]">↵</kbd> {t.search.openHint}</span>
+          <span><kbd className="font-pixel text-[12px]">ESC</kbd> {t.search.closeHint}</span>
         </div>
       </div>
     </div>

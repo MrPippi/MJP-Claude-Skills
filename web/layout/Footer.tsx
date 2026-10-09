@@ -38,7 +38,7 @@ export function Footer() {
             <span className="font-serif text-lg font-semibold text-fg">MJP Claude Skills</span>
           </Link>
           <p className="mt-3 text-sm leading-relaxed text-fg-2">{t.footer.tagline}</p>
-          <p className="mt-4 font-pixel text-[11px] text-fg-3">Paper 1.21.11 · 26.2</p>
+          <p className="mt-4 font-pixel text-[12px] text-fg-3">Paper 1.21.11 · 26.2</p>
         </div>
 
         {columns.map((col) => (

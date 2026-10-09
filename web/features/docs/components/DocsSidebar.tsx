@@ -45,9 +45,9 @@ export function DocsSidebar({ nav }: { nav: NavGroup[] }) {
             return (
               <details key={sub.platform} open={containsActive || undefined} className="group mt-1">
                 <summary className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-fg-2 hover:bg-surface hover:text-fg [&::-webkit-details-marker]:hidden">
-                  <span className="font-pixel text-[10px] text-fg-3 transition-transform group-open:rotate-90">▶</span>
+                  <span className="font-pixel text-[12px] text-fg-3 transition-transform group-open:rotate-90">▶</span>
                   <span className={sub.platform === 'paper-nms' ? 'text-nms' : 'text-api'}>{platform?.label}</span>
-                  <span className="ml-auto font-pixel text-[10px] text-fg-3">{sub.items.length}</span>
+                  <span className="ml-auto font-pixel text-[12px] text-fg-3">{sub.items.length}</span>
                 </summary>
                 <ul className="mt-0.5 space-y-0.5 border-l border-line pl-2 ml-3">
                   {sub.items.map((item) => (

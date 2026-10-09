@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono, Silkscreen, Source_Serif_4 } from 'next/font/google';
+import { Inter, JetBrains_Mono, Source_Serif_4 } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { AppShell } from '@/layout';
 import { THEME_INIT_SCRIPT } from '@/layout/theme-script';
@@ -10,7 +11,8 @@ import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/config/site';
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' });
 const serif = Source_Serif_4({ variable: '--font-serif-src', subsets: ['latin'], weight: ['600'], display: 'swap' });
 const mono = JetBrains_Mono({ variable: '--font-jetbrains', subsets: ['latin'], display: 'swap' });
-const pixel = Silkscreen({ variable: '--font-silkscreen', subsets: ['latin'], weight: ['400'], display: 'swap' });
+/** Cubic 11 (OFL), subset to UI characters by scripts/pixel-font.py. */
+const pixel = localFont({ src: '../shared/fonts/cubic-11-subset.woff2', variable: '--font-cubic', display: 'swap' });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

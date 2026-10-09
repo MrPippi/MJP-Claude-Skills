@@ -15,6 +15,7 @@
 - 搜尋同時涵蓋 Skills 與文件頁；技能列表支援 `?platform=`、`?category=` 篩選
 
 #### Added
+- 像素字型改為俐方體 11 號（Cubic 11，OFL）子集（約 630 字、28 KB），中英文點綴文字一致像素化；取代只有拉丁字母的 Silkscreen；產生腳本 `web/scripts/pixel-font.py`
 - 原版材質（26.3 資源包）：13 個物品圖示、首頁方塊地景改用真實貼圖，圖示外框改為物品欄格子；擷取腳本 `web/scripts/mc-art.py`
 - `Skills/*/PLATFORM.md`、`Skills/_shared/*.md`、`docs/paper-nms/*.md` 直接渲染為網站頁面（單一來源，不複製）
 

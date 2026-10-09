@@ -76,7 +76,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
           >
             <SearchIcon className="h-4 w-4 shrink-0" />
             <span className="hidden flex-1 truncate text-left sm:block">{t.header.searchPlaceholder}</span>
-            <kbd className="hidden rounded-[3px] border border-line-strong bg-bg px-1.5 font-pixel text-[10px] text-fg-3 sm:inline">{shortcut}</kbd>
+            <kbd className="hidden rounded-[3px] border border-line-strong bg-bg px-1.5 font-pixel text-[12px] text-fg-3 sm:inline">{shortcut}</kbd>
           </button>
 
           <button
@@ -84,7 +84,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             onClick={() => setLang(lang === 'en' ? 'zh-TW' : 'en')}
             aria-label={t.header.switchLang}
             title={t.header.switchLang}
-            className="icon-btn font-pixel text-[11px]"
+            className="icon-btn font-pixel text-[12px]"
           >
             {lang === 'en' ? '中' : 'EN'}
           </button>

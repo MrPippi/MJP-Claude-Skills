@@ -104,7 +104,7 @@ export function SkillBrowser({ skills, categories }: SkillBrowserProps) {
           {visibleCategories.map((c) => (
             <button key={c.id} type="button" aria-pressed={category === c.id} className={chipClass(category === c.id)} onClick={() => setFilter({ category: category === c.id ? null : c.id })}>
               {lang === 'en' ? c.labelEn : c.label}
-              <span className="font-pixel text-[10px] opacity-70">{c.count}</span>
+              <span className="font-pixel text-[12px] opacity-70">{c.count}</span>
             </button>
           ))}
         </div>

@@ -27,7 +27,7 @@ export function SkillDetail({ skill }: { skill: SkillFull }) {
       <div className="flex flex-wrap items-center gap-2 text-xs text-fg-3">
         <PlatformBadge platform={platform} />
         <SkillBadge status={skill.status} />
-        <span className="rounded-[3px] border border-line px-1.5 py-0.5 font-pixel text-[10px]">v{String(skill.version)}</span>
+        <span className="rounded-[3px] border border-line px-1.5 py-0.5 font-pixel text-[12px]">v{String(skill.version)}</span>
         <code className="font-mono text-fg-3">{skill.id}</code>
         {skill.updatedAt && (
           <span className="ml-auto">

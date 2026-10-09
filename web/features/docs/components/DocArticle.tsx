@@ -62,7 +62,7 @@ export function DocArticle({ eyebrow, title, icon, description, meta, html, head
               <div className="grid gap-3 border-t border-line pt-6 sm:grid-cols-2">
                 {prev ? (
                   <Link href={prev.href} className="card p-4">
-                    <span className="font-pixel text-[10px] text-fg-3">← {t.docs.previous}</span>
+                    <span className="font-pixel text-[12px] text-fg-3">← {t.docs.previous}</span>
                     <span className="mt-1 block truncate text-sm font-medium text-fg">{lang === 'en' ? prev.label.en : prev.label.zh}</span>
                   </Link>
                 ) : (
@@ -70,7 +70,7 @@ export function DocArticle({ eyebrow, title, icon, description, meta, html, head
                 )}
                 {next && (
                   <Link href={next.href} className="card p-4 text-right">
-                    <span className="font-pixel text-[10px] text-fg-3">{t.docs.next} →</span>
+                    <span className="font-pixel text-[12px] text-fg-3">{t.docs.next} →</span>
                     <span className="mt-1 block truncate text-sm font-medium text-fg">{lang === 'en' ? next.label.en : next.label.zh}</span>
                   </Link>
                 )}
