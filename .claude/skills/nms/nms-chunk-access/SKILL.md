@@ -64,17 +64,17 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.CraftChunk;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftChunk;
+import org.bukkit.craftbukkit.CraftWorld;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class ChunkAccessUtil {
 
     private ChunkAccessUtil() {}
 
-    /** 取得 NMS LevelChunk。 */
+    /** 取得 NMS LevelChunk（CraftChunk.getHandle(ChunkStatus) 回傳的是 ChunkAccess，非 LevelChunk）。 */
     public static LevelChunk getChunk(Chunk chunk) {
-        return ((CraftChunk) chunk).getHandle(net.minecraft.world.level.chunk.status.ChunkStatus.FULL);
+        return ((CraftWorld) chunk.getWorld()).getHandle().getChunk(chunk.getX(), chunk.getZ());
     }
 
     /** 取得指定世界座標的 NMS BlockState（不觸發光照更新）。 */
@@ -114,7 +114,7 @@ public final class ChunkAccessUtil {
     /** 取得 ChunkSection（16 格高的子區段），sectionY 為 section index（非方塊 Y）。 */
     public static LevelChunkSection getSection(Chunk chunk, int sectionY) {
         LevelChunk nms = getChunk(chunk);
-        return nms.getSections()[sectionY - nms.getMinSection()];
+        return nms.getSections()[nms.getSectionIndexFromSectionY(sectionY)];
     }
 
     /** 讀取 ChunkSection 中的方塊狀態（localX/Y/Z 為 0-15 相對座標）。 */
@@ -142,7 +142,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorld;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -223,6 +223,6 @@ src/main/java/com/example/
 | 錯誤 | 原因 | 解法 |
 |------|------|------|
 | `getChunk()` 回傳未載入狀態 | 區塊未完全生成 | 呼叫前先 `world.loadChunk(cx, cz)` 確保載入 |
-| `ArrayIndexOutOfBoundsException` | sectionY 超出範圍 | 確認 sectionY 在 `chunk.getMinSection()` 至 `getMaxSection()` 之間 |
+| `ArrayIndexOutOfBoundsException` | sectionY 超出範圍 | 用 `chunk.getSectionIndexFromSectionY(sectionY)` 換算索引，並確認結果在 `0` 至 `getSectionsCount() - 1` 之間 |
 | 方塊更新後客戶端無反應 | flags=0 或未呼叫 `commit()` | 改用 flags=2（`SEND_TO_CLIENTS`） |
 | 大量更新造成伺服器卡頓 | 單 tick 修改過多方塊 | 分批執行（Bukkit scheduler runTaskTimer） |

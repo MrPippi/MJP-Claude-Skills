@@ -164,7 +164,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.Location;
 
@@ -190,7 +190,7 @@ public class V1_21_Adapter implements NmsAdapter {
 
     @Override
     public int getLatency(Player player) {
-        return ((CraftPlayer) player).getHandle().latency;
+        return ((CraftPlayer) player).getHandle().connection.latency();
     }
 
     @Override
@@ -256,7 +256,7 @@ src/main/java/com/example/
 | 錯誤 | 原因 | 解法 |
 |------|------|------|
 | `IllegalStateException: Unsupported MC version` | 在未支援版本上啟動 | 在 `NmsVersion.detect()` 加 fallback 分支（嘗試最接近的版本） |
-| `ClassNotFoundException: v1_21_R1` | 發布版不含該版本的 CraftBukkit 類別 | 在 `register()` 外層用 try-catch，若失敗則不註冊該 adapter |
+| `ClassNotFoundException` / `NoClassDefFoundError` | adapter 引用的 NMS 類別在目前版本不存在 | 在 `register()` 外層用 try-catch，若失敗則不註冊該 adapter |
 | `AbstractMethodError` | adapter 介面新增方法但舊 adapter 未實作 | 為介面方法加 `default` 實作 |
 | Multi-module 打包遺漏 | shadowJar 未包含 adapter module | 在 `plugin/build.gradle` 加 `shadow project(':adapter-v1_21')` |
 | 不同版本 NMS 簽名差異 | 1.21.1 方法移除或改名 | 用 reflection 在 adapter 內做版本分支（結合 `nms-reflection-bridge`） |

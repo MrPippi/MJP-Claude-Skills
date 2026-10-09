@@ -62,9 +62,9 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftInventory;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftInventoryCustom;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftInventoryView;
+import net.minecraft.world.SimpleContainer;
+import org.bukkit.craftbukkit.inventory.CraftInventory;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.inventory.InventoryView;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -73,14 +73,22 @@ public class CustomMenu extends AbstractContainerMenu {
     private static final int ROWS = 3;
     private static final int SIZE = ROWS * 9;
 
-    private final net.minecraft.world.Container menuInventory;
+    private final CustomMenuHolder holder;
+    private final SimpleContainer menuInventory;
     private final Inventory playerInventory;
-    private CraftInventoryView bukkitView;
+    private CraftInventoryView<CustomMenu, org.bukkit.inventory.Inventory> bukkitView;
 
     public CustomMenu(int syncId, Inventory playerInventory) {
+        this(syncId, playerInventory, new CustomMenuHolder());
+    }
+
+    public CustomMenu(int syncId, Inventory playerInventory, CustomMenuHolder holder) {
         super(MenuType.GENERIC_9x3, syncId);
         this.playerInventory = playerInventory;
-        this.menuInventory = new net.minecraft.world.SimpleContainer(SIZE);
+        this.holder = holder;
+        // 以 holder 作為 Container owner，Bukkit 端 getTopInventory().getHolder() 才會是 CustomMenuHolder
+        this.menuInventory = new SimpleContainer(SIZE, holder);
+        holder.setInventory(new CraftInventory(menuInventory));
 
         // 注册 GUI slot（上方容器區）
         for (int row = 0; row < ROWS; row++) {
@@ -119,10 +127,8 @@ public class CustomMenu extends AbstractContainerMenu {
     @Override
     public InventoryView getBukkitView() {
         if (bukkitView == null) {
-            CraftInventory craftInventory = new CraftInventoryCustom(null, menuInventory);
-            bukkitView = new CraftInventoryView(
-                (org.bukkit.entity.HumanEntity) playerInventory.player.getBukkitEntity(),
-                craftInventory, this);
+            bukkitView = new CraftInventoryView<>(
+                playerInventory.player.getBukkitEntity(), holder.getInventory(), this);
         }
         return bukkitView;
     }
@@ -157,6 +163,39 @@ public class CustomMenuProvider implements MenuProvider {
     @Override
     public AbstractContainerMenu createMenu(int syncId, Inventory inventory, Player player) {
         return new CustomMenu(syncId, inventory);
+    }
+}
+```
+
+### `CustomMenuHolder.java`
+
+```java
+package com.example.gui;
+
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+
+/** 自訂 GUI 的 Bukkit InventoryHolder；Listener 以 instanceof 辨識並分派點擊。覆寫回呼以實作行為。 */
+public class CustomMenuHolder implements InventoryHolder {
+
+    private Inventory inventory;
+
+    void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
+
+    @Override
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    /** 上方 GUI slot（0–26）被點擊時呼叫。 */
+    public void handleSlotClick(int slot, HumanEntity who) {
+    }
+
+    /** GUI 關閉時呼叫。 */
+    public void onClose(HumanEntity who) {
     }
 }
 ```
@@ -200,7 +239,7 @@ public class CustomMenuListener implements Listener {
 
 ```java
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 @SuppressWarnings("UnstableApiUsage")

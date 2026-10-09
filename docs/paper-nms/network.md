@@ -103,7 +103,7 @@ Netty Boss Group    Netty Worker Group      Bukkit Main Thread
 ```java
 import net.minecraft.network.Connection;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 
 ServerPlayer nms = ((CraftPlayer) player).getHandle();
 // nms.connection 是 ServerGamePacketListenerImpl

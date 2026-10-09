@@ -86,12 +86,14 @@ CompoundTag serialized = NbtSerializer.serialize(data);
 // 存到物品
 org.bukkit.inventory.ItemStack item = new org.bukkit.inventory.ItemStack(Material.PAPER);
 ItemStack nms = CraftItemStack.asNMSCopy(item);
-nms.getOrCreateTag().put("playerData", serialized);
+// 1.20.5+：物品 NBT 改存於 minecraft:custom_data 組件
+CustomData.update(DataComponents.CUSTOM_DATA, nms, tag -> tag.put("playerData", serialized));
 item = CraftItemStack.asBukkitCopy(nms);
 
 // 讀回
-CompoundTag tag = CraftItemStack.asNMSCopy(item).getTag();
-if (tag != null && tag.contains("playerData")) {
+CompoundTag tag = CraftItemStack.asNMSCopy(item)
+    .getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+if (tag.contains("playerData")) {
     NbtSerializer.PlayerData loaded = NbtSerializer.deserialize(tag.getCompound("playerData"));
     player.sendMessage("玩家：" + loaded.name() + " Lv." + loaded.level());
 }

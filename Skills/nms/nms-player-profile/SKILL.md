@@ -59,9 +59,9 @@ package com.example.npc;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.UUID;
@@ -122,7 +122,7 @@ package com.example.npc;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.plugin.Plugin;
 
 import java.util.concurrent.CompletableFuture;
@@ -181,11 +181,11 @@ public final class SkinFetcher {
 package com.example.npc;
 
 import com.mojang.authlib.GameProfile;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class SkullBuilder {
@@ -194,12 +194,11 @@ public final class SkullBuilder {
 
     /**
      * 建立帶有指定 GameProfile skin 的玩家頭顱 ItemStack。
+     * 1.20.5+ 以 {@code minecraft:profile} 組件取代舊的 SkullOwner NBT。
      */
     public static org.bukkit.inventory.ItemStack withProfile(GameProfile profile) {
         ItemStack nms = new ItemStack(Items.PLAYER_HEAD);
-        CompoundTag tag = nms.getOrCreateTag();
-        CompoundTag skullOwner = NbtUtils.writeGameProfile(new CompoundTag(), profile);
-        tag.put("SkullOwner", skullOwner);
+        nms.set(DataComponents.PROFILE, new ResolvableProfile(profile));
         return CraftItemStack.asBukkitCopy(nms);
     }
 }

@@ -58,18 +58,29 @@ dependencies {
 package com.example.display;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundResetScorePacket;
+import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
+import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
+import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.PlayerScoreEntry;
+import net.minecraft.world.scores.ScoreHolder;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Per-player sidebar：每位玩家一個不掛在伺服器上的 NMS Scoreboard，只透過封包同步給該玩家。
+ * 1.20.3+ 分數的持有者為 {@link ScoreHolder}（不再是 String）。
+ */
 @SuppressWarnings("UnstableApiUsage")
 public class ScoreboardManager {
 
@@ -93,37 +104,52 @@ public class ScoreboardManager {
         });
     }
 
-    /** 設定 sidebar 某行的分數（行 = 分數，數字大的在上方）。 */
+    /** 設定 sidebar 某行的分數（行 = 分數，數字大的在上方），並同步給玩家。 */
     public void setLine(Player player, String entry, int score) {
         Scoreboard board = getOrCreate(player);
         Objective obj = board.getObjective(OBJECTIVE_NAME);
         if (obj == null) return;
-        board.getOrCreatePlayerScore(entry, obj).setScore(score);
+        board.getOrCreatePlayerScore(ScoreHolder.forNameOnly(entry), obj).set(score);
+        handle(player).connection.send(new ClientboundSetScorePacket(
+            entry, OBJECTIVE_NAME, score, Optional.empty(), Optional.empty()));
     }
 
-    /** 移除某行。 */
+    /** 移除某行，並同步給玩家。 */
     public void removeLine(Player player, String entry) {
         Scoreboard board = getOrCreate(player);
-        board.resetPlayerScore(entry, board.getObjective(OBJECTIVE_NAME));
+        Objective obj = board.getObjective(OBJECTIVE_NAME);
+        if (obj == null) return;
+        board.resetSinglePlayerScore(ScoreHolder.forNameOnly(entry), obj);
+        handle(player).connection.send(new ClientboundResetScorePacket(entry, OBJECTIVE_NAME));
     }
 
-    /** 將 NMS Scoreboard 套用至玩家（封包推送）。 */
+    /** 將整個 Scoreboard 推送給玩家（objective → display slot → 所有分數）。 */
     public void apply(Player player) {
-        ServerPlayer nms = ((CraftPlayer) player).getHandle();
+        ServerPlayer nms = handle(player);
         Scoreboard board = getOrCreate(player);
-        nms.setServerLevel(nms.serverLevel()); // 觸發重新同步
-        // 直接設定 playerScoreboard
-        nms.server.getScoreboard();  // 確保 server scoreboard 已初始化
-        // 使用 connection 發送 scoreboard 封包
-        nms.connection.send(new net.minecraft.network.protocol.game
-            .ClientboundSetDisplayObjectivePacket(
-                DisplaySlot.SIDEBAR,
-                board.getDisplayObjective(DisplaySlot.SIDEBAR)));
+        Objective obj = board.getObjective(OBJECTIVE_NAME);
+        if (obj == null) return;
+        nms.connection.send(new ClientboundSetObjectivePacket(obj, ClientboundSetObjectivePacket.METHOD_ADD));
+        nms.connection.send(new ClientboundSetDisplayObjectivePacket(DisplaySlot.SIDEBAR, obj));
+        for (PlayerScoreEntry e : board.listPlayerScores(obj)) {
+            nms.connection.send(new ClientboundSetScorePacket(
+                e.owner(), OBJECTIVE_NAME, e.value(), Optional.empty(), Optional.empty()));
+        }
     }
 
-    /** 清除玩家計分板資料。 */
+    /** 清除玩家計分板資料，並通知客戶端移除 objective。 */
     public void remove(Player player) {
-        playerBoards.remove(player.getUniqueId());
+        Scoreboard board = playerBoards.remove(player.getUniqueId());
+        if (board == null || !player.isOnline()) return;
+        Objective obj = board.getObjective(OBJECTIVE_NAME);
+        if (obj != null) {
+            handle(player).connection.send(
+                new ClientboundSetObjectivePacket(obj, ClientboundSetObjectivePacket.METHOD_REMOVE));
+        }
+    }
+
+    private static ServerPlayer handle(Player player) {
+        return ((CraftPlayer) player).getHandle();
     }
 }
 ```
@@ -134,16 +160,20 @@ public class ScoreboardManager {
 package com.example.display;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetDisplayObjectivePacket;
+import net.minecraft.network.protocol.game.ClientboundSetObjectivePacket;
+import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.DisplaySlot;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @SuppressWarnings("UnstableApiUsage")
 public class SidebarDisplay {
@@ -161,27 +191,27 @@ public class SidebarDisplay {
         return this;
     }
 
-    /** 建立 NMS Scoreboard 並推送給玩家。 */
+    /**
+     * 建立僅存在於封包層的 sidebar 並推送給玩家。
+     * 獨立的 Scoreboard 不是 ServerScoreboard，沒有 getStartTrackingPackets()，因此手動組封包。
+     */
     public void show(Player player) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
         Scoreboard board = new Scoreboard();
 
         Objective obj = board.addObjective(
-            "mps_sb_" + player.getName().hashCode(),
+            "mps_sb_" + Integer.toHexString(player.getName().hashCode()),
             ObjectiveCriteria.DUMMY,
             Component.literal(title),
             ObjectiveCriteria.RenderType.INTEGER,
             true, null
         );
-        board.setDisplayObjective(DisplaySlot.SIDEBAR, obj);
 
+        nms.connection.send(new ClientboundSetObjectivePacket(obj, ClientboundSetObjectivePacket.METHOD_ADD));
+        nms.connection.send(new ClientboundSetDisplayObjectivePacket(DisplaySlot.SIDEBAR, obj));
         for (Map.Entry<String, Integer> entry : lines.entrySet()) {
-            board.getOrCreatePlayerScore(entry.getKey(), obj).setScore(entry.getValue());
-        }
-
-        // 推送所有 scoreboard 封包
-        for (var packet : board.getStartTrackingPackets(obj)) {
-            nms.connection.send(packet);
+            nms.connection.send(new ClientboundSetScorePacket(
+                entry.getKey(), obj.getName(), entry.getValue(), Optional.empty(), Optional.empty()));
         }
     }
 }
@@ -196,7 +226,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Scoreboard;
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_21_R1.CraftServer;
+import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Player;
 
 @SuppressWarnings("UnstableApiUsage")

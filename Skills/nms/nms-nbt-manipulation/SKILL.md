@@ -56,64 +56,69 @@ dependencies {
 ```java
 package com.example.nbt;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack;
+import net.minecraft.world.item.component.CustomData;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 
 import java.util.Optional;
 
+/**
+ * 物品自定義 NBT 讀寫。
+ * 1.20.5+ 物品已無 getTag()/getOrCreateTag()；自定義 NBT 存放於 {@code minecraft:custom_data} 組件。
+ */
 @SuppressWarnings("UnstableApiUsage")
 public final class ItemNbtHelper {
 
     private ItemNbtHelper() {}
 
-    /** 取得物品的 NMS ItemStack 並讀取自定義 NBT 標籤。 */
-    public static Optional<String> getString(org.bukkit.inventory.ItemStack item, String key) {
+    /** 讀取物品 custom_data 的副本（不存在時為空 CompoundTag）。 */
+    private static CompoundTag readTag(org.bukkit.inventory.ItemStack item) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getTag();
-        if (tag == null || !tag.contains(key)) return Optional.empty();
-        return Optional.of(tag.getString(key));
+        return nms.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
+    /** 讀取字串 NBT。 */
+    public static Optional<String> getString(org.bukkit.inventory.ItemStack item, String key) {
+        CompoundTag tag = readTag(item);
+        return tag.contains(key) ? Optional.of(tag.getString(key)) : Optional.empty();
     }
 
     /** 寫入字串 NBT 並回傳修改後的 Bukkit ItemStack（不可變模式）。 */
     public static org.bukkit.inventory.ItemStack setString(
             org.bukkit.inventory.ItemStack item, String key, String value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getOrCreateTag();
-        tag.putString(key, value);
+        CustomData.update(DataComponents.CUSTOM_DATA, nms, tag -> tag.putString(key, value));
         return CraftItemStack.asBukkitCopy(nms);
     }
 
     /** 讀取整數 NBT。 */
     public static int getInt(org.bukkit.inventory.ItemStack item, String key, int def) {
-        ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getTag();
-        return (tag != null && tag.contains(key)) ? tag.getInt(key) : def;
+        CompoundTag tag = readTag(item);
+        return tag.contains(key) ? tag.getInt(key) : def;
     }
 
     /** 寫入整數 NBT 並回傳修改後的 Bukkit ItemStack。 */
     public static org.bukkit.inventory.ItemStack setInt(
             org.bukkit.inventory.ItemStack item, String key, int value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getOrCreateTag();
-        tag.putInt(key, value);
+        CustomData.update(DataComponents.CUSTOM_DATA, nms, tag -> tag.putInt(key, value));
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 移除指定 NBT 鍵。 */
+    /** 移除指定 NBT 鍵（custom_data 變空時組件會被移除）。 */
     public static org.bukkit.inventory.ItemStack removeKey(
             org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getTag();
-        if (tag != null) tag.remove(key);
+        CustomData.update(DataComponents.CUSTOM_DATA, nms, tag -> tag.remove(key));
         return CraftItemStack.asBukkitCopy(nms);
     }
 
     /** 檢查是否含有指定鍵。 */
     public static boolean hasKey(org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
-        CompoundTag tag = nms.getTag();
-        return tag != null && tag.contains(key);
+        return nms.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).contains(key);
     }
 }
 ```
@@ -125,7 +130,7 @@ package com.example.nbt;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Entity;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class EntityNbtHelper {
@@ -217,7 +222,7 @@ src/main/java/com/example/
 
 | 錯誤 | 原因 | 解法 |
 |------|------|------|
-| `getTag()` 回傳 null | 物品無自定義 NBT | 改用 `getOrCreateTag()` |
+| `getTag()` / `getOrCreateTag()` 找不到方法 | 1.20.5+ 物品 NBT 已移至 `minecraft:custom_data` 組件 | 使用 `ItemNbtHelper`（`DataComponents.CUSTOM_DATA` + `CustomData.update()`） |
 | 資料合併後實體行為異常 | `load()` 覆寫了位置/UUID | 合併前從 patch 移除 `Pos`、`UUID` 鍵 |
 | `ClassCastException: CraftEntity` | 外掛替換實體實作 | 改用 `nms-reflection-bridge` 取得 handle |
 | NBT 鍵消失（重載後） | 未使用 PersistentDataContainer | 若需跨重啟持久化，改用 PDC 或 SQL |

@@ -267,7 +267,7 @@ public static AttributeSupplier.Builder createAttributes() {
 
 ## SpawnReason 對照
 
-| NMS `MobSpawnType` | Bukkit `SpawnReason` | 說明 |
+| NMS `MobSpawnType`（1.21.2+ 改名 `EntitySpawnReason`） | Bukkit `SpawnReason` | 說明 |
 |--------------------|---------------------|------|
 | `NATURAL` | `NATURAL` | 自然生成 |
 | `CHUNK_GENERATION` | `CHUNK_GEN` | 區塊生成 |

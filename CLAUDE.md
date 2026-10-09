@@ -151,7 +151,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception 
 
 - **一律使用 Mojang mappings**（由 Paperweight 提供）
 - Paper 1.20.5+ runtime 原生使用 Mojang mappings，無需 remap
-- CraftBukkit 套件（如 `org.bukkit.craftbukkit.v1_21_R1`）的 `v1_21_R1` 部分**隨版本變動**；跨版本時用 `nms-reflection-bridge`
+- CraftBukkit 套件在 Paper 1.20.5+ 固定為 `org.bukkit.craftbukkit`（**不帶** `v1_21_R1` 版本號）；需相容 Spigot / 舊版時用 `nms-reflection-bridge`
 - 詳見 `Skills/_shared/nms-obfuscation.md`
 
 ### NMS 依賴宣告範本

@@ -109,8 +109,10 @@ public List<Location> findDiamonds(Chunk chunk) {
     LevelChunk nms = ChunkAccessUtil.getChunk(chunk);
 
     // 鑽石礦在 Y -64 到 Y 16（section -4 到 1）
-    for (int sectionY = nms.getMinSection(); sectionY < nms.getMaxSection(); sectionY++) {
-        LevelChunkSection section = nms.getSections()[sectionY - nms.getMinSection()];
+    // 1.21.2+ 的 getMinSection() 改名為 getMinSectionY()；用 index 迴圈可同時相容 1.21–1.21.3
+    for (int index = 0; index < nms.getSectionsCount(); index++) {
+        int sectionY = nms.getSectionYFromSectionIndex(index);
+        LevelChunkSection section = nms.getSections()[index];
         if (section == null || section.hasOnlyAir()) continue;
 
         for (int lx = 0; lx < 16; lx++) {

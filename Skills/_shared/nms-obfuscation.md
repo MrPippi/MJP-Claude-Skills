@@ -59,7 +59,9 @@ java {
 ## Bukkit ↔ NMS 橋接
 
 ```java
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 // Bukkit Player → NMS ServerPlayer
@@ -70,10 +72,11 @@ ServerLevel nmsLevel = ((CraftWorld) bukkitWorld).getHandle();
 
 // Bukkit ItemStack → NMS ItemStack
 net.minecraft.world.item.ItemStack nmsItem =
-    org.bukkit.craftbukkit.v1_21_R1.inventory.CraftItemStack.asNMSCopy(bukkitItem);
+    org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitItem);
 ```
 
-> ⚠️ `org.bukkit.craftbukkit.v1_21_R1` 的 `v1_21_R1` 版本號**每個 MC 版本都會變**。若需跨版本，使用 `nms-reflection-bridge` 技能。
+> Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
+> 若外掛需同時支援 Spigot 或 1.20.4 以前的 Paper，使用 `nms-reflection-bridge` 技能動態取得套件名。
 
 ---
 
@@ -84,7 +87,7 @@ net.minecraft.world.item.ItemStack nmsItem =
 | 🟢 高 | `net.minecraft.world.*`、`.server.level.*` | 直接升級通常 OK |
 | 🟡 中 | `.network.protocol.game.*`（封包） | 新版常改欄位名/record 結構 |
 | 🔴 低 | `.server.MinecraftServer` 私有欄位 | 每版可能改欄位可見度 |
-| ❌ 變動 | `org.bukkit.craftbukkit.v1_21_R1.*` | `v1_21_R1` 隨版本變更 |
+| 🟢 高（Paper 1.20.5+） | `org.bukkit.craftbukkit.*` | 不再帶版本號；Spigot / 舊版 Paper 為 `org.bukkit.craftbukkit.v1_xx_Rx.*` |
 
 ---
 
@@ -111,5 +114,5 @@ net.minecraft.world.item.ItemStack nmsItem =
 
 ## 相關技能
 
-- `nms-reflection-bridge` — 避開 `v1_21_R1` 的跨版本反射策略
+- `nms-reflection-bridge` — 需相容 Spigot / 舊版（`v1_xx_Rx` 套件）時的反射策略
 - `nms-version-adapter` — 多版本 adapter 實作

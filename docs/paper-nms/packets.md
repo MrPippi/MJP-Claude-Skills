@@ -203,16 +203,35 @@ ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(
 
 ---
 
-#### `ClientboundExplosionPacket`
-```java
-import net.minecraft.network.protocol.game.ClientboundExplosionPacket;
+#### `ClientboundExplodePacket`
 
-// 純客戶端爆炸效果，不破壞方塊
-ClientboundExplosionPacket packet = new ClientboundExplosionPacket(
-    x, y, z,     // 中心座標
-    3.0f,        // 強度（影響視覺效果）
-    List.of(),   // 受影響的方塊位置列表（空 = 不破壞）
-    new net.minecraft.world.phys.Vec3(0, 0, 0) // knockback
+> 類名為 `ClientboundExplodePacket`（非 ~~ClientboundExplosionPacket~~），且建構子在 1.21.2 改版，兩版本寫法不同。
+
+```java
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.phys.Vec3;
+
+// 1.21 – 1.21.1：純客戶端爆炸效果，不破壞方塊
+ClientboundExplodePacket packet = new ClientboundExplodePacket(
+    x, y, z,                               // 中心座標
+    3.0f,                                  // 強度（影響視覺效果）
+    List.of(),                             // 受影響的方塊位置列表（空 = 不破壞）
+    Vec3.ZERO,                             // 玩家 knockback
+    Explosion.BlockInteraction.KEEP,
+    ParticleTypes.EXPLOSION,               // 小爆炸粒子
+    ParticleTypes.EXPLOSION_EMITTER,       // 大爆炸粒子
+    SoundEvents.GENERIC_EXPLODE
+);
+
+// 1.21.2 – 1.21.3：簡化為 中心點 / 可選 knockback / 粒子 / 音效
+ClientboundExplodePacket packet = new ClientboundExplodePacket(
+    new Vec3(x, y, z),
+    java.util.Optional.empty(),            // 玩家 knockback
+    ParticleTypes.EXPLOSION_EMITTER,
+    SoundEvents.GENERIC_EXPLODE
 );
 ```
 
@@ -261,21 +280,17 @@ ClientboundContainerSetSlotPacket packet = new ClientboundContainerSetSlotPacket
 
 #### `ClientboundCustomPayloadPacket`（Plugin Message）
 ```java
+import io.netty.buffer.Unpooled;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.resources.ResourceLocation;
 
-ResourceLocation channel = new ResourceLocation("myplugin", "sync");
+ResourceLocation channel = ResourceLocation.fromNamespaceAndPath("myplugin", "sync");
 byte[] data = /* your data */;
 
-CustomPacketPayload payload = new CustomPacketPayload() {
-    @Override
-    public void write(FriendlyByteBuf buf) { buf.writeBytes(data); }
-    @Override
-    public ResourceLocation id() { return channel; }
-};
-ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(payload);
+// 1.20.5+：CustomPacketPayload 改為 type() + StreamCodec；任意 channel 原始位元組用 Paper 的 DiscardedPayload
+ClientboundCustomPayloadPacket packet =
+    new ClientboundCustomPayloadPacket(new DiscardedPayload(channel, Unpooled.wrappedBuffer(data)));
 ```
 
 ---
@@ -283,7 +298,7 @@ ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(paylo
 #### `ClientboundDisconnectPacket`
 ```java
 import net.minecraft.network.protocol.login.ClientboundLoginDisconnectPacket;
-import net.minecraft.network.protocol.game.ClientboundDisconnectPacket;
+import net.minecraft.network.protocol.common.ClientboundDisconnectPacket; // 1.20.2+ 移至 common
 
 // Game 階段踢出
 ClientboundDisconnectPacket packet =
@@ -411,7 +426,7 @@ buf.writeUtf("hello");
 buf.writeBoolean(true);
 buf.writeFloat(3.14f);
 buf.writeVarInt(1000);       // 壓縮整數（封包常用）
-buf.writeResourceLocation(new ResourceLocation("mc", "stone"));
+buf.writeResourceLocation(ResourceLocation.withDefaultNamespace("stone"));
 
 // 讀取
 int i = buf.readInt();

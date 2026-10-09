@@ -41,10 +41,10 @@ tasks {
         options.release.set(21)
     }
 
-    // Paper 1.20.5+ 無需 reobfJar；直接使用 assemble 產物
-    assemble {
-        dependsOn 'shadowJar' // 若有使用 shadow plugin
-    }
+    // Paper 1.20.5+ 無需 reobfJar；直接使用 assemble 產物（build/libs/*.jar）
+    // 若有套用 shadow plugin（id 'com.gradleup.shadow'），再加上：
+    //   assemble { dependsOn 'shadowJar' }
+    // 未套用 shadow 時宣告 dependsOn 'shadowJar' 會讓 assemble 失敗（Task 'shadowJar' not found）
 
     processResources {
         filteringCharset = 'UTF-8'
@@ -117,9 +117,13 @@ public final class MyNmsPlugin extends JavaPlugin {
 
 | Paper 建置版本 | MC 版本 | CraftBukkit package | ServerPlayer location |
 |--------------|--------|--------------------|----------------------|
-| `1.21-R0.1-SNAPSHOT` | 1.21 | `v1_21_R1` | `net.minecraft.server.level.ServerPlayer` |
-| `1.21.1-R0.1-SNAPSHOT` | 1.21.1 | `v1_21_R1` | 同上 |
-| `1.21.3-R0.1-SNAPSHOT` | 1.21.3 | `v1_21_R2` | 同上 |
+| `1.21-R0.1-SNAPSHOT` | 1.21 | `org.bukkit.craftbukkit` | `net.minecraft.server.level.ServerPlayer` |
+| `1.21.1-R0.1-SNAPSHOT` | 1.21.1 | `org.bukkit.craftbukkit` | 同上 |
+| `1.21.3-R0.1-SNAPSHOT` | 1.21.3 | `org.bukkit.craftbukkit` | 同上 |
+
+> Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
+>
+> 1.21.2 起部分 NMS API 改名（例：`MobSpawnType` → `EntitySpawnReason`、`getMinSection()` → `getMinSectionY()`、`ClientboundExplodePacket` 建構子）。技能範本優先使用 1.21–1.21.3 皆存在的 API；無共同 API 時會分別標註。
 
 ---
 

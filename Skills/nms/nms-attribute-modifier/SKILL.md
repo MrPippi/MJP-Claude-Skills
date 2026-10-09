@@ -59,7 +59,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import org.bukkit.craftbukkit.v1_21_R1.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Optional;
@@ -104,13 +104,7 @@ public final class AttributeUtil {
         });
     }
 
-    /** 移除指定 id 的 AttributeModifier。 */
-    public static void removeModifier(LivingEntity entity, Holder<Attribute> attribute,
-                                      java.util.UUID id) {
-        getInstance(entity, attribute).ifPresent(inst -> inst.removeModifier(id));
-    }
-
-    /** 移除指定 id 的 AttributeModifier（ResourceLocation 版）。 */
+    /** 移除指定 id 的 AttributeModifier（1.21 起 modifier id 為 ResourceLocation，不再是 UUID）。 */
     public static void removeModifier(LivingEntity entity, Holder<Attribute> attribute,
                                       net.minecraft.resources.ResourceLocation id) {
         getInstance(entity, attribute).ifPresent(inst -> inst.removeModifier(id));

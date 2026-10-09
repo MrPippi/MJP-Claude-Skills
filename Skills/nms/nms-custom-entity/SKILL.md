@@ -168,9 +168,8 @@ package com.example.entities;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MobSpawnType;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorld;
 
 @SuppressWarnings("UnstableApiUsage")
 public final class EntitySpawner {
