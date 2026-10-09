@@ -13,6 +13,13 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 
 產生標準的 NMS 封包發送工具類，涵蓋單人、多人、廣播、延遲發送等情境。所有發送點透過 `ServerPlayer.connection.send(Packet<?>)` 進入 Netty write queue。
 
+### 替代方案 / Alternatives
+
+先確認 Paper API 能不能做到，能就不要送原始封包（升版時不會壞）：
+- 只給單一玩家看的世界邊界、時間、天氣、隱藏玩家 → [`paper-client-side-effects`](../../paper/paper-client-side-effects/SKILL.md)
+- Action bar、title、boss bar → Adventure（`player.sendActionBar`、`showTitle`、`showBossBar`）
+- 需要修改「伺服器原本就會送」的封包 → [`paper-packetevents-filter`](../../paper/paper-packetevents-filter/SKILL.md)
+
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

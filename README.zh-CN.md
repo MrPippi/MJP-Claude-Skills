@@ -21,11 +21,15 @@ MJP-Claude-Skills 提供经过编译验证的 NMS 技能模板，Claude Code 在
 | **Java** | 21 (1.21.11) / 25 (26.2) |
 | **技能运行时** | `.claude/skills/`（Claude Code） |
 
-> 从 1.21.x 模板升级？请参阅 [CHANGELOG.md](CHANGELOG.md) 以及 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 第 5 节中的迁移说明。
+> 从 1.21.x 模板升级？请参阅 [CHANGELOG.md](CHANGELOG.md) 以及 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)（第 5 节）中的迁移说明。
 
 ---
 
 ## 技能
+
+共 30 个技能，分为两条路线：**NMS** 技能需要 Paperweight userdev；**Paper API** 技能只需 `paper-api`。所有模板均已针对 Paper 1.21.11 和 26.2 完成编译验证。
+
+### NMS 技能（`Skills/nms/`）
 
 | Skill ID | 类别 | 用途 |
 |----------|------|------|
@@ -44,6 +48,26 @@ MJP-Claude-Skills 提供经过编译验证的 NMS 技能模板，Claude Code 在
 | [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | 直接访问 `LevelChunk` / 区段并批量修改方块 |
 | [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | 基于 `MethodHandle` 缓存的 NMS 访问，无需 Paperweight 编译依赖 |
 | [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | 带运行时分发的多版本适配器接口 |
+| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | 基于真实 NMS `ServerPlayer`、无需客户端的假玩家（机器人） |
+
+### Paper API 技能（不使用 NMS，`Skills/paper/`）
+
+| Skill ID | 类别 | 用途 |
+|----------|------|------|
+| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | 带有主线程安全回调的 Paper Dialog API 界面 |
+| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | 支持分页与点击防护的 `InventoryHolder` 箱子 GUI |
+| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | SQLite 仓储、`user_version` 迁移、单写入者 flusher |
+| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | 不可变配置快照、`config-version`、MiniMessage 语言文件 |
+| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | 通过 `ServicesManager` 提供跨插件 API，可容忍 jar 版本差异 |
+| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | 软依赖 Hook/Bridge、Vault、PlaceholderAPI 扩展 |
+| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | 内嵌 JDK `HttpServer` JSON API（localhost、限流、快照） |
+| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | PacketEvents / ProtocolLib 数据包过滤器（Netty 线程安全、fail-open） |
+| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | 每位玩家独立的世界边界、时间、天气与可见性幻象 |
+| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | 带有伤害归属与下线处理的 PvP 战斗标记 |
+| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | 安全落点搜索、RTP、异步传送、预备时间与冷却 |
+| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | 多币种账本、托管（escrow）与 Vault provider |
+| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | 通过 `LifecycleEvents.COMMANDS` 注册 Brigadier 命令 |
+| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | 用完即弃的世界与可重置的竞技场 |
 
 ---
 
@@ -85,7 +109,7 @@ Claude Code 会在生成代码前读取匹配的 `SKILL.md`、[`PLATFORM.md`](Sk
 | `com.gradleup.shadow`（可选） | `9.6.1` | 仅用于多模块/打包构建（参见 `nms-version-adapter`） |
 | `paper-api`（仅反射 / core 模块） | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
-标准的 `build.gradle` 与 `paper-plugin.yml` 位于 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)。
+标准的 `build.gradle` 与 `paper-plugin.yml` 位于 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)（NMS 技能）和 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md)（Paper API 技能，含软依赖坐标：VaultAPI 1.7.1、PlaceholderAPI 2.11.6、packetevents 2.13.0、ProtocolLib 5.3.0、sqlite-jdbc 3.49.1.0）。
 
 ### 文档网站（`web/`）
 
@@ -97,12 +121,14 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 
 ```
 MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except paper-nms/)
+├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
 ├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← v6.0.0, 15 skills
-│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md
-│   ├── paper-nms/PLATFORM.md ← build.gradle / paper-plugin.yml templates, version table
-│   └── nms/<skill-id>/       ← SKILL.md + examples.md (15 skills)
+│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
+│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
+│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
 ├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
 ├── web/                      ← Next.js documentation site (static export → GitHub Pages)
 ├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
@@ -128,13 +154,13 @@ CI 会在每个 Pull Request 上运行相同的检查（`.github/workflows/ci.ym
 
 ## 添加新技能
 
-1. 创建 `Skills/nms/<slug>/SKILL.md` + `examples.md`（≥ 2 个示例）
-2. 镜像到 `.claude/skills/nms/<slug>/`
+1. 创建 `Skills/nms/<slug>/` 或 `Skills/paper/<slug>/`，包含 `SKILL.md` + `examples.md`（≥ 2 个示例）
+2. 镜像到 `.claude/skills/` 下的相同路径
 3. 将条目添加到两份 `skills-registry.yml`
 4. 添加 `web/data/skills/<slug>.md`，并更新 `web/tests/skills-api.data.test.ts` 中的预期列表
-5. 合并前，针对当前 dev bundle 编译模板类
+5. 合并前，针对 Paper 1.21.11 和 26.2 编译模板类
 
-完整的 8 步流程与不变量请参见 `CLAUDE.md`。
+完整的 9 步流程与不变量请参见 `CLAUDE.md`。
 
 ---
 

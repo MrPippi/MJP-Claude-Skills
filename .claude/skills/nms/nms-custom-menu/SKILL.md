@@ -13,6 +13,12 @@ description: "繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 sl
 
 透過繼承 NMS `AbstractContainerMenu` 實作自定義容器 GUI，支援 slot 操作攔截、資料同步（`ContainerData`）、與 Bukkit `InventoryView` 整合，比純 Bukkit API 更靈活。
 
+### 替代方案 / Alternatives
+
+- 表單、確認視窗、設定頁 → Paper Dialog API，見 [`paper-dialog-ui`](../../paper/paper-dialog-ui/SKILL.md)
+- 一般箱子 GUI（商店、清單、分頁） → Bukkit `InventoryHolder`，見 [`paper-chest-gui`](../../paper/paper-chest-gui/SKILL.md)
+- 只有需要自訂 `MenuType`、slot 行為或伺服器端容器邏輯時才用本技能
+
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

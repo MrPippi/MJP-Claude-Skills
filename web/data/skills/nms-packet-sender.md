@@ -31,6 +31,12 @@ featured: true
 
 ---
 
+## 替代方案
+
+先確認 Paper API 能否做到：單一玩家的世界邊界／時間／天氣／隱藏玩家見 `paper-client-side-effects`；action bar、title、boss bar 用 Adventure；改寫伺服器原本會送的封包見 `paper-packetevents-filter`。
+
+---
+
 ## 平台需求
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

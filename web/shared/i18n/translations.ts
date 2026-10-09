@@ -13,7 +13,7 @@ const zhTW: Translations = {
     menuAriaLabel: '選單',
   },
   footer: {
-    description: 'Paper 1.21.11 / 26.x NMS 底層開發的 Claude Code Agent Skills 函式庫，基於 Paperweight + Mojang mappings。',
+    description: 'Paper 1.21.11 / 26.x 插件開發的 Claude Code Agent Skills 函式庫：NMS 底層技能與純 Paper API 技能，皆經雙版本編譯驗證。',
     nav: '導覽',
     resources: '資源',
     home: '首頁',
@@ -28,7 +28,7 @@ const zhTW: Translations = {
   home: {
     openSource: 'Open Source · Claude Code Agent Skills',
     heroDescription:
-      'Paper 1.21.11 / 26.x NMS 底層開發的 Claude Code Agent Skills 函式庫——涵蓋封包發送、Netty 攔截、自定義實體 AI、反射式橋接與多版本 Adapter 模式。',
+      'Paper 1.21.11 / 26.x 插件開發的 Claude Code Agent Skills 函式庫——NMS 底層（封包、自定義實體、假玩家）與純 Paper API（Dialog、SQLite、跨插件 API、封包過濾、PvP 玩法）兩大類技能。',
     browseAllSkills: '瀏覽所有 Skills',
     statsSkills: '個 Skills',
     statsPublished: '個已發布',
@@ -141,7 +141,7 @@ const zhTW: Translations = {
       },
       {
         q: 'Skills 支援哪些 Minecraft 版本？',
-        a: '所有 Skills 預設以 Paper 1.21.11 / 26.x 為目標，透過 Paperweight userdev 與 Mojang mappings 存取 NMS。大多數非 NMS 工具類 Skill 同樣相容 Paper 1.20+。',
+        a: '所有 Skills 的範本都對 Paper 1.21.11 與 26.2 實際編譯驗證。NMS 技能透過 Paperweight userdev 存取；Paper API 技能只需要 paper-api。兩版寫法不同的地方會在程式碼行尾以 // @1.21.11: 標註。',
       },
       {
         q: 'Skills 會自動修改我的檔案嗎？',
@@ -189,7 +189,7 @@ const en: Translations = {
   },
   footer: {
     description:
-      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x NMS development, powered by Paperweight + Mojang mappings.',
+      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x plugin development: NMS skills and pure Paper API skills, compile-verified on both versions.',
     nav: 'Navigation',
     resources: 'Resources',
     home: 'Home',
@@ -204,7 +204,7 @@ const en: Translations = {
   home: {
     openSource: 'Open Source · Claude Code Agent Skills',
     heroDescription:
-      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x NMS development — covering packet sending, Netty interception, custom entity AI, reflection bridging, and multi-version adapters.',
+      'Claude Code Agent Skills library for Paper 1.21.11 / 26.x plugin development — NMS (packets, custom entities, fake players) and pure Paper API (Dialogs, SQLite, cross-plugin APIs, packet filters, PvP gameplay).',
     browseAllSkills: 'Browse All Skills',
     statsSkills: 'Skills',
     statsPublished: 'Published',
@@ -318,7 +318,7 @@ const en: Translations = {
       },
       {
         q: 'Which Minecraft versions are supported?',
-        a: 'All Skills target Paper 1.21.11 / 26.x with NMS access via Paperweight userdev and Mojang mappings. Most non-NMS utility Skills are also compatible with Paper 1.20+.',
+        a: 'Every skill template is compile-verified against Paper 1.21.11 and 26.2. NMS skills use Paperweight userdev; Paper API skills need only paper-api. Lines that differ between the two versions carry an inline // @1.21.11: alternative.',
       },
       {
         q: 'Will Skills modify my files automatically?',

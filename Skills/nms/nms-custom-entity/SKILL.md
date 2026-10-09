@@ -13,6 +13,11 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 
 透過繼承 NMS Mob 類別並覆寫 `registerGoals()` 加入自訂 `PathfinderGoal`，實現自定義 AI 行為。適用於客製化 Boss、NPC、守衛等場景。
 
+### 相關技能 / Related
+
+- 需要「玩家外觀」且行為與真玩家一致（暴擊、舉盾、擊退）的機器人 → [`nms-fake-player`](../nms-fake-player/SKILL.md)
+- 生物只需調整屬性或 AI 目標時，先考慮 Paper API（`Mob#getPathfinder`、`Attribute`），再考慮 NMS
+
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）

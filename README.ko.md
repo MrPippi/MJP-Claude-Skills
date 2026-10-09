@@ -27,6 +27,10 @@ MJP-Claude-Skills는 Claude Code가 플러그인 코드를 생성하기 전에 �
 
 ## 스킬
 
+두 가지 트랙으로 구성된 30개의 스킬입니다. **NMS** 스킬은 Paperweight userdev가 필요하며, **Paper API** 스킬은 `paper-api`만 필요합니다. 모든 템플릿은 Paper 1.21.11과 26.2를 대상으로 컴파일 검증되었습니다.
+
+### NMS 스킬 (`Skills/nms/`)
+
 | 스킬 ID | 카테고리 | 목적 |
 |----------|----------|---------|
 | [`nms-packet-sender`](Skills/nms/nms-packet-sender/SKILL.md) | nms-packet | `ServerPlayer.connection.send()`를 통해 Clientbound 패킷을 전송합니다 |
@@ -44,6 +48,26 @@ MJP-Claude-Skills는 Claude Code가 플러그인 코드를 생성하기 전에 �
 | [`nms-chunk-access`](Skills/nms/nms-chunk-access/SKILL.md) | nms-world | `LevelChunk` / 섹션 직접 접근 및 대량 블록 편집 |
 | [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | nms-bridge | Paperweight 컴파일 의존성 없이 `MethodHandle` 캐시로 NMS에 접근합니다 |
 | [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | nms-bridge | 런타임 디스패치를 갖는 멀티 버전 어댑터 인터페이스 |
+| [`nms-fake-player`](Skills/nms/nms-fake-player/SKILL.md) | nms-player | 실제 NMS `ServerPlayer`를 기반으로 하는 클라이언트 없는 가짜 플레이어(봇) |
+
+### Paper API 스킬 (NMS 없음, `Skills/paper/`)
+
+| 스킬 ID | 카테고리 | 목적 |
+|----------|----------|---------|
+| [`paper-dialog-ui`](Skills/paper/paper-dialog-ui/SKILL.md) | paper-ui | 메인 스레드에서 안전한 콜백을 갖는 Paper Dialog API 화면 |
+| [`paper-chest-gui`](Skills/paper/paper-chest-gui/SKILL.md) | paper-ui | 페이지 처리와 클릭 방지 기능을 갖춘 `InventoryHolder` 상자 GUI |
+| [`paper-sqlite-repository`](Skills/paper/paper-sqlite-repository/SKILL.md) | paper-data | SQLite 리포지토리, `user_version` 마이그레이션, 단일 라이터 플러셔 |
+| [`paper-config-lang`](Skills/paper/paper-config-lang/SKILL.md) | paper-data | 불변 설정 스냅샷, `config-version`, MiniMessage 언어 파일 |
+| [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | paper-integration | `ServicesManager`를 통한 플러그인 간 API, jar 버전 불일치에 관대합니다 |
+| [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | paper-integration | 소프트 의존성 Hook/Bridge, Vault, PlaceholderAPI 확장 |
+| [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | paper-integration | 내장 JDK `HttpServer` JSON API (localhost, 요청 제한, 스냅샷) |
+| [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | paper-network | PacketEvents / ProtocolLib 패킷 필터 (Netty 스레드 안전, fail-open) |
+| [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | paper-network | 플레이어별 월드 보더, 시간, 날씨 및 가시성 착시 효과 |
+| [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | paper-gameplay | 피해 귀속과 로그아웃 처리를 포함한 PvP 전투 태그 |
+| [`paper-safe-teleport`](Skills/paper/paper-safe-teleport/SKILL.md) | paper-gameplay | 안전 지점 탐색, RTP, 비동기 텔레포트, 대기 시간 및 쿨다운 |
+| [`paper-economy-ledger`](Skills/paper/paper-economy-ledger/SKILL.md) | paper-gameplay | 다중 통화 원장, 에스크로 및 Vault 제공자 |
+| [`paper-brigadier-command`](Skills/paper/paper-brigadier-command/SKILL.md) | paper-command | `LifecycleEvents.COMMANDS`를 통한 Brigadier 명령어 |
+| [`paper-disposable-world`](Skills/paper/paper-disposable-world/SKILL.md) | paper-world | 일회용 월드와 초기화 가능한 아레나 |
 
 ---
 
@@ -85,7 +109,7 @@ Claude Code는 코드를 생성하기 전에 일치하는 `SKILL.md`, [`PLATFORM
 | `com.gradleup.shadow` (선택 사항) | `9.6.1` | 멀티 모듈 / 번들 빌드에서만 사용 (`nms-version-adapter` 참조) |
 | `paper-api` (리플렉션 전용 / 코어 모듈) | `1.21.11-R0.1-SNAPSHOT` / `26.2.build.132-stable` | `compileOnly` |
 
-표준 `build.gradle`과 `paper-plugin.yml`은 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)에 있습니다.
+표준 `build.gradle`과 `paper-plugin.yml`은 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md)(NMS 스킬)와 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md)(Paper API 스킬, 소프트 의존성 좌표 포함: VaultAPI 1.7.1, PlaceholderAPI 2.11.6, packetevents 2.13.0, ProtocolLib 5.3.0, sqlite-jdbc 3.49.1.0)에 있습니다.
 
 ### 문서 웹사이트 (`web/`)
 
@@ -97,12 +121,14 @@ Node.js 24 · Next.js 16.4.0 · React 19.3.0 · TypeScript 6.0.3 · Tailwind CSS
 
 ```
 MJP-Claude-Skills/
-├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except paper-nms/)
+├── .claude/skills/           ← Claude Code runtime (mirrors Skills/, except the PLATFORM folders)
 ├── Skills/                   ← Canonical skill sources
-│   ├── skills-registry.yml   ← v6.0.0, 15 skills
-│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md
-│   ├── paper-nms/PLATFORM.md ← build.gradle / paper-plugin.yml templates, version table
-│   └── nms/<skill-id>/       ← SKILL.md + examples.md (15 skills)
+│   ├── skills-registry.yml   ← 30 skills (paper-nms + paper-api)
+│   ├── _shared/              ← nms-threading.md, nms-obfuscation.md, paper-threading.md
+│   ├── paper-nms/PLATFORM.md ← NMS build.gradle / paper-plugin.yml templates, version table
+│   ├── paper-api/PLATFORM.md ← Paper API build.gradle, soft-dependency coordinates
+│   ├── nms/<skill-id>/       ← SKILL.md + examples.md (16 NMS skills)
+│   └── paper/<skill-id>/     ← SKILL.md + examples.md (14 Paper API skills)
 ├── docs/paper-nms/           ← NMS API quick reference (packets, entities, network, bridge)
 ├── web/                      ← Next.js documentation site (static export → GitHub Pages)
 ├── .github/workflows/        ← ci.yml (PR checks), nextjs.yml (deploy), Claude workflows
@@ -128,13 +154,13 @@ CI는 모든 풀 리퀘스트에서 동일한 검사를 실행합니다 (`.githu
 
 ## 새 스킬 추가
 
-1. `Skills/nms/<slug>/SKILL.md` + `examples.md`를 생성합니다 (예제 2개 이상)
-2. `.claude/skills/nms/<slug>/`에 미러링합니다
+1. `Skills/nms/<slug>/` 또는 `Skills/paper/<slug>/`에 `SKILL.md` + `examples.md`를 생성합니다 (예제 2개 이상)
+2. `.claude/skills/` 아래 동일한 경로에 미러링합니다
 3. 두 `skills-registry.yml` 파일 모두에 항목을 추가합니다
 4. `web/data/skills/<slug>.md`를 추가하고 `web/tests/skills-api.data.test.ts`의 기대 목록을 업데이트합니다
-5. 병합하기 전에 현재 dev bundle을 대상으로 템플릿 클래스를 컴파일합니다
+5. 병합하기 전에 Paper 1.21.11과 26.2를 대상으로 템플릿 클래스를 컴파일합니다
 
-전체 8단계 절차와 불변 규칙은 `CLAUDE.md`를 참고하십시오.
+전체 9단계 절차와 불변 규칙은 `CLAUDE.md`를 참고하십시오.
 
 ---
 

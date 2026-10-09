@@ -16,7 +16,7 @@ MJP-Claude-Skills (Minecraft NMS Claude Code Skills) 是一套 Paper 插件開�
 執行時目錄：**`.claude/skills/`**（Claude Code 專用）
 規範來源：**`Skills/`**（authoritative source，與 `.claude/skills/` 內容相同）
 
-Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 已含全部 15 個 NMS 技能。
+Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 含全部 30 個技能頁面。
 
 ### Repository Layout
 
@@ -30,12 +30,12 @@ MJP-Claude-Skills/
 │   ├── nextjs.yml                       ← main push：tsc + test + build + 部署 GitHub Pages
 │   └── ci.yml                           ← PR：tsc + test + build（不部署）
 ├── .claude/
-│   └── skills/                          ← Claude Code 執行時（15 個技能，與 Skills/ 同步）
+│   └── skills/                          ← Claude Code 執行時（30 個技能，與 Skills/ 同步）
 │       ├── skills-registry.yml          ← 與 Skills/ 相同
 │       ├── _shared/
 │       └── nms/
 ├── Skills/                              ← Canonical source
-│   ├── skills-registry.yml              ← v6.0.0，15 個 NMS 技能
+│   ├── skills-registry.yml              ← 30 個技能（paper-nms + paper-api）
 │   ├── _shared/
 │   │   ├── nms-threading.md
 │   │   ├── nms-obfuscation.md
@@ -54,7 +54,7 @@ MJP-Claude-Skills/
 │       ├── network.md                   ← Netty pipeline 結構與執行緒模型
 │       └── bukkit-nms-bridge.md         ← Bukkit ↔ NMS 橋接轉換表
 └── web/                                 ← Next.js 文件站
-    └── data/skills/                     ← 15 個 NMS 技能 .md（已完整）
+    └── data/skills/                     ← 30 個技能 .md（已完整）
 ```
 
 ---
@@ -96,7 +96,9 @@ MJP-Claude-Skills/
 
 ## Skills Index
 
-所有技能以 `Skills/skills-registry.yml`（v6.0.0）為準。✅ = 已同步至 `.claude/skills/`。
+所有技能以 `Skills/skills-registry.yml` 為準（共 30 個：NMS 16 個、Paper API 14 個）。✅ = 已同步至 `.claude/skills/`。
+
+**NMS 技能**（`platform: paper-nms`，`Skills/nms/`）
 
 | Skill ID | Category | Purpose | 狀態 |
 |----------|----------|---------|------|
@@ -115,6 +117,26 @@ MJP-Claude-Skills/
 | `nms-data-component` | nms-data | DataComponentType 物品組件系統 | ✅ |
 | `nms-chunk-access` | nms-world | LevelChunk 直接方塊/ChunkSection 存取 | ✅ |
 | `nms-boss-event` | nms-display | ServerBossEvent Boss Bar 每人獨立控制 | ✅ |
+| `nms-fake-player` | nms-player | 沒有客戶端的 NMS ServerPlayer 假玩家（機器人） | ✅ |
+
+**Paper API 技能**（`platform: paper-api`，`Skills/paper/`）
+
+| Skill ID | Category | Purpose | 狀態 |
+|----------|----------|---------|------|
+| `paper-dialog-ui` | paper-ui | Paper Dialog API 介面（回呼回主執行緒、確認鈕在右） | ✅ |
+| `paper-chest-gui` | paper-ui | InventoryHolder 箱子 GUI（分頁、點擊防護、onDisable 關閉） | ✅ |
+| `paper-sqlite-repository` | paper-data | SQLite Repository、user_version 遷移、單一寫入執行緒 | ✅ |
+| `paper-config-lang` | paper-data | 不可變設定物件、config-version、MiniMessage 語言檔 | ✅ |
+| `paper-service-api` | paper-integration | ServicesManager 跨插件 API（只加不改、容忍版本落差） | ✅ |
+| `paper-softdepend-hook` | paper-integration | 軟依賴 Hook／Bridge、Vault、PlaceholderAPI expansion | ✅ |
+| `paper-embedded-http` | paper-integration | 內嵌 JDK HttpServer JSON API（127.0.0.1、限流、快照） | ✅ |
+| `paper-packetevents-filter` | paper-network | PacketEvents／ProtocolLib 封包過濾（Netty 執行緒、fail-open） | ✅ |
+| `paper-client-side-effects` | paper-network | 只對單一玩家顯示的邊界／時間／天氣／隱藏玩家 | ✅ |
+| `paper-combat-tag` | paper-gameplay | PvP 戰鬥標記（傷害歸屬、指令白名單、離線處理） | ✅ |
+| `paper-safe-teleport` | paper-gameplay | 安全落點搜尋、RTP、非同步傳送與冷卻 | ✅ |
+| `paper-economy-ledger` | paper-gameplay | 多幣別帳本、託管、Vault 提供者 | ✅ |
+| `paper-brigadier-command` | paper-command | Brigadier 指令（LifecycleEvents.COMMANDS、k/m/b 金額） | ✅ |
+| `paper-disposable-world` | paper-world | 拋棄式世界與競技場重置 | ✅ |
 
 ---
 
@@ -235,7 +257,7 @@ Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-
 
 ## Web App (`web/`)
 
-Next.js 16 靜態匯出至 `web/out/`。`web/data/skills/` 已含全部 15 個 NMS 技能（每個一個 `.md`）。
+Next.js 16 靜態匯出至 `web/out/`。`web/data/skills/` 含全部 30 個技能（每個一個 `.md`）。
 
 ```bash
 cd web
@@ -295,4 +317,6 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 7. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
 
-8. **Paperweight 依賴預設**：全部 15 個 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。
+8. **Paperweight 依賴預設**：全部 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。Paper API 技能不使用 Paperweight，也不得 import NMS。
+
+9. **NMS 隔離**：NMS 程式碼只放在單一 `nms/` 套件、公開簽名只用 Bukkit 型別、版本不符時只停用該功能（見 `Skills/paper-nms/PLATFORM.md` 第 8 節）。
