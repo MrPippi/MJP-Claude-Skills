@@ -136,7 +136,8 @@ describe('getSkillBySlug (real data)', () => {
   it('renders nms-packet-sender starting with h1 then 目的 h2', async () => {
     const skill = await getSkillBySlug('nms-packet-sender');
     assert.ok(skill);
-    assert.ok(skill.contentHtml.startsWith('<h1>NMS Packet Sender</h1>\n<h2>目的</h2>'));
+    assert.ok(skill.contentHtml.startsWith('<h1 id="nms-packet-sender">NMS Packet Sender</h1>\n<h2 id="目的">目的</h2>'));
+    assert.equal(skill.headings[0].text, '目的');
   });
 
   it('renders every skill to non-empty HTML', async () => {

@@ -1,139 +1,127 @@
 export type Language = 'zh-TW' | 'en';
 
-export interface StepLink {
-  label: string;
-  href: string;
-}
-
-export interface StepTrigger {
-  keyword: string;
-  skill: string;
-}
-
 export interface GuideStep {
   number: string;
   title: string;
   description: string;
   code?: string;
-  triggers?: StepTrigger[];
+  triggers?: { keyword: string; skill: string }[];
   outputs?: string[];
-  note?: string;
-  links: StepLink[];
-}
-
-export interface GuideFaq {
-  q: string;
-  a: string;
+  note: string;
 }
 
 export interface Translations {
-  nav: {
-    skills: string;
-    categories: string;
-    guide: string;
-  };
+  nav: { docs: string; skills: string; reference: string; gettingStarted: string };
   header: {
     searchPlaceholder: string;
     searchAriaLabel: string;
     menuAriaLabel: string;
+    themeToLight: string;
+    themeToDark: string;
+    switchLang: string;
   };
   footer: {
-    description: string;
-    nav: string;
+    tagline: string;
+    docs: string;
     resources: string;
-    home: string;
+    gettingStarted: string;
     allSkills: string;
-    categoriesBrowse: string;
-    howToUse: string;
+    reference: string;
     githubProject: string;
     contributeGuide: string;
     license: string;
-    builtWith: string;
+    disclaimer: string;
   };
   home: {
-    openSource: string;
+    eyebrow: string;
+    titleLead: string;
+    titleAccent: string;
     heroDescription: string;
-    browseAllSkills: string;
+    ctaPrimary: string;
+    ctaSecondary: string;
     statsSkills: string;
-    statsPublished: string;
-    statsCategories: string;
+    statsPlatforms: string;
+    statsVersions: string;
+    terminalTitle: string;
+    terminalComment: string;
+    terminalComment2: string;
+    terminalPrompt: string;
+    terminalResult: string;
+    platformsLabel: string;
+    platformsTitle: string;
+    platformNmsDesc: string;
+    platformApiDesc: string;
+    platformSkills: string;
+    platformSetup: string;
+    stepsLabel: string;
+    stepsTitle: string;
+    steps: { title: string; body: string }[];
     featuredLabel: string;
     featuredTitle: string;
-    featuredSubtitle: string;
     viewAll: string;
-    categoriesLabel: string;
-    categoriesTitle: string;
-    categoriesSubtitle: string;
-    categoryCount: string;
+    referenceLabel: string;
+    referenceTitle: string;
+    referenceSubtitle: string;
     ctaTitle: string;
     ctaDescription: string;
-    ctaDescriptionLink: string;
     ctaButton: string;
   };
+  docs: {
+    overviewLabel: string;
+    overviewTitle: string;
+    overviewDescription: string;
+    sections: { start: string; platforms: string; concepts: string; skills: string; reference: string };
+    sectionDescriptions: { start: string; platforms: string; concepts: string; skills: string; reference: string };
+    editOnGithub: string;
+    previous: string;
+    next: string;
+    toc: string;
+    menu: string;
+    closeMenu: string;
+    pagesCount: string;
+  };
   skills: {
-    pageLabel: string;
     pageTitle: string;
     pageSubtitle: string;
     filterAll: string;
-    gridView: string;
-    listView: string;
+    filterPlatform: string;
+    filterCategory: string;
+    searchPlaceholder: string;
     emptyState: string;
-  };
-  categories: {
-    pageLabel: string;
-    pageTitle: string;
-    pageSubtitle: string;
-    skillsCount: string;
-    activeCount: string;
-  };
-  categoryDetail: {
-    breadcrumb: string;
-    emptyMessage: string;
-    subtitle: string;
+    resultCount: string;
+    clearFilters: string;
   };
   skillDetail: {
-    home: string;
-    skills: string;
-    toc: string;
     updatedAt: string;
+    version: string;
+    triggers: string;
+    tags: string;
+    platformDoc: string;
   };
-  guide: {
-    badge: string;
-    heroTitle: string;
-    heroTitleHighlight: string;
-    heroDescription: string;
-    browseSkills: string;
-    stepsLabel: string;
-    stepsTitle: string;
-    faqLabel: string;
-    faqTitle: string;
-    faqSubtitle: string;
-    ctaTitle: string;
-    ctaDescription: string;
-    ctaButtonSkills: string;
-    ctaButtonContribute: string;
-    steps: GuideStep[];
-    faqs: GuideFaq[];
-  };
-  notFound: {
+  gettingStarted: {
+    label: string;
     title: string;
     description: string;
-    backHome: string;
+    stepsTitle: string;
+    steps: GuideStep[];
+    faqTitle: string;
+    faqSubtitle: string;
+    faqs: { q: string; a: string }[];
+    ctaTitle: string;
+    ctaDescription: string;
+    ctaButton: string;
   };
+  notFound: { title: string; description: string; backHome: string; browseDocs: string };
   search: {
     placeholder: string;
     emptyHint: string;
     noResults: string;
+    skillsGroup: string;
+    docsGroup: string;
     navHint: string;
     openHint: string;
     closeHint: string;
   };
-  status: {
-    active: string;
-    deprecated: string;
-  };
-  sidebar: {
-    categories: string;
-    allSkills: string;
-  };
+  status: { active: string; deprecated: string };
+  redirect: { moved: string; goNow: string };
 }

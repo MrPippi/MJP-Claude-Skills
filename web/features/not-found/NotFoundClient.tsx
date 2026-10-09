@@ -1,28 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { PickaxeIcon } from '@/shared/ui';
+import { ROUTES } from '@/config/routes';
+import { PixelIcon } from '@/shared/ui/PixelIcon';
 import { useLanguage } from '@/shared/i18n';
 
 export function NotFoundClient() {
   const { t } = useLanguage();
-
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center text-center px-4">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] text-[var(--color-accent)]">
-        <PickaxeIcon className="h-8 w-8" />
+    <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-24 text-center">
+      <PixelIcon name="creeper" className="h-24 w-24" title="Creeper" />
+      <p className="mt-8 font-pixel text-5xl text-accent">404</p>
+      <h1 className="mt-4 font-serif text-3xl font-semibold text-fg">{t.notFound.title}</h1>
+      <p className="mt-3 text-fg-2">{t.notFound.description}</p>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Link href={ROUTES.home} className="btn-pixel btn-primary">
+          {t.notFound.backHome}
+        </Link>
+        <Link href={ROUTES.docs} className="btn-pixel btn-ghost">
+          {t.notFound.browseDocs}
+        </Link>
       </div>
-      <div className="text-6xl font-extrabold text-[var(--color-border)] mb-3 tabular-nums">404</div>
-      <h1 className="text-xl font-bold text-[var(--color-text)] mb-2">{t.notFound.title}</h1>
-      <p className="text-sm text-[var(--color-text-muted)] mb-8 max-w-sm">
-        {t.notFound.description}
-      </p>
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--color-surface)] transition-all hover:bg-[var(--color-accent-hover)] focus-ring"
-      >
-        {t.notFound.backHome}
-      </Link>
     </div>
   );
 }

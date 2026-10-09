@@ -1,1 +1,2 @@
-export { PickaxeIcon } from './PickaxeIcon';
+export { PixelIcon } from './PixelIcon';
+export type { PixelIconName } from './pixel-icons';

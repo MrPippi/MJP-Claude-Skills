@@ -1,3 +1,5 @@
+import type { Heading } from '@/shared/markdown/render';
+
 export type SkillStatus = 'active' | 'deprecated';
 
 export interface SkillMeta {
@@ -23,6 +25,7 @@ export interface SkillMeta {
 export interface SkillFull extends SkillMeta {
   content: string;
   contentHtml: string;
+  headings: Heading[];
 }
 
 export interface Category {

@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
-import { GuidePageClient } from '@/features/guide/GuidePageClient';
+import { Redirect } from '@/shared/ui/Redirect';
+import { ROUTES } from '@/config/routes';
 
-export const metadata: Metadata = {
-  title: '使用方法 — MJP-Claude-Skills',
-  description: '了解如何安裝並使用 MJP-Claude-Skills Claude Code Agent Skills，在 Paper 1.21.11 / 26.x NMS 底層開發中快速生成高品質的 Java 代碼。',
-};
+export const metadata: Metadata = { robots: { index: false }, alternates: { canonical: ROUTES.gettingStarted } };
 
-export default function GuidePage() {
-  return <GuidePageClient />;
+export default function LegacyGuidePage() {
+  return <Redirect to={ROUTES.gettingStarted} />;
 }

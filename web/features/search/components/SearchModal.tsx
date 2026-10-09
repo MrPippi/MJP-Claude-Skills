@@ -1,183 +1,163 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import Fuse, { type FuseResult } from 'fuse.js';
+import { useRouter } from 'next/navigation';
 import { createSearchIndex, search } from '@/features/search/api/search';
 import type { SearchIndex } from '@/shared/types/skill';
-import { statusTextColor } from '@/shared/lib/utils';
-import { useLanguage } from '@/shared/i18n';
+import type { DocLink } from '@/features/docs/registry';
+import { categoryIconFor } from '@/features/skills/lib/platform';
+import { ROUTES } from '@/config/routes';
+import { PixelIcon } from '@/shared/ui/PixelIcon';
+import type { PixelIconName } from '@/shared/ui/pixel-icons';
+import { SearchIcon } from '@/shared/ui/icons';
+import { format, useLanguage } from '@/shared/i18n';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   searchData: SearchIndex[];
+  docLinks: DocLink[];
 }
 
-export function SearchModal({ isOpen, onClose, searchData }: SearchModalProps) {
+interface ResultItem {
+  key: string;
+  group: 'skills' | 'docs';
+  href: string;
+  title: string;
+  subtitle: string;
+  icon: PixelIconName;
+}
+
+const MAX_DOC_RESULTS = 5;
+
+export function SearchModal({ isOpen, onClose, searchData, docLinks }: SearchModalProps) {
   const { t, lang } = useLanguage();
+  const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<FuseResult<SearchIndex>[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selected, setSelected] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const fuseRef = useRef<Fuse<SearchIndex> | null>(null);
+  const fuse = useMemo(() => createSearchIndex(searchData), [searchData]);
 
   useEffect(() => {
-    if (searchData.length > 0) {
-      fuseRef.current = createSearchIndex(searchData);
-    }
-  }, [searchData]);
-
-  useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setResults([]);
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
+    if (!isOpen) return;
+    setQuery('');
+    setSelected(0);
+    const id = window.setTimeout(() => inputRef.current?.focus(), 30);
+    return () => window.clearTimeout(id);
   }, [isOpen]);
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      setQuery(value);
-      setSelectedIndex(0);
-      if (fuseRef.current) {
-        setResults(search(value, fuseRef.current));
-      }
+  const results = useMemo<ResultItem[]>(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    const skills = search(query, fuse).map(({ item }) => ({
+      key: `skill-${item.slug}`,
+      group: 'skills' as const,
+      href: ROUTES.skill(item.slug),
+      title: lang === 'en' ? item.title : item.titleZh,
+      subtitle: lang === 'en' ? item.description : item.descriptionZh,
+      icon: categoryIconFor(item.category),
+    }));
+    const docs = docLinks
+      .filter((d) => `${d.title.en} ${d.title.zh} ${d.slug}`.toLowerCase().includes(q))
+      .slice(0, MAX_DOC_RESULTS)
+      .map((d) => ({
+        key: `doc-${d.href}`,
+        group: 'docs' as const,
+        href: d.href,
+        title: lang === 'en' ? d.title.en : d.title.zh,
+        subtitle: t.docs.sections[d.section],
+        icon: d.icon,
+      }));
+    return [...skills, ...docs];
+  }, [query, fuse, docLinks, lang, t]);
+
+  const go = useCallback(
+    (item: ResultItem | undefined) => {
+      if (!item) return;
+      onClose();
+      router.push(item.href);
     },
-    []
+    [onClose, router],
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Escape') {
-        onClose();
-      } else if (e.key === 'Enter' && results[selectedIndex]) {
-        onClose();
-        window.location.href = `/skills/${results[selectedIndex].item.slug}`;
-      }
-    },
-    [results, selectedIndex, onClose]
-  );
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        if (!isOpen) {
-          // handled by parent
-        }
-      }
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isOpen, onClose]);
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    // Enter while an IME candidate is open (zh-TW input) only commits the text.
+    if (e.nativeEvent.isComposing) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelected((i) => Math.min(i + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelected((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      go(results[selected]);
+    } else if (e.key === 'Escape') {
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-bg)_80%,transparent)] backdrop-blur-md" />
-
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]" onClick={onClose} role="presentation">
+      <div className="absolute inset-0 bg-[color-mix(in_srgb,var(--color-fg)_25%,transparent)] backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-xl rounded-xl border border-[var(--color-border-strong)] bg-[var(--color-surface-2)] shadow-2xl shadow-black/60"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.header.searchAriaLabel}
+        className="relative w-full max-w-xl overflow-hidden rounded-lg border border-line-strong bg-bg shadow-[0_8px_0_var(--color-line-strong)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-4 py-3.5">
-          <svg className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        <div className="flex items-center gap-3 border-b border-line px-4 py-3">
+          <SearchIcon className="h-4 w-4 shrink-0 text-fg-3" />
           <input
             ref={inputRef}
             type="text"
-            placeholder={t.search.placeholder}
             value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] outline-none focus:ring-0"
+            placeholder={t.search.placeholder}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelected(0);
+            }}
+            onKeyDown={onKeyDown}
+            className="flex-1 bg-transparent text-sm text-fg placeholder:text-fg-3 outline-none"
+            aria-label={t.search.placeholder}
           />
-          <button
-            onClick={onClose}
-            className="shrink-0 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-border)] px-2 py-0.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors font-mono focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-surface-2)]"
-          >
-            ESC
-          </button>
+          <kbd className="rounded-[3px] border border-line-strong px-1.5 font-pixel text-[10px] text-fg-3">ESC</kbd>
         </div>
 
-        <div className="max-h-[360px] overflow-y-auto">
-          {query === '' && (
-            <div className="py-12 text-center text-sm text-[var(--color-text-muted)]">
-              {t.search.emptyHint}
-            </div>
+        <div className="max-h-[min(60vh,420px)] overflow-y-auto p-1.5">
+          {!query.trim() && <p className="py-10 text-center text-sm text-fg-3">{t.search.emptyHint}</p>}
+          {query.trim() && results.length === 0 && (
+            <p className="py-10 text-center text-sm text-fg-3">{format(t.search.noResults, { query })}</p>
           )}
-
-          {query !== '' && results.length === 0 && (
-            <div className="py-12 text-center text-sm text-[var(--color-text-muted)]">
-              {t.search.noResults.replace('{query}', query)}
-            </div>
-          )}
-
-          {results.length > 0 && (
-            <ul className="p-1.5">
-              {results.map((result, index) => (
-                <li key={result.item.id}>
-                  <Link
-                    href={`/skills/${result.item.slug}`}
-                    onClick={onClose}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-inset ${
-                      index === selectedIndex
-                        ? 'bg-accent-subtle border border-accent-soft'
-                        : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-border)] border border-transparent'
-                    }`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium truncate text-[var(--color-text)]">
-                          {lang === 'en' ? result.item.title : result.item.titleZh}
-                        </span>
-                        <span className={`text-[11px] shrink-0 ${statusTextColor(result.item.status)}`}>
-                          {t.status[result.item.status]}
-                        </span>
-                      </div>
-                      <p className="truncate text-xs text-[var(--color-text-muted)] mt-0.5">
-                        {lang === 'en' ? result.item.description : result.item.descriptionZh}
-                      </p>
-                    </div>
-                    <svg className="h-3.5 w-3.5 shrink-0 text-[var(--color-border-strong)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+          {results.map((item, index) => {
+            const showGroup = index === 0 || results[index - 1].group !== item.group;
+            return (
+              <div key={item.key}>
+                {showGroup && <p className="eyebrow px-3 pb-1 pt-3">{item.group === 'skills' ? t.search.skillsGroup : t.search.docsGroup}</p>}
+                <Link
+                  href={item.href}
+                  onClick={onClose}
+                  onMouseEnter={() => setSelected(index)}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2.5 ${index === selected ? 'bg-surface' : ''}`}
+                >
+                  <PixelIcon name={item.icon} className="h-5 w-5 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-fg">{item.title}</span>
+                    <span className="block truncate text-xs text-fg-3">{item.subtitle}</span>
+                  </span>
+                </Link>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="flex items-center gap-4 border-t border-[var(--color-border)] px-4 py-2.5 text-[11px] text-[var(--color-text-muted)]">
-          <span className="flex items-center gap-1.5">
-            <kbd className="rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-1.5 py-0.5 font-mono">↑↓</kbd>
-            {t.search.navHint}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <kbd className="rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-1.5 py-0.5 font-mono">↵</kbd>
-            {t.search.openHint}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <kbd className="rounded border border-[var(--color-border-strong)] bg-[var(--color-border)] px-1.5 py-0.5 font-mono">ESC</kbd>
-            {t.search.closeHint}
-          </span>
+        <div className="flex gap-4 border-t border-line px-4 py-2 text-[11px] text-fg-3">
+          <span><kbd className="font-pixel">↑↓</kbd> {t.search.navHint}</span>
+          <span><kbd className="font-pixel">↵</kbd> {t.search.openHint}</span>
+          <span><kbd className="font-pixel">ESC</kbd> {t.search.closeHint}</span>
         </div>
       </div>
     </div>
