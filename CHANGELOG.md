@@ -3,30 +3,34 @@
 本檔記錄 MJP-Claude-Skills 的重要變更，格式參考 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)。
 技能庫版本以 `Skills/skills-registry.yml` 的 `version` 為準。
 
-## [Unreleased] — Paper API 技能（PR #16，疊在 #15 之上）
+## [7.0.0] - 2026-10-09
+
+技能庫 registry 版本 `6.0.0` → `7.0.0`（major：目標平台改為 Paper 1.21.11／26.2、範本 API 不相容變更、新增 `paper-api` 平台）。共 30 個技能。
+
+### Paper API 技能（PR #16）
 
 依 BlockoSMP 與 Bydsmp 插件集的實際模式新增技能；全部範本、examples 中的完整類別與 JUnit 測試，都對 Paper **1.21.11** 與 **26.2** 實際編譯，測試實際執行。
 
-### Added
+#### Added
 
 - **Paper API 技能平台**：`Skills/paper/`、`Skills/paper-api/PLATFORM.md`（paper-api compileOnly、軟依賴座標）、`Skills/_shared/paper-threading.md`、registry `paper-api` 平台
 - 14 個 Paper API 技能：`paper-dialog-ui`、`paper-chest-gui`、`paper-sqlite-repository`、`paper-config-lang`、`paper-service-api`、`paper-softdepend-hook`、`paper-embedded-http`、`paper-packetevents-filter`、`paper-client-side-effects`、`paper-combat-tag`、`paper-safe-teleport`、`paper-economy-ledger`、`paper-brigadier-command`、`paper-disposable-world`
 - NMS 技能 `nms-fake-player`：沒有客戶端的 `ServerPlayer` 假玩家（機器人），NMS 限定單一套件、版本不符時只停用該功能
 - 網站新增 15 個技能頁、NMS／Paper 分類圖示
 
-### Changed
+#### Changed
 
 - `nms-packet-interceptor`、`nms-packet-sender`、`nms-custom-menu`、`nms-player-profile`、`nms-custom-entity` 新增「替代方案／相關技能」段落（優先使用 Paper API、PacketEvents、Dialog）
 - `Skills/paper-nms/PLATFORM.md` 新增「NMS 隔離與版本守門」規範
 - CLAUDE.md、README（8 種語言）、網站文案改為「NMS + Paper API」兩大類，共 30 個技能
 - Web 測試改為依資料動態計算數量；搜尋測試只鎖定必含結果
 
-## [Unreleased] — 依賴升級、範本修正與 1.21.11／26.2 雙版本（PR #14、#15）
+### 依賴升級、範本修正與 1.21.11／26.2 雙版本（PR #14、#15、#17）
 
 涵蓋 PR [#14](https://github.com/MrPippi/MJP-Claude-Skills/pull/14)（依賴升級、安全修補、範本修正）與
 PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper 26.2）。
 
-### ⚠️ Breaking
+#### ⚠️ Breaking
 
 - **目標平台由 Minecraft 1.21 – 1.21.3 改為 Paper 1.21.11 與 26.2 雙版本**（#15）
   - 所有範本同時對 `1.21.11-R0.1-SNAPSHOT`（Java 21）與 `26.2.build.132-stable`（Java 25）編譯驗證；預設寫 26.2 API，1.21.11 不同處以行尾 `// @1.21.11:` 或區塊 `// @only <版本>` 標註
@@ -44,14 +48,14 @@ PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper
 - `AttributeUtil.removeModifier(..., UUID)` 已移除，modifier id 一律為 `Identifier`（#14）
 - `ScoreboardManager.apply()` / `setLine()` / `removeLine()` / `remove()` 現在會實際送出計分板封包（原本 `apply()` 不會讓 sidebar 顯示）（#14）
 
-### Added
+#### Added
 
 - `CustomMenuHolder` 範本：作為 container owner，讓 `InventoryClickEvent` 能辨識自訂 GUI；`CustomMenu` 新增 `(syncId, inventory, CustomMenuHolder)` 建構子（#14）
 - Web：以 `node:test` + `tsx` 撰寫的 characterization tests（`npm test`），CI 於 push 與 PR 執行（新增 `.github/workflows/ci.yml`）（#14）
 - `CHANGELOG.md`；README 新增依賴說明
 - 多語 README：简体中文、日本語、한국어、Español、Português (BR)、Русский，各 README 頂端提供語言切換列
 
-### Changed
+#### Changed
 
 - 所有 SKILL.md 範本 class 經 dev bundle 實際編譯驗證（26.2：42 個 class 0 錯誤）；docs／examples 片段經自動包裝編譯檢查（#14、#15）
 - `Skills/paper-nms/PLATFORM.md`：版本對照表、`api-version: '26.2'`、Javadoc 26.2、1.21 → 26.x 遷移重點（#15）
@@ -62,7 +66,7 @@ PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper
 - robots.txt / sitemap.xml 統一由 `app/robots.ts`、`app/sitemap.ts` 產生，sitemap 新增 `/guide`（#14）
 - Web 技能頁的範例程式碼對齊範本實際 API（#14、#15）
 
-### Fixed
+#### Fixed
 
 - 範本 import 不存在的 `org.bukkit.craftbukkit.v1_21_R1`（Paper 1.20.5+ 已無版本號 relocation）（#14）
 - 物品 NBT 改用 `DataComponents.CUSTOM_DATA`；玩家頭顱改用 `DataComponents.PROFILE`（#14）
@@ -71,12 +75,12 @@ PR [#15](https://github.com/MrPippi/MJP-Claude-Skills/pull/15)（移植至 Paper
 - `vercel.json` 的 `outputDirectory` 改為 `out`（#14）
 - 文件中錯誤的類名與 API：`ClientboundExplodePacket`、`ClientboundDisconnectPacket` 套件、`CraftItemStack.unwrap()`、`ServerboundInteractPacket` 等（#14、#15）
 
-### Security
+#### Security
 
 - 修補 Next.js critical（request smuggling 等）與 sharp、postcss、js-yaml、nanoid、source-map-js 等 high／moderate 漏洞；`npm audit` 由 12 個（1 critical）降至 4 個 moderate（`sprintf-js`，上游無修補）（#14）
 - 技能 Markdown 改用 remark-html 預設 sanitize；`getSkillBySlug` 只接受 kebab-case slug，防止路徑穿越（#14）
 
-### Removed
+#### Removed
 
 - 未使用的依賴：`rehype-autolink-headings`、`rehype-highlight`、`rehype-slug`、`reading-time`（#14）
 - `web/scripts/generate-static-metadata.ts` 與提交在 repo 中的 `public/robots.txt`、`public/sitemap.xml`（#14）

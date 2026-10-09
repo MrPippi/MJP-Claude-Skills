@@ -1,6 +1,6 @@
-version: "6.0.0"
-updated: "2026-04-30"
-description: "MJP-Claude-Skills — Minecraft NMS Claude Code Skills / NMS 技能索引（Paper 1.21.11 / 26.x + Mojang 官方命名）"
+version: "7.0.0"
+updated: "2026-10-09"
+description: "MJP-Claude-Skills — Minecraft Paper Claude Code Skills / 技能索引：NMS（paper-nms）與純 Paper API（paper-api），Paper 1.21.11 / 26.x"
 
 skills:
   - id: nms-packet-sender

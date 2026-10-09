@@ -35,7 +35,7 @@ MJP-Claude-Skills/
 │       ├── _shared/
 │       └── nms/
 ├── Skills/                              ← Canonical source
-│   ├── skills-registry.yml              ← 30 個技能（paper-nms + paper-api）
+│   ├── skills-registry.yml              ← v7.0.0，30 個技能（paper-nms + paper-api）
 │   ├── _shared/
 │   │   ├── nms-threading.md
 │   │   ├── nms-obfuscation.md
@@ -96,7 +96,7 @@ MJP-Claude-Skills/
 
 ## Skills Index
 
-所有技能以 `Skills/skills-registry.yml` 為準（共 30 個：NMS 16 個、Paper API 14 個）。✅ = 已同步至 `.claude/skills/`。
+所有技能以 `Skills/skills-registry.yml`（v7.0.0）為準（共 30 個：NMS 16 個、Paper API 14 個）。✅ = 已同步至 `.claude/skills/`。
 
 **NMS 技能**（`platform: paper-nms`，`Skills/nms/`）
 
