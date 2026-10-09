@@ -57,16 +57,22 @@ describe('search (real data)', () => {
   const fuse = createSearchIndex(getSearchIndex());
   const slugs = (q: string) => search(q, fuse).map((r) => r.item.slug);
 
+  // 技能持續增加，只鎖定「必須出現」的結果，不鎖定完整清單
+  const includesAll = (q: string, expected: string[]) => {
+    const got = slugs(q);
+    for (const e of expected) assert.ok(got.includes(e), `${q}: missing ${e} in ${JSON.stringify(got)}`);
+  };
+
   it('packet', () => {
-    assert.deepEqual(slugs('packet'), ['nms-packet-sender', 'nms-packet-interceptor', 'nms-particle-effect']);
+    includesAll('packet', ['nms-packet-sender', 'nms-packet-interceptor', 'paper-packetevents-filter']);
   });
 
   it('Chinese query 封包', () => {
-    assert.deepEqual(slugs('封包'), ['nms-packet-sender', 'nms-packet-interceptor']);
+    includesAll('封包', ['nms-packet-sender', 'nms-packet-interceptor']);
   });
 
   it('typo pakcet still matches (fuzzy)', () => {
-    assert.deepEqual(slugs('pakcet'), ['nms-packet-interceptor', 'nms-packet-sender']);
+    includesAll('pakcet', ['nms-packet-interceptor', 'nms-packet-sender']);
   });
 
   it('boss ranks nms-custom-entity above nms-boss-event', () => {
