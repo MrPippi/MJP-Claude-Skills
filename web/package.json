@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "tsx scripts/generate-static-metadata.ts && next build",
+    "build": "next build",
     "start": "next start",
     "test": "node --import tsx --test tests/*.test.ts"
   },
