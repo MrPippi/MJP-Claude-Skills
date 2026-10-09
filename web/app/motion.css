@@ -7,8 +7,8 @@
 /* ── Scroll reveal (MotionLayer adds .is-visible) ── */
 .motion-ok [data-reveal] {
   transition:
-    opacity 600ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms),
-    transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms);
+    opacity 450ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms),
+    transform 450ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--reveal-delay, 0ms);
 }
 .motion-ok [data-reveal]:not(.is-visible) {
   opacity: 0;
@@ -23,13 +23,14 @@
 }
 
 /* ── Hero: terminal typing (one shot) ── */
-.type-line { display: block; min-height: 1lh; }
+/* Lines wrap instead of overflowing; the end state uses a negative inset so nothing is clipped. */
+.type-line { display: block; min-height: 1lh; white-space: pre-wrap; overflow-wrap: anywhere; }
 .motion-ok .type-line {
   clip-path: inset(0 100% 0 0);
   animation: type-in 0.45s steps(18, end) var(--line-delay, 0s) forwards;
 }
 @keyframes type-in {
-  to { clip-path: inset(0 0 0 0); }
+  to { clip-path: inset(-0.25em -1em -0.25em -1em); }
 }
 
 /* ── Hero: drifting clouds, bobbing sun/moon, swaying leaves (SVG user units) ── */
@@ -124,4 +125,17 @@ a:hover > .mc-slot::after { opacity: 0.22; }
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-new(root) { animation: none; }
+}
+
+/* Printing / PDF export: show everything regardless of scroll position or animation state. */
+@media print {
+  [data-reveal],
+  .type-line {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    animation: none !important;
+  }
+  .hero-mote,
+  .xp-orb { display: none !important; }
 }

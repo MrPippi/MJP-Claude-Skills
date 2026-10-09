@@ -129,7 +129,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
           <SectionHeading label={h.stepsLabel} title={h.stepsTitle} />
           <ol className="grid gap-8 md:grid-cols-3">
             {h.steps.map((step, i) => (
-              <li key={step.title} data-reveal style={revealDelay(i)} className="flex gap-4">
+              <li key={i} data-reveal style={revealDelay(i)} className="flex gap-4">
                 <span className="mc-slot h-12 w-12">
                   <PixelIcon name={STEP_ICONS[i] ?? 'grass'} className="h-8 w-8" />
                 </span>
