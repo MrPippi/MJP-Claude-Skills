@@ -184,15 +184,17 @@ describe('getSkillBySlug (fixture)', () => {
     assert.ok(skill?.contentHtml.includes('<table>'));
   });
 
-  it('does NOT sanitize raw HTML (sanitize: false) — script tags pass through', async () => {
+  it('sanitizes output: raw HTML blocks (including <script>) are dropped', async () => {
     const skill = await api.getSkillBySlug('full');
-    assert.ok(skill?.contentHtml.includes('<div class="raw">raw html</div>'));
-    assert.ok(skill?.contentHtml.includes('<script>alert(1)</script>'));
+    assert.ok(!skill?.contentHtml.includes('<script'));
+    assert.ok(!skill?.contentHtml.includes('alert(1)'));
+    assert.ok(!skill?.contentHtml.includes('raw html'));
   });
 
-  it('does not restrict slug to the data directory (path traversal resolves)', async () => {
-    const skill = await api.getSkillBySlug('../outside');
-    assert.equal(skill?.id, 'outside');
-    assert.equal(skill?.slug, '../outside');
+  it('rejects slugs that are not plain kebab-case (no path traversal)', async () => {
+    assert.equal(await api.getSkillBySlug('../outside'), null);
+    assert.equal(await api.getSkillBySlug('..\\outside'), null);
+    assert.equal(await api.getSkillBySlug('Full'), null);
+    assert.equal(await api.getSkillBySlug(''), null);
   });
 });
