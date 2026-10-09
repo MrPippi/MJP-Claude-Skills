@@ -51,6 +51,10 @@ jobs:
         working-directory: web
         run: npx tsc --noEmit
 
+      - name: Test
+        working-directory: web
+        run: npm test
+
       - name: Build with Next.js
         working-directory: web
         env:
