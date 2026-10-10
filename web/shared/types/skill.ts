@@ -26,6 +26,8 @@ export interface SkillFull extends SkillMeta {
   content: string;
   contentHtml: string;
   headings: Heading[];
+  /** English body from data/skills/en/<slug>.md; null when no translation exists. */
+  english: { contentHtml: string; headings: Heading[] } | null;
 }
 
 export interface Category {

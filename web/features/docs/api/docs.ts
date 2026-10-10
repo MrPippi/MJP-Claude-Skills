@@ -11,10 +11,13 @@ export interface DocPage extends DocSource {
   title: BilingualText;
   html: string;
   headings: Heading[];
+  /** English translation from data/docs/en/<section>/<slug>.md; null when none exists. */
+  english: { html: string; headings: Heading[] } | null;
   githubUrl: string;
 }
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
+const DOCS_EN_DIR = path.join(process.cwd(), 'data', 'docs', 'en');
 const CJK = /[㐀-鿿]/;
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
 
@@ -51,16 +54,28 @@ function readSource(source: DocSource): string {
 
 const pageCache = new Map<string, Promise<DocPage>>();
 
+function splitH1(markdown: string): { h1: string | null; body: string } {
+  const match = markdown.match(/^# (.+)$/m);
+  return match ? { h1: match[1].trim(), body: markdown.replace(match[0], '') } : { h1: null, body: markdown };
+}
+
+/** Links in the translation resolve against the original source file, so relative targets stay identical. */
+async function loadEnglish(source: DocSource): Promise<DocPage['english']> {
+  const enPath = path.join(DOCS_EN_DIR, source.section, `${source.slug}.md`);
+  if (!fs.existsSync(enPath)) return null;
+  const { body } = splitH1(fs.readFileSync(enPath, 'utf8'));
+  return renderMarkdown(body, { resolveLink: createLinkResolver(source.file) });
+}
+
 async function loadPage(source: DocSource): Promise<DocPage> {
-  const markdown = readSource(source);
-  const h1 = markdown.match(/^# (.+)$/m);
-  const body = h1 ? markdown.replace(h1[0], '') : markdown;
+  const { h1, body } = splitH1(readSource(source));
   const { html, headings } = await renderMarkdown(body, { resolveLink: createLinkResolver(source.file) });
   return {
     ...source,
-    title: splitBilingualTitle(h1 ? h1[1].trim() : source.slug),
+    title: splitBilingualTitle(h1 ?? source.slug),
     html,
     headings,
+    english: await loadEnglish(source),
     githubUrl: `${GITHUB_REPO_URL}/blob/main/${source.file}`,
   };
 }

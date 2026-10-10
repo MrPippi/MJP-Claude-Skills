@@ -14,12 +14,19 @@ import { GITHUB_REPO_URL } from '@/config/site';
 import { formatDate } from '@/shared/lib/utils';
 import { useLanguage } from '@/shared/i18n';
 
+const CJK = /[㐀-鿿]/;
+
 export function SkillDetail({ skill }: { skill: SkillFull }) {
   const { t, lang } = useLanguage();
   const isEn = lang === 'en';
   const platform = getPlatform(skill);
   const platformInfo = PLATFORMS.find((p) => p.id === platform);
-  const html = useMemo(() => (isEn ? translateHeadingsHtml(skill.contentHtml) : skill.contentHtml), [isEn, skill.contentHtml]);
+  const english = isEn ? skill.english : null;
+  const html = useMemo(() => {
+    if (!isEn) return skill.contentHtml;
+    return english ? english.contentHtml : translateHeadingsHtml(skill.contentHtml);
+  }, [isEn, english, skill.contentHtml]);
+  const triggerKeywords = isEn ? skill.triggerKeywords.filter((kw) => !CJK.test(kw)) : skill.triggerKeywords;
   const githubUrl = skill.githubPath ? `${GITHUB_REPO_URL}/blob/main/${skill.githubPath}` : GITHUB_REPO_URL;
 
   const meta = (
@@ -36,11 +43,11 @@ export function SkillDetail({ skill }: { skill: SkillFull }) {
         )}
       </div>
 
-      {skill.triggerKeywords.length > 0 && (
+      {triggerKeywords.length > 0 && (
         <div className="rounded-md border border-line bg-surface p-3">
           <p className="eyebrow mb-2 text-fg-3">{t.skillDetail.triggers}</p>
           <div className="flex flex-wrap gap-1.5">
-            {skill.triggerKeywords.map((kw) => (
+            {triggerKeywords.map((kw) => (
               <code key={kw} className="rounded-[3px] border border-line bg-bg px-1.5 py-0.5 font-mono text-xs text-fg-2">
                 {kw}
               </code>
@@ -70,8 +77,8 @@ export function SkillDetail({ skill }: { skill: SkillFull }) {
       description={isEn ? skill.description : skill.descriptionZh}
       meta={meta}
       html={html}
-      headings={skill.headings}
-      tocLabel={isEn ? translateHeadingText : undefined}
+      headings={english ? english.headings : skill.headings}
+      tocLabel={isEn && !english ? translateHeadingText : undefined}
       githubUrl={githubUrl}
     />
   );

@@ -1,6 +1,11 @@
 export const GITHUB_REPO_URL = 'https://github.com/MrPippi/MJP-Paper-Skills';
-/** 貢獻指南（繁體中文 README 錨點） */
-export const GITHUB_CONTRIBUTE_URL = `${GITHUB_REPO_URL}/blob/main/README.zh-TW.md#貢獻指南`;
+/** 貢獻指南：各語言 README 的「新增技能」段落 */
+export const GITHUB_CONTRIBUTE_URLS = {
+  'zh-TW': `${GITHUB_REPO_URL}/blob/main/README.zh-TW.md#新增技能`,
+  en: `${GITHUB_REPO_URL}/blob/main/README.md#adding-new-skills`,
+} as const;
+/** Short name appended to page titles (matches the metadata title template). */
+export const SITE_SHORT_NAME = 'MJP-Paper-Skills';
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://mrpippi.github.io/MJP-Paper-Skills';
 export const SITE_NAME = 'MJP-Paper-Skills — Minecraft Paper Agent Skills';
 export const SITE_DESCRIPTION =

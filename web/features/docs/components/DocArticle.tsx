@@ -12,6 +12,8 @@ import { PixelIcon } from '@/shared/ui/PixelIcon';
 import type { PixelIconName } from '@/shared/ui/pixel-icons';
 import { GitHubIcon } from '@/shared/ui/icons';
 import { useLanguage } from '@/shared/i18n';
+import { SITE_SHORT_NAME } from '@/config/site';
+import { useDocumentTitle } from '@/shared/lib/use-document-title';
 
 interface DocArticleProps {
   eyebrow: string;
@@ -33,6 +35,8 @@ export function DocArticle({ eyebrow, title, icon, description, meta, html, head
   const [prev, next] = getPrevNext(useFlatNav(), pathname);
   const proseRef = useRef<HTMLDivElement>(null);
   useCopyButtons(proseRef, [html]);
+  // Static metadata titles are Chinese-first; keep the tab title in the active language.
+  useDocumentTitle(`${title} | ${SITE_SHORT_NAME}`);
 
   return (
     <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_15rem] xl:gap-10">

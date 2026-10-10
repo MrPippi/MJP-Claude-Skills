@@ -252,7 +252,7 @@ Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-
 5. 將新條目加入 `Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml`
 6. 若涉及新平台，建立 `Skills/<platform>/PLATFORM.md`
 7. 驗證觸發關鍵字無與既有技能衝突
-8. 在 `web/data/skills/<slug>.md` 新增網站頁面，並更新 `web/tests/skills-api.data.test.ts` 的預期清單
+8. 在 `web/data/skills/<slug>.md` 新增網站頁面、在 `web/data/skills/en/<slug>.md` 新增英文內文（只含內文、不含 frontmatter、不得有中文），並更新 `web/tests/skills-api.data.test.ts` 的預期清單
 9. 範本對 1.21.11 與 26.2 實際編譯驗證（NMS 技能用 dev bundle；Paper API 技能只用 `paper-api` 與 PLATFORM.md 列出的依賴）
 
 ---
@@ -293,7 +293,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | `/docs/skills`、`/docs/skills/[slug]` | `web/data/skills/`（`?platform=` / `?category=` 篩選） |
 | `/skills/*`、`/categories/*`、`/guide` | 舊網址轉址頁（noindex，不進 sitemap） |
 
-新增文件頁：在 `features/docs/registry.ts` 的 `DOC_SOURCES` 加一筆即可（sidebar、sitemap、搜尋自動更新）。站內 raw URL（meta refresh、`<img>`、Markdown 內連結）一律經 `withBasePath()`（`config/routes.ts`）。
+新增文件頁：在 `features/docs/registry.ts` 的 `DOC_SOURCES` 加一筆（sidebar、sitemap、搜尋自動更新），並在 `web/data/docs/en/<section>/<slug>.md` 放英文翻譯。站內 raw URL（meta refresh、`<img>`、Markdown 內連結）一律經 `withBasePath()`（`config/routes.ts`）。
 
 ### Minecraft 圖片素材
 
@@ -322,6 +322,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | Path | Purpose |
 |------|---------|
 | `web/data/skills/` | 每個技能一個 `.md`；YAML frontmatter 驅動所有元資料 |
+| `web/data/skills/en/`、`web/data/docs/en/` | 英文模式的內文翻譯（技能內文、文件頁）；`tests/english-content.test.ts` 要求每頁都有且不含 CJK。修改中文內容時同步更新 |
 | `web/config/site.ts`、`web/config/routes.ts` | 站台常數；路由常數、轉址表、`withBasePath` |
 | `web/shared/markdown/render.ts` | Markdown → HTML + headings（技能頁與文件頁共用） |
 | `web/features/skills/api/skills.ts` | 技能資料存取（模組級快取；slug 僅接受 kebab-case） |

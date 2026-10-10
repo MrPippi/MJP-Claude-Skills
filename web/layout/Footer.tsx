@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { GITHUB_REPO_URL, GITHUB_CONTRIBUTE_URL } from '@/config/site';
+import { GITHUB_REPO_URL, GITHUB_CONTRIBUTE_URLS } from '@/config/site';
 import { ROUTES } from '@/config/routes';
 import { PixelIcon } from '@/shared/ui/PixelIcon';
 import { useLanguage } from '@/shared/i18n';
 
 export function Footer() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const columns = [
     {
@@ -22,7 +22,7 @@ export function Footer() {
       title: t.footer.resources,
       links: [
         { label: t.footer.githubProject, href: GITHUB_REPO_URL, external: true },
-        { label: t.footer.contributeGuide, href: GITHUB_CONTRIBUTE_URL, external: true },
+        { label: t.footer.contributeGuide, href: GITHUB_CONTRIBUTE_URLS[lang], external: true },
         { label: t.footer.license, href: `${GITHUB_REPO_URL}/blob/main/LICENSE`, external: true },
       ],
     },
