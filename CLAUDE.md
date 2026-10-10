@@ -231,20 +231,22 @@ name: nms-{skill-id}
 description: "中英雙語描述（含 NMS Paperweight 要求）"
 ---
 
-# Skill Title / 技能標題
+# Skill Title
 
-## 技能名稱 / Skill Name
-## 目的 / Purpose
-## NMS 版本需求 / NMS Version Requirements
-## 觸發條件 / Triggers
-## 輸入參數 / Inputs
-## 輸出產物 / Outputs
-## Paperweight 建置設定 / Build Setup
-## 代碼範本 / Code Template
-## 推薦目錄結構 / Recommended Directory Structure
-## 執行緒安全注意事項 / Thread Safety
-## 失敗回退 / Fallback
+## Skill Name
+## Purpose
+## NMS Version Requirements
+## Triggers            ← 觸發關鍵字中英並列（唯一保留中文的內文）
+## Inputs
+## Outputs
+## Build Setup
+## Code Template
+## Recommended Directory Structure
+## Thread Safety
+## Fallback
 ```
+
+技能內文（SKILL.md、examples.md、`PLATFORM.md`、`_shared/`）一律英文，包含程式碼註解與字串；frontmatter `description` 與 registry 維持中英雙語。
 
 Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-{skill-id}`、版本段落為「Paper 版本需求 / Paper Version Requirements」、建置段落為「建置設定 / Build Setup」並引用 `Skills/paper-api/PLATFORM.md`。範本只能 import Paper API 與 `PLATFORM.md` 列出的軟依賴，不可出現 `net.minecraft` / `org.bukkit.craftbukkit`。
 
@@ -327,7 +329,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | Path | Purpose |
 |------|---------|
 | `web/data/skills/` | 每個技能一個 `.md`；YAML frontmatter 驅動所有元資料 |
-| `web/data/skills/en/`、`web/data/docs/en/` | 英文模式的內文翻譯（技能內文、文件頁）；`tests/english-content.test.ts` 要求每頁都有且不含 CJK。修改中文內容時同步更新 |
+| `web/data/skills/en/`、`web/data/docs/<en\|zh>/` | 網站雙語內文：技能頁英文內文；文件頁「非來源語言」的版本（`registry.ts` 的 `sourceLang`：`PLATFORM.md`／`_shared` 來源為英文、繁中放 `docs/zh/`；`docs/paper-nms` 來源為中文、英文放 `docs/en/`）。`tests/english-content.test.ts` 檢查。修改來源時同步更新 |
 | `web/config/site.ts`、`web/config/routes.ts` | 站台常數；路由常數、轉址表、`withBasePath` |
 | `web/shared/markdown/render.ts` | Markdown → HTML + headings（技能頁與文件頁共用） |
 | `web/features/skills/api/skills.ts` | 技能資料存取（模組級快取；slug 僅接受 kebab-case） |
@@ -360,7 +362,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 6. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
 
-7. **雙語要求**：技能標題、描述、觸發關鍵字皆須中英並陳。
+7. **語言**：技能標題、frontmatter 描述、觸發關鍵字中英並陳；技能內文與共用文件（`PLATFORM.md`、`_shared/`）為英文。網站繁中頁面另由 `web/data/` 提供。
 
 8. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
 

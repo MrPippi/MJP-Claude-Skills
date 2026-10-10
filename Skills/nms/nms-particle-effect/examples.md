@@ -1,6 +1,6 @@
 # examples — nms-particle-effect
 
-## 範例 1：客戶端專屬粒子（只對特定玩家顯示）
+## Example 1: Client-Specific Particles (Shown Only to Selected Players)
 
 **Input:**
 ```
@@ -8,7 +8,7 @@ package_name: com.example.effect
 include_shapes: false
 ```
 
-**Output — 只在目標玩家視角顯示傷害粒子:**
+**Output — show damage particles only to the target player:**
 ```java
 @EventHandler
 public void onDamage(EntityDamageByEntityEvent event) {
@@ -16,22 +16,22 @@ public void onDamage(EntityDamageByEntityEvent event) {
 
     Location hitLoc = event.getEntity().getLocation().add(0, 1, 0);
 
-    // 只對攻擊者顯示命中粒子（客戶端專屬）
+    // Show hit particles only to the attacker (client-specific)
     ParticleEffect.send(
         attacker,
         ParticleTypes.CRIT,
         hitLoc,
-        10,         // 數量
-        0.2, 0.2, 0.2, // 偏移
-        0.1,        // 速度
-        false       // 不強制顯示
+        10,         // count
+        0.2, 0.2, 0.2, // offset
+        0.1,        // speed
+        false       // do not force display
     );
 }
 ```
 
 ---
 
-## 範例 2：Builder 模式廣播粒子效果
+## Example 2: Broadcast Particle Effects With the Builder Pattern
 
 **Input:**
 ```
@@ -39,7 +39,7 @@ package_name: com.example.effect
 include_shapes: true
 ```
 
-**Output — 對世界所有玩家廣播魔法粒子:**
+**Output — broadcast enchant particles to all players in the world:**
 ```java
 Location center = world.getSpawnLocation().add(0, 1, 0);
 
@@ -55,7 +55,7 @@ new ParticleBuilder()
 
 ---
 
-## 範例 3：圓形粒子效果（保護區邊界）
+## Example 3: Circle Particle Effect (Protected Zone Border)
 
 **Input:**
 ```
@@ -63,7 +63,7 @@ package_name: com.example.effect
 include_shapes: true
 ```
 
-**Output — 每秒在保護區邊界顯示圓形粒子:**
+**Output — show circle particles on the protected zone border every second:**
 ```java
 Location center = protectedZone.getCenter();
 double radius = protectedZone.getRadius();
@@ -74,12 +74,12 @@ Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             ParticleShapes.circle(p, center, radius, 72, ParticleTypes.ENCHANT);
         }
     }
-}, 0L, 20L); // 每秒執行
+}, 0L, 20L); // runs every second
 ```
 
 ---
 
-## 範例 4：螺旋粒子升天效果
+## Example 4: Ascending Spiral Particle Effect
 
 **Input:**
 ```
@@ -87,14 +87,14 @@ package_name: com.example.effect
 include_shapes: true
 ```
 
-**Output — 玩家死亡時產生螺旋粒子:**
+**Output — spawn spiral particles when a player dies:**
 ```java
 @EventHandler
 public void onDeath(PlayerDeathEvent event) {
     Player dead = event.getEntity();
     Location deathLoc = dead.getLocation();
 
-    // 對所有 30 格內玩家顯示螺旋粒子
+    // Show spiral particles to all players within 30 blocks
     List<Player> viewers = deathLoc.getWorld().getPlayers().stream()
         .filter(p -> p.getLocation().distance(deathLoc) <= 30)
         .toList();

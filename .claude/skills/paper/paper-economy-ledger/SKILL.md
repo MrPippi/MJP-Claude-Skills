@@ -3,64 +3,64 @@ name: paper-economy-ledger
 description: "插件內建經濟核心：long 最小單位金額（不用 double）、多幣種、純 Ledger（OK/INSUFFICIENT/NO_ACCOUNT/INVALID_AMOUNT）、只增不改交易紀錄、k/m/b 簡寫解析與格式化、託管（escrow）例外安全、write-behind 持久化、內部 API 與選用 Vault Economy 提供端 / In-plugin economy core with long minor units, multi-currency pure Ledger, append-only transaction log, k/m/b parsing, exception-safe escrow, write-behind persistence, internal API and optional Vault provider"
 ---
 
-# Paper Economy Ledger / 插件內建經濟帳本
+# Paper Economy Ledger
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-economy-ledger`
 
-## 目的 / Purpose
+## Purpose
 
-提供一個可以直接放進插件的經濟核心，重點是「錢不能算錯、不能憑空消失」：
+Provide an economy core you can drop straight into a plugin. The point: money must never be miscalculated or vanish.
 
-1. **金額一律是 `long` 最小單位**（`decimals = 2` → 1 元 = 100）。`double` 只出現在 Vault 邊界，進出都經 `BigDecimal` 四捨五入到最小單位。
-2. **純 `Ledger`**：沒有任何 Bukkit 型別，存款／提款／轉帳回傳明確結果 `OK / INSUFFICIENT / NO_ACCOUNT / INVALID_AMOUNT`，不丟例外、不改一半；加法用 `Math.addExact` 防溢位。
-3. **只增不改的交易紀錄**：每次異動產生 `Transaction`（誰、變動量、異動後餘額、備註、時間），同一批原子地寫入持久層。
-4. **簡寫與格式化**：`1.2k / 3m / 4b` 解析（拒絕負數、`NaN`、科學記號、過多小數、超過上限）與顯示。
-5. **託管（escrow）**：先保留買方的錢，交貨成功才付給賣方；交貨丟例外時在 `finally` 退款，絕不讓錢或物品消失。
-6. **write-behind 持久化**：記憶體是權威，單執行緒佇列依序落地（實作見 [`paper-sqlite-repository`](../paper-sqlite-repository/SKILL.md)）。
-7. **對外**：先暴露內部 API（見 [`paper-service-api`](../paper-service-api/SKILL.md)），再選用註冊 Vault `Economy` 提供端（隔離規則見 [`paper-softdepend-hook`](../paper-softdepend-hook/SKILL.md)）。
+1. **Amounts are always `long` minor units** (`decimals = 2` -> 1 dollar = 100). `double` appears only at the Vault boundary, and every crossing goes through `BigDecimal` rounded to the minor unit.
+2. **A pure `Ledger`**: no Bukkit types. Deposit/withdraw/transfer return an explicit result `OK / INSUFFICIENT / NO_ACCOUNT / INVALID_AMOUNT`, never throw, never apply half a change; additions use `Math.addExact` to guard against overflow.
+3. **Append-only transaction log**: every change produces a `Transaction` (who, delta, balance after, note, time), written to the persistence layer atomically as one batch.
+4. **Shorthand and formatting**: parse `1.2k / 3m / 4b` (rejecting negatives, `NaN`, scientific notation, too many decimals, and values over the cap) and display amounts.
+5. **Escrow**: reserve the buyer's money first, pay the seller only after delivery succeeds; if delivery throws, refund in `finally`, so money or items never vanish.
+6. **Write-behind persistence**: memory is authoritative, and a single-thread queue writes to storage in order (implementation in [`paper-sqlite-repository`](../paper-sqlite-repository/SKILL.md)).
+7. **External surface**: expose the internal API first (see [`paper-service-api`](../paper-service-api/SKILL.md)), then optionally register a Vault `Economy` provider (isolation rules in [`paper-softdepend-hook`](../paper-softdepend-hook/SKILL.md)).
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（只用 Bukkit API 與 Vault 1.7.1，兩版程式碼相同，沒有版本差異行）
-- 純 Paper API，不需要 Paperweight；`Ledger`、`Escrow`、格式化與解析完全不依賴 Bukkit，可直接用 JUnit 測試
+- Paper 1.21.11 / 26.2 (uses only the Bukkit API and Vault 1.7.1; the code is identical on both versions, with no version-specific lines)
+- Pure Paper API, no Paperweight needed; `Ledger`, `Escrow`, formatting and parsing do not depend on Bukkit at all and can be tested directly with JUnit
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「經濟」「economy」「帳本」「ledger」「餘額」「balance」「轉帳」「pay」
 - 「貨幣」「multi-currency」「小數」「minor units」「k m b」「1.5k」「簡寫金額」
 - 「託管」「escrow」「退款」「refund」「訂單」「交易紀錄」「transaction log」
 - 「Vault Economy 提供端」「register Economy」「ServicePriority.Highest」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.economy` | 根 package；API 放 `<base>.api`（不可 relocate） |
-| `currencies` | `coins`（2 位小數）、`gems`（0 位） | 每種幣的 `id`、符號、小數位數、顯示 pattern、起始餘額 |
-| `vault_currency` | `coins` | 暴露給 Vault 的那一種幣（Vault 只有單一幣種） |
-| `persistence` | `sqlite` | 持久層；範本附記憶體版 `InMemoryLedgerStore` 供測試 |
-| `expose_vault` | `true` | 是否註冊 Vault 提供端 |
+| `base_package` | `com.example.economy` | Root package; the API lives in `<base>.api` (must not be relocated) |
+| `currencies` | `coins` (2 decimals), `gems` (0) | Per currency: `id`, symbol, decimals, display pattern, starting balance |
+| `vault_currency` | `coins` | The one currency exposed to Vault (Vault supports a single currency) |
+| `persistence` | `sqlite` | Persistence layer; the template includes an in-memory `InMemoryLedgerStore` for tests |
+| `expose_vault` | `true` | Whether to register the Vault provider |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `EconomyResult.java`、`EconomyApi.java` — 對外 API（只含 JDK 型別）
-- `Currency.java`、`Money.java`、`MoneyFormat.java`、`AmountParser.java` — 幣種、最小單位換算、顯示、解析
-- `Transaction.java`、`Ledger.java` — 純帳本與交易紀錄
-- `Escrow.java` — 例外安全的託管
-- `LedgerStore.java`、`InMemoryLedgerStore.java`、`WriteBehindQueue.java` — 持久層介面與 write-behind 佇列
-- `EconomyApiImpl.java` — 主執行緒限定的 API 實作
-- `VaultEconomyProvider.java`、`VaultHook.java` — 選用的 Vault 提供端與註冊入口
-- `EconomyPlugin.java` — 組裝、註冊、停用時排空佇列
+- `EconomyResult.java`, `EconomyApi.java` - public API (JDK types only)
+- `Currency.java`, `Money.java`, `MoneyFormat.java`, `AmountParser.java` - currencies, minor-unit conversion, display, parsing
+- `Transaction.java`, `Ledger.java` - pure ledger and transaction log
+- `Escrow.java` - exception-safe escrow
+- `LedgerStore.java`, `InMemoryLedgerStore.java`, `WriteBehindQueue.java` - persistence interface and write-behind queue
+- `EconomyApiImpl.java` - API implementation restricted to the main thread
+- `VaultEconomyProvider.java`, `VaultHook.java` - optional Vault provider and registration entry point
+- `EconomyPlugin.java` - wiring, registration, and draining the queue on disable
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。Vault 為 `compileOnly`，不可打包；測試另加 JUnit：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Vault is `compileOnly` and must not be shaded; add JUnit for tests:
 
 ```groovy
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11：'1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11: '1.21.11-R0.1-SNAPSHOT'
     compileOnly('com.github.MilkBowl:VaultAPI:1.7.1') { exclude group: 'org.bukkit' }
 
     testImplementation platform('org.junit:junit-bom:5.12.2')
@@ -71,7 +71,7 @@ dependencies {
 tasks.withType(Test).configureEach { useJUnitPlatform() }
 ```
 
-`plugin.yml`：
+`plugin.yml`:
 
 ```yaml
 name: Economy
@@ -80,7 +80,7 @@ api-version: '26.2'
 softdepend: [Vault]
 ```
 
-`config.yml`（幣種定義；`decimals` 0 到 2，`pattern` 只管千分位，小數位數由 `decimals` 決定；`starting-balance` 請加引號以字串解析）：
+`config.yml` (currency definitions; `decimals` is 0 to 2, `pattern` only controls thousands grouping and the fraction digits come from `decimals`; quote `starting-balance` so it is parsed as a string):
 
 ```yaml
 vault-currency: coins
@@ -97,33 +97,33 @@ currencies:
     starting-balance: "0"
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### 核心規則
+### Core Rules
 
-1. **金額是 `long` 最小單位**，上限 `Money.MAX`（9×10^15，小於 2^53，`double` 到此仍能精確表示整數）。不要在帳本內出現 `double`。
-2. **`Ledger` 不碰 Bukkit**；執行緒由外層（`EconomyApiImpl`）檢查，`Ledger` 本身假設單執行緒使用。
-3. **先驗證、後異動、再記錄**：所有檢查（帳號、金額、餘額、溢位）通過後才改餘額；回傳非 `OK` 時餘額一定沒變。
-4. **記憶體為權威，落地是 write-behind**：寫入失敗只記錄，不回滾記憶體；每筆交易帶「異動後餘額」，下一筆成功就自癒，`onDisable` 同步排空。
-5. **託管用 `finally` 退款**：任何走出 `trade` 的路徑，保留的錢要嘛已付給賣方，要嘛已退回買方。
-6. Vault 的 `double` 一律經 `Money.toMinor` 四捨五入到最小單位；`Economy.format()` 的回傳值**不是** MiniMessage（見 `VaultEconomyProvider` 的說明）。
+1. **Amounts are `long` minor units**, capped at `Money.MAX` (9x10^15, below 2^53, so `double` can still represent integers exactly up to that point). Never use `double` inside the ledger.
+2. **`Ledger` never touches Bukkit**; the outer layer (`EconomyApiImpl`) checks the thread, and `Ledger` itself assumes single-threaded use.
+3. **Validate first, mutate second, record third**: change balances only after every check (account, amount, balance, overflow) passes; a non-`OK` result guarantees balances are unchanged.
+4. **Memory is authoritative, persistence is write-behind**: a failed write is only logged and memory is not rolled back; each transaction carries the "balance after", so the next successful write self-heals, and `onDisable` drains synchronously.
+5. **Escrow refunds in `finally`**: on every path out of `trade`, the reserved money has either been paid to the seller or returned to the buyer.
+6. Vault `double` values always go through `Money.toMinor`, rounded to the minor unit; the return value of `Economy.format()` is **not** MiniMessage (see the note on `VaultEconomyProvider`).
 
-### `EconomyResult.java`（api package）
+### `EconomyResult.java` (api package)
 
 ```java
 package com.example.economy.api;
 
-/** 帳本操作結果。只加不改：新值只能加在最後。非 OK 時餘額一定沒有變動。 */
+/** Ledger operation result. Append-only: new values may only be added at the end. A non-OK result guarantees no balance changed. */
 public enum EconomyResult {
     OK,
     INSUFFICIENT,
     NO_ACCOUNT,
-    /** 金額 ≤ 0、超過上限、加總溢位，或轉帳給自己。 */
+    /** Amount <= 0, over the cap, sum overflow, or a transfer to oneself. */
     INVALID_AMOUNT
 }
 ```
 
-### `EconomyApi.java`（api package，只含 JDK 型別）
+### `EconomyApi.java` (api package, JDK types only)
 
 ```java
 package com.example.economy.api;
@@ -133,37 +133,37 @@ import java.util.OptionalLong;
 import java.util.UUID;
 
 /**
- * 給其他插件使用的經濟 API（透過 ServicesManager 取得，見 paper-service-api）。
+ * Economy API for other plugins (obtained through ServicesManager, see paper-service-api).
  *
- * <p>規則：金額是 long 最小單位；所有方法只能在主執行緒呼叫，否則丟 {@link IllegalStateException}；
- * 未知的幣種 id 丟 {@link IllegalArgumentException}（呼叫端的程式錯誤，不是遊戲狀況）。
- * 只加不改：新增方法放在最後。
+ * <p>Rules: amounts are long minor units; every method may only be called on the main thread, otherwise it throws {@link IllegalStateException};
+ * an unknown currency id throws {@link IllegalArgumentException} (a programming error in the caller, not a game condition).
+ * Append-only: new methods go at the end.
  */
 public interface EconomyApi {
 
     boolean hasAccount(UUID account);
 
-    /** 開戶並發放各幣種起始餘額；已存在回 false。 */
+    /** Opens an account and grants each currency's starting balance; returns false if it already exists. */
     boolean openAccount(UUID account);
 
-    /** 無帳號 → empty。 */
+    /** No account -> empty. */
     OptionalLong balance(UUID account, String currency);
 
-    /** 入帳；amount ≤ 0 → INVALID_AMOUNT。note 是呼叫端自報來源，存入交易紀錄。 */
+    /** Credits the account; amount <= 0 -> INVALID_AMOUNT. note is the caller's self-reported source, stored in the transaction log. */
     EconomyResult deposit(UUID account, String currency, long amount, String note);
 
-    /** 扣款；餘額不足 → INSUFFICIENT，餘額不變。 */
+    /** Debits the account; insufficient balance -> INSUFFICIENT, balance unchanged. */
     EconomyResult withdraw(UUID account, String currency, long amount, String note);
 
     EconomyResult transfer(UUID from, UUID to, String currency, long amount, String note);
 
-    /** 純文字（無任何色碼）的完整金額，例如 {@code $ 1,234.50}。 */
+    /** Plain text (no color codes) full amount, e.g. {@code $ 1,234.50}. */
     String format(String currency, long minor);
 
-    /** 純文字的簡寫金額，例如 {@code $ 1.2k}。 */
+    /** Plain text short amount, e.g. {@code $ 1.2k}. */
     String formatShort(String currency, long minor);
 
-    /** 解析玩家輸入（支援 k／m／b）；格式不合 → empty。 */
+    /** Parses player input (supports k/m/b); malformed -> empty. */
     OptionalLong parse(String currency, String text);
 
     List<String> currencies();
@@ -179,10 +179,10 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * 幣種定義。金額一律是最小單位：decimals = 2 → 1.00 = 100。
+ * Currency definition. Amounts are always minor units: decimals = 2 -> 1.00 = 100.
  *
- * @param pattern {@link java.text.DecimalFormat} 樣式，只用來決定千分位；小數位數由 decimals 強制
- * @param startingBalance 最小單位
+ * @param pattern {@link java.text.DecimalFormat} pattern, used only for thousands grouping; the fraction digits are forced by decimals
+ * @param startingBalance in minor units
  */
 public record Currency(String id, String symbol, int decimals, String pattern, long startingBalance) {
 
@@ -205,7 +205,7 @@ public record Currency(String id, String symbol, int decimals, String pattern, l
         }
     }
 
-    /** 10^decimals：最小單位換主單位的除數。 */
+    /** 10^decimals: the divisor that converts minor units to major units. */
     public long scale() {
         long scale = 1L;
         for (int i = 0; i < decimals; i++) {
@@ -225,10 +225,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.OptionalLong;
 
-/** 最小單位的上限與 double 邊界換算（只給 Vault 之類 double API 用）。 */
+/** Minor-unit cap and double-boundary conversion (only for double-based APIs such as Vault). */
 public final class Money {
 
-    /** 最小單位上限：小於 2^53，double 到這裡仍能精確表示整數。 */
+    /** Minor-unit cap: below 2^53, so double can still represent integers exactly up to here. */
     public static final long MAX = 9_000_000_000_000_000L;
     private static final BigDecimal MAX_DECIMAL = BigDecimal.valueOf(MAX);
 
@@ -236,9 +236,9 @@ public final class Money {
     }
 
     /**
-     * Vault 的 double（主單位）→ 最小單位，<b>四捨五入</b>到 decimals 位：
-     * {@code 0.1 + 0.2 = 0.30000000000000004} 會變成 0.30。
-     * 負數、NaN／無限大、超過 {@link #MAX} → empty。走 BigDecimal，不做浮點乘法。
+     * Vault double (major units) -> minor units, <b>rounded</b> (half up) to decimals places:
+     * {@code 0.1 + 0.2 = 0.30000000000000004} becomes 0.30.
+     * Negative, NaN/infinite, or over {@link #MAX} -> empty. Uses BigDecimal, no floating-point multiplication.
      */
     public static OptionalLong toMinor(double major, int decimals) {
         if (!Double.isFinite(major) || major < 0) {
@@ -251,12 +251,12 @@ public final class Money {
         return OptionalLong.of(minor.longValueExact());
     }
 
-    /** 最小單位 → double 主單位（只在回傳給 Vault 時使用；上限內不會失真）。 */
+    /** Minor units -> double major units (used only when returning to Vault; no loss within the cap). */
     public static double toMajor(long minor, int decimals) {
         return BigDecimal.valueOf(minor, decimals).doubleValue();
     }
 
-    /** 溢位安全的加法：超過 long 或 {@link #MAX} → empty。 */
+    /** Overflow-safe addition: beyond long or {@link #MAX} -> empty. */
     public static OptionalLong checkedAdd(long a, long b) {
         try {
             long sum = Math.addExact(a, b);
@@ -280,8 +280,8 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 /**
- * 金額顯示，輸入一律最小單位，輸出一律純文字（不含任何色碼）。固定 {@link Locale#ROOT}，避免伺服器語系改變小數點。
- * 簡寫用整數運算、一位小數「無條件捨去」並去尾零：1_999 → 1.9k（不是 2k），避免顯示的錢比實際多。
+ * Amount display: input is always minor units, output is always plain text (no color codes). Fixed to {@link Locale#ROOT} so the server locale cannot change the decimal separator.
+ * Short form uses integer arithmetic, truncates to one decimal (never rounds up) and strips a trailing zero: 1_999 -> 1.9k (not 2k), so the displayed amount is never more than the real one.
  */
 public final class MoneyFormat {
 
@@ -292,7 +292,7 @@ public final class MoneyFormat {
     private MoneyFormat() {
     }
 
-    /** 千分位 + 固定小數位：{@code 1,234.50}。 */
+    /** Thousands grouping + fixed decimals: {@code 1,234.50}. */
     public static String number(long minor, Currency currency) {
         DecimalFormat format = new DecimalFormat(currency.pattern(), DecimalFormatSymbols.getInstance(Locale.ROOT));
         format.setRoundingMode(RoundingMode.UNNECESSARY);
@@ -301,12 +301,12 @@ public final class MoneyFormat {
         return format.format(BigDecimal.valueOf(minor, currency.decimals()));
     }
 
-    /** 符號 + 數字：{@code $ 1,234.50}。 */
+    /** Symbol + number: {@code $ 1,234.50}. */
     public static String full(long minor, Currency currency) {
         return currency.symbol() + " " + number(minor, currency);
     }
 
-    /** 主單位 ≥ 1,000 時縮成 k／m／b；其餘同 {@link #number}。 */
+    /** Shortens to k/m/b when the major amount >= 1,000; otherwise same as {@link #number}. */
     public static String shortNumber(long minor, Currency currency) {
         long major = minor / currency.scale();
         if (major < THOUSAND) {
@@ -321,7 +321,7 @@ public final class MoneyFormat {
             unit = MILLION;
             suffix = "m";
         }
-        long tenths = major * 10 / unit; // major ≤ 9e15 → ×10 不溢位
+        long tenths = major * 10 / unit; // major <= 9e15 -> x10 cannot overflow
         long whole = tenths / 10;
         long fraction = tenths % 10;
         return (fraction == 0 ? Long.toString(whole) : whole + "." + fraction) + suffix;
@@ -344,10 +344,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 玩家輸入 → 最小單位。只收 {@code 整數[.小數][k|m|b]}（不分大小寫）：
- * 拒絕負號、{@code NaN}、{@code Infinity}、科學記號、千分位逗號、前後多餘字元、
- * 比幣種更細的小數（{@code 1.234} 在 2 位幣種；{@code 1.234567k} 乘上單位後仍多於 2 位）、超過 {@link Money#MAX}。
- * 全程 BigDecimal，不經過 double。
+ * Player input -> minor units. Accepts only {@code integer[.fraction][k|m|b]} (case-insensitive):
+ * rejects a minus sign, {@code NaN}, {@code Infinity}, scientific notation, thousands commas, extra surrounding characters,
+ * fractions finer than the currency ({@code 1.234} for a 2-decimal currency; {@code 1.234567k} still has more than 2 decimals after applying the unit), and values over {@link Money#MAX}.
+ * BigDecimal throughout, never via double.
  */
 public final class AmountParser {
 
@@ -401,12 +401,12 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * 一筆只增不改的交易紀錄（帳本異動的唯一憑證）。
+ * An append-only transaction record (the sole evidence of a ledger change).
  *
- * @param at 毫秒時間戳
- * @param delta 帶號變動量（最小單位）：入帳為正、扣款為負
- * @param balanceAfter 異動後餘額；持久層用它 upsert 餘額，所以單筆寫入失敗不會讓之後的餘額錯亂
- * @param note 來源說明，例如 {@code pay}、{@code shop:buy}、{@code vault}
+ * @param at timestamp in milliseconds
+ * @param delta signed change (minor units): positive for a credit, negative for a debit
+ * @param balanceAfter balance after the change; persistence upserts the balance from it, so one failed write cannot corrupt later balances
+ * @param note source description, e.g. {@code pay}, {@code shop:buy}, {@code vault}
  */
 public record Transaction(long at, UUID account, String currency, long delta, long balanceAfter, String note) {
 
@@ -446,10 +446,10 @@ import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 
 /**
- * 純帳本：沒有 Bukkit 型別，所以能直接用 JUnit 測。<b>非執行緒安全</b>，呼叫端（EconomyApiImpl）負責限定主執行緒。
+ * Pure ledger: no Bukkit types, so it can be tested directly with JUnit. <b>Not thread-safe</b>; the caller (EconomyApiImpl) is responsible for restricting it to the main thread.
  *
- * <p>每個操作：驗證 → 改餘額 → 把這次的 {@link Transaction} 批次交給 sink（write-behind 佇列）。
- * 任何非 OK 的結果都保證沒有改任何餘額，也不會呼叫 sink。
+ * <p>Each operation: validate -> change balances -> hand this operation's {@link Transaction}s as one batch to the sink (the write-behind queue).
+ * Any non-OK result is guaranteed to change no balance and not call the sink.
  */
 public final class Ledger {
 
@@ -478,7 +478,7 @@ public final class Ledger {
         return Optional.ofNullable(currencies.get(id));
     }
 
-    /** 啟動時從持久層還原餘額（不產生交易）。幣種已不在設定中或數值不合法 → 回 false 並略過。 */
+    /** Restores balances from persistence at startup (produces no transactions). Currency no longer in config or invalid value -> returns false and skips. */
     public boolean restore(UUID account, String currencyId, long balance) {
         if (!currencies.containsKey(currencyId) || balance < 0 || balance > Money.MAX) {
             return false;
@@ -491,7 +491,7 @@ public final class Ledger {
         return accounts.containsKey(account);
     }
 
-    /** 開戶並依各幣種的起始餘額產生交易；已存在回 false。 */
+    /** Opens an account and produces transactions from each currency's starting balance; returns false if it already exists. */
     public boolean open(UUID account) {
         if (accounts.containsKey(account)) {
             return false;
@@ -513,7 +513,7 @@ public final class Ledger {
         return true;
     }
 
-    /** 無帳號 → empty。未知幣種丟 IllegalArgumentException。 */
+    /** No account -> empty. An unknown currency throws IllegalArgumentException. */
     public OptionalLong balance(UUID account, String currencyId) {
         requireCurrency(currencyId);
         Map<String, Long> wallet = accounts.get(account);
@@ -556,7 +556,7 @@ public final class Ledger {
         return EconomyResult.OK;
     }
 
-    /** 轉帳：兩筆交易同一批交給 sink（持久層放進同一個 SQL transaction）。轉給自己 → INVALID_AMOUNT。 */
+    /** Transfer: both transactions go to the sink in the same batch (persistence puts them in one SQL transaction). Transfer to oneself -> INVALID_AMOUNT. */
     public EconomyResult transfer(UUID from, UUID to, String currencyId, long amount, String note) {
         requireCurrency(currencyId);
         if (!validAmount(amount) || from.equals(to)) {
@@ -573,7 +573,7 @@ public final class Ledger {
         }
         OptionalLong targetNext = Money.checkedAdd(target.getOrDefault(currencyId, 0L), amount);
         if (targetNext.isEmpty()) {
-            return EconomyResult.INVALID_AMOUNT; // 收款方會溢位：兩邊都不動
+            return EconomyResult.INVALID_AMOUNT; // the receiver would overflow: neither side changes
         }
         source.put(currencyId, sourceBalance - amount);
         target.put(currencyId, targetNext.getAsLong());
@@ -606,35 +606,35 @@ import com.example.economy.api.EconomyResult;
 import java.util.UUID;
 
 /**
- * 託管：先把買方的錢「保留」（從餘額扣掉），交貨成功才付給賣方，否則退回。
+ * Escrow: first "reserve" the buyer's money (deduct it from the balance), pay the seller only after delivery succeeds, otherwise refund.
  *
- * <p>不變量：{@link #trade} 回傳或丟例外時，保留的錢不是已付給賣方，就是已退回買方，不會懸空。
- * 交貨（{@link Delivery}）若丟例外，{@code finally} 先退款再讓例外繼續往外丟；物品的還原由 Delivery 自己負責
- * （見 examples.md：先還物品、再重拋）。<b>非執行緒安全</b>，與 {@link Ledger} 在同一執行緒使用。
+ * <p>Invariant: when {@link #trade} returns or throws, the reserved money has either been paid to the seller or refunded to the buyer; it never dangles.
+ * If delivery ({@link Delivery}) throws, {@code finally} refunds first and then lets the exception propagate; restoring items is Delivery's own responsibility
+ * (see examples.md: restore the items first, then rethrow). <b>Not thread-safe</b>; use it on the same thread as {@link Ledger}.
  */
 public final class Escrow {
 
-    /** 交貨動作：成功交付回 true；無法交付（缺貨、對方背包滿）回 false（會退款）；丟例外也會退款。 */
+    /** The delivery action: returns true on successful delivery; returns false when it cannot deliver (out of stock, receiver's inventory full), which refunds; throwing also refunds. */
     @FunctionalInterface
     public interface Delivery {
         boolean deliver();
     }
 
     public enum Outcome {
-        /** 已交貨、錢已付給賣方。 */
+        /** Delivered, and the money has been paid to the seller. */
         SETTLED,
-        /** 買方餘額不足、無帳號或金額無效；沒有保留任何錢（原因見 {@code funds}）。 */
+        /** Buyer has insufficient balance, no account, or the amount is invalid; no money was reserved (see {@code funds} for the reason). */
         NOT_RESERVED,
-        /** 交貨回 false：已全額退款。 */
+        /** Delivery returned false: fully refunded. */
         DECLINED,
-        /** 已交貨但賣方無法收款（例如餘額溢位）：已全額退款，呼叫端必須還原已交出的物品。 */
+        /** Delivered but the seller cannot receive the payment (e.g. balance overflow): fully refunded, and the caller must restore the items already handed over. */
         SETTLEMENT_FAILED
     }
 
     public record TradeResult(Outcome outcome, EconomyResult funds) {
     }
 
-    /** 一筆保留中的款項。settle 與 refund 只有一個會成功，之後即失效。 */
+    /** A reserved sum. Only one of settle and refund can succeed; afterwards the hold is dead. */
     public static final class Hold {
 
         private final Ledger ledger;
@@ -655,7 +655,7 @@ public final class Escrow {
             this.open = reserved == EconomyResult.OK;
         }
 
-        /** 保留的結果；非 OK 代表沒有扣任何錢，Hold 一開始就是關閉的。 */
+        /** Result of the reservation; non-OK means no money was deducted, and the Hold starts out closed. */
         public EconomyResult reserved() {
             return reserved;
         }
@@ -664,7 +664,7 @@ public final class Escrow {
             return open;
         }
 
-        /** 付給收款方。失敗（非 OK）時保留仍在，呼叫端應接著 {@link #refund()}。 */
+        /** Pays the payee. On failure (non-OK) the reservation remains and the caller should follow with {@link #refund()}. */
         public EconomyResult settle(UUID payee) {
             if (!open) {
                 throw new IllegalStateException("Escrow hold is not open");
@@ -676,14 +676,14 @@ public final class Escrow {
             return result;
         }
 
-        /** 退回付款方；已結清、已退款或從未保留成功則什麼都不做。 */
+        /** Refunds the payer; does nothing if already settled, already refunded, or the reservation never succeeded. */
         public void refund() {
             if (!open) {
                 return;
             }
             EconomyResult result = ledger.deposit(payer, currency, amount, note + ":refund");
             if (result != EconomyResult.OK) {
-                // 理論上不會發生（剛扣掉的錢加回去不會溢位）；若發生必須讓管理員對得回帳
+                // Should be impossible (adding back money just deducted cannot overflow); if it happens, admins must be able to reconcile
                 throw new IllegalStateException("Escrow refund failed (" + result + "): payer=" + payer
                     + " currency=" + currency + " amount=" + amount + " note=" + note);
             }
@@ -697,12 +697,12 @@ public final class Escrow {
         this.ledger = ledger;
     }
 
-    /** 保留款項。自訂流程時，拿到 Hold 後必須把 settle／refund 放進 try／finally。 */
+    /** Reserves funds. In a custom flow, once you hold the Hold you must put settle/refund inside try/finally. */
     public Hold reserve(UUID payer, String currency, long amount, String note) {
         return new Hold(ledger, payer, currency, amount, note);
     }
 
-    /** 保留 → 交貨 → 結清或退款；任何路徑離開都不會讓錢懸空。 */
+    /** Reserve -> deliver -> settle or refund; leaving by any path never leaves money dangling. */
     public TradeResult trade(UUID buyer, UUID seller, String currency, long price, String note, Delivery delivery) {
         Hold hold = reserve(buyer, currency, price, note);
         if (!hold.isOpen()) {
@@ -753,15 +753,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 持久層介面。SQLite 實作見 paper-sqlite-repository：{@code apply} 在同一個 SQL transaction 內
- * INSERT 交易紀錄並用 {@code balanceAfter} UPSERT 餘額（{@code INSERT ... ON CONFLICT DO UPDATE}）。
+ * Persistence interface. For the SQLite implementation see paper-sqlite-repository: {@code apply} INSERTs the transaction records inside one SQL transaction
+ * and UPSERTs balances using {@code balanceAfter} ({@code INSERT ... ON CONFLICT DO UPDATE}).
  */
 public interface LedgerStore {
 
-    /** 啟動時呼叫一次（可阻塞）：account → (currency → 最小單位餘額)。 */
+    /** Called once at startup (may block): account -> (currency -> minor-unit balance). */
     Map<UUID, Map<String, Long>> loadBalances();
 
-    /** 寫入一批交易並更新餘額。只在 {@link WriteBehindQueue} 的寫入執行緒呼叫，可阻塞。 */
+    /** Writes a batch of transactions and updates balances. Called only on the {@link WriteBehindQueue} writer thread; may block. */
     void apply(List<Transaction> batch);
 }
 ```
@@ -779,7 +779,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** 記憶體版持久層：給 JUnit 與沒有資料庫時的開發用。方法同步化（寫入執行緒與測試執行緒共用）。 */
+/** In-memory persistence: for JUnit and for development without a database. Methods are synchronized (the writer thread and the test thread share it). */
 public final class InMemoryLedgerStore implements LedgerStore {
 
     private final Map<UUID, Map<String, Long>> balances = new HashMap<>();
@@ -800,7 +800,7 @@ public final class InMemoryLedgerStore implements LedgerStore {
         }
     }
 
-    /** 只增不改的紀錄副本（測試用）。 */
+    /** Append-only copy of the records (for tests). */
     public synchronized List<Transaction> log() {
         return List.copyOf(log);
     }
@@ -820,8 +820,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * 單執行緒寫入佇列：寫入照送出順序落地（不用 Bukkit 的 async 池——池會讓兩筆寫入亂序）。
- * 失敗只記錄，不回滾記憶體：每筆交易帶絕對餘額，下一筆成功就自癒；{@link #close} 在 onDisable 同步排空。
+ * Single-thread write queue: writes land in submission order (do not use Bukkit's async pool, since a pool can reorder two writes).
+ * Failures are only logged and memory is not rolled back: each transaction carries the absolute balance, so the next successful write self-heals; {@link #close} drains synchronously in onDisable.
  */
 public final class WriteBehindQueue {
 
@@ -837,7 +837,7 @@ public final class WriteBehindQueue {
         });
     }
 
-    /** description 必須含 uuid 與金額，寫入失敗時管理員才對得回帳。 */
+    /** The description must contain the uuid and amount, so admins can reconcile when a write fails. */
     public void submit(String description, Runnable write) {
         try {
             worker.execute(() -> {
@@ -853,7 +853,7 @@ public final class WriteBehindQueue {
         }
     }
 
-    /** 同步排空。只在 onDisable 呼叫——此時排程器已不收任務，非同步存檔永遠不會跑。 */
+    /** Synchronous drain. Call only in onDisable - the scheduler no longer accepts tasks then, so an async save would never run. */
     public void close(long timeoutSeconds) {
         worker.shutdown();
         try {
@@ -887,7 +887,7 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.UUID;
 
-/** {@link EconomyApi} 的實作：只負責「主執行緒限定」與把幣種 id 轉成 {@link Currency}，其餘全交給 {@link Ledger}。 */
+/** Implementation of {@link EconomyApi}: only responsible for "main thread only" and mapping the currency id to a {@link Currency}; everything else is delegated to {@link Ledger}. */
 final class EconomyApiImpl implements EconomyApi {
 
     private final Ledger ledger;
@@ -966,11 +966,11 @@ final class EconomyApiImpl implements EconomyApi {
 }
 ```
 
-### `VaultEconomyProvider.java`（選用，只由 `VaultHook` 建構）
+### `VaultEconomyProvider.java` (optional, constructed only by `VaultHook`)
 
-> **色碼警告**：別人的提供端的 `Economy.format()` 常回傳含 `§` 或 `&` 的舊式色碼字串。消費 Vault 時，不要把它塞進 MiniMessage（色碼會被當純文字顯示）；用 `LegacyComponentSerializer` 轉成 `Component`，或改用 `EconomyApi.format` 的純文字。本提供端回傳純文字，但消費端仍須假設任何提供端都可能含色碼。
+> **Color code warning**: other providers' `Economy.format()` often returns legacy color-code strings containing `§` or `&`. When consuming Vault, do not put it into MiniMessage (the color codes would show as plain text); convert it to a `Component` with `LegacyComponentSerializer`, or use the plain text from `EconomyApi.format` instead. This provider returns plain text, but consumers must still assume any provider may contain color codes.
 >
-> **double 警告**：Vault 的 API 只有 `double` 與單一幣種。所有 `double` 一律經 `Money.toMinor` 四捨五入到幣種小數位；以名字為參數的舊方法只能解析「伺服器曾見過」的玩家（`getOfflinePlayerIfCached`，不會發出 Mojang 查詢）。`AbstractEconomy` 會把 `OfflinePlayer` 版本轉成名字版本，所以下面把 `OfflinePlayer` 版本全部覆寫成 UUID 路徑。
+> **double warning**: the Vault API has only `double` and a single currency. Every `double` goes through `Money.toMinor`, rounded to the currency's decimals; the legacy name-based methods can only resolve players "the server has seen before" (`getOfflinePlayerIfCached`, which issues no Mojang lookup). `AbstractEconomy` converts the `OfflinePlayer` variants into name variants, so all `OfflinePlayer` variants are overridden below to use the UUID path.
 
 ```java
 package com.example.economy.vault;
@@ -990,8 +990,8 @@ import java.util.OptionalLong;
 import java.util.UUID;
 
 /**
- * Vault 經濟服務。所有方法主執行緒限定（{@link EconomyApi} 會檢查）。
- * 銀行功能不支援；world 參數忽略。
+ * Vault economy service. All methods are main-thread only (checked by {@link EconomyApi}).
+ * Banks are not supported; the world parameter is ignored.
  */
 @SuppressWarnings("deprecation")
 public final class VaultEconomyProvider extends AbstractEconomy {
@@ -1029,7 +1029,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         return currency.decimals();
     }
 
-    /** 純文字（無色碼）。 */
+    /** Plain text (no color codes). */
     @Override
     public String format(double amount) {
         OptionalLong minor = Money.toMinor(amount, currency.decimals());
@@ -1046,7 +1046,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         return currency.symbol();
     }
 
-    // ---- 帳號 ----
+    // ---- Accounts ----
 
     @Override
     public boolean hasAccount(OfflinePlayer player) {
@@ -1090,7 +1090,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         return createPlayerAccount(playerName);
     }
 
-    // ---- 餘額 ----
+    // ---- Balances ----
 
     @Override
     public double getBalance(OfflinePlayer player) {
@@ -1136,7 +1136,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         return has(playerName, amount);
     }
 
-    // ---- 存提 ----
+    // ---- Deposit / withdraw ----
 
     @Override
     public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) {
@@ -1186,7 +1186,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         if (amount.isEmpty()) {
             return failure(raw, before, "Invalid amount");
         }
-        if (amount.getAsLong() == 0L) { // 部分插件會以 0 查詢：視為成功的空操作
+        if (amount.getAsLong() == 0L) { // some plugins query with 0: treat as a successful no-op
             return new EconomyResponse(raw, Money.toMajor(before, currency.decimals()), ResponseType.SUCCESS, "");
         }
         EconomyResult result = deposit
@@ -1205,12 +1205,12 @@ public final class VaultEconomyProvider extends AbstractEconomy {
         return new EconomyResponse(amount, Money.toMajor(balanceMinor, currency.decimals()), ResponseType.FAILURE, message);
     }
 
-    /** 只認伺服器曾見過的名字（快取），不會觸發 Mojang 查詢；沒見過回 null。 */
+    /** Only recognizes names the server has seen (cache); never triggers a Mojang lookup; returns null if unseen. */
     private OfflinePlayer cached(String name) {
         return server.getOfflinePlayerIfCached(name);
     }
 
-    // ---- 銀行：不支援 ----
+    // ---- Banks: unsupported ----
 
     private static EconomyResponse notImplemented() {
         return new EconomyResponse(0, 0, ResponseType.NOT_IMPLEMENTED, "Banks are not supported");
@@ -1263,7 +1263,7 @@ public final class VaultEconomyProvider extends AbstractEconomy {
 }
 ```
 
-### `VaultHook.java`（隔離入口）
+### `VaultHook.java` (isolated entry point)
 
 ```java
 package com.example.economy.vault;
@@ -1275,16 +1275,16 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * 只在 Vault 插件存在時才呼叫（呼叫端先 {@code isPluginEnabled("Vault")}）：
- * 本類與 {@link VaultEconomyProvider} 都引用 net.milkbowl，沒有 Vault 時載入會 NoClassDefFoundError。
- * 隔離規則見 paper-softdepend-hook。
+ * Call only when the Vault plugin is present (the caller first checks {@code isPluginEnabled("Vault")}):
+ * this class and {@link VaultEconomyProvider} both reference net.milkbowl, so loading without Vault causes NoClassDefFoundError.
+ * See paper-softdepend-hook for the isolation rules.
  */
 public final class VaultHook {
 
     private VaultHook() {
     }
 
-    /** 以 Highest 優先權註冊，讓本插件成為 Vault 的預設經濟提供端；{@code unregisterAll(plugin)} 一次移除。 */
+    /** Registers at Highest priority so this plugin becomes Vault's default economy provider; {@code unregisterAll(plugin)} removes it in one call. */
     public static void register(JavaPlugin plugin, EconomyApi api, Currency vaultCurrency) {
         plugin.getServer().getServicesManager().register(
             Economy.class,
@@ -1295,7 +1295,7 @@ public final class VaultHook {
 }
 ```
 
-### `EconomyPlugin.java`（組裝）
+### `EconomyPlugin.java` (wiring)
 
 ```java
 package com.example.economy;
@@ -1343,7 +1343,7 @@ public final class EconomyPlugin extends JavaPlugin implements Listener {
         List<Currency> currencies = readCurrencies(getConfig().getConfigurationSection("currencies"));
         String vaultId = getConfig().getString("vault-currency", "");
 
-        LedgerStore store = new InMemoryLedgerStore(); // 換成 SqliteLedgerStore（paper-sqlite-repository）
+        LedgerStore store = new InMemoryLedgerStore(); // replace with SqliteLedgerStore (paper-sqlite-repository)
         queue = new WriteBehindQueue(getLogger(), "Economy-writer");
 
         Ledger ledger = new Ledger(currencies, System::currentTimeMillis, batch -> {
@@ -1361,7 +1361,7 @@ public final class EconomyPlugin extends JavaPlugin implements Listener {
         api = new EconomyApiImpl(ledger, getServer());
         getServer().getPluginManager().registerEvents(this, this);
 
-        // 其餘初始化完成後才註冊，確保使用端拿到的是可用的實作
+        // Register only after the rest of initialization completes, so consumers get a usable implementation
         getServer().getServicesManager().register(EconomyApi.class, api, this, ServicePriority.Normal);
 
         if (getServer().getPluginManager().isPluginEnabled("Vault")) {
@@ -1385,7 +1385,7 @@ public final class EconomyPlugin extends JavaPlugin implements Listener {
                 throw new IllegalStateException("currencies." + id + " must be a section");
             }
             int decimals = c.getInt("decimals", 0);
-            // starting-balance 以字串解析：YAML 的 double 可能是 0.30000000000000004
+        // starting-balance is parsed as a string: a YAML double may be 0.30000000000000004
             OptionalLong starting = AmountParser.parse(c.getString("starting-balance", "0"), decimals);
             if (starting.isEmpty()) {
                 throw new IllegalStateException("currencies." + id + ".starting-balance is invalid");
@@ -1404,54 +1404,54 @@ public final class EconomyPlugin extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         getServer().getServicesManager().unregisterAll(this);
-        if (queue != null) { // onEnable 可能半途失敗
+        if (queue != null) { // onEnable may fail halfway
             queue.close(DRAIN_TIMEOUT_SECONDS);
         }
     }
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 economy/
 └── src/main/java/com/example/economy/
     ├── EconomyPlugin.java
     ├── EconomyApiImpl.java
-    ├── api/                       ← 不可 relocate、只加不改（JDK 型別）
+    ├── api/                       <- must not be relocated, append-only (JDK types)
     │   ├── EconomyApi.java
     │   └── EconomyResult.java
-    ├── domain/                    ← 純 Java，無 org.bukkit；JUnit 直接測
+    ├── domain/                    <- pure Java, no org.bukkit; test directly with JUnit
     │   ├── Currency.java  Money.java  MoneyFormat.java  AmountParser.java
     │   └── Transaction.java  Ledger.java  Escrow.java
     ├── storage/
     │   ├── LedgerStore.java  InMemoryLedgerStore.java  WriteBehindQueue.java
-    │   └── SqliteLedgerStore.java ← 見 paper-sqlite-repository
-    └── vault/                     ← 只有這裡 import net.milkbowl
+    │   └── SqliteLedgerStore.java <- see paper-sqlite-repository
+    └── vault/                     <- the only place that imports net.milkbowl
         ├── VaultEconomyProvider.java
         └── VaultHook.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- `Ledger`／`Escrow` 假設單執行緒；`EconomyApiImpl` 與 Vault 提供端只允許**主執行緒**（違反丟 `IllegalStateException`）
-- 持久化只在 `WriteBehindQueue` 的單一寫入執行緒；佇列中只傳不可變的 `Transaction`（record），不傳 Bukkit 物件
-- 非同步工作（HTTP、資料庫）需要金額時，先在主執行緒讀值再傳入；寫回時用 `runTask` 回主執行緒再呼叫 API
-- `onDisable` 時排程器已關閉：同步 `queue.close(...)` 排空，不要再丟 `runTaskAsynchronously`
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- `Ledger`/`Escrow` assume a single thread; `EconomyApiImpl` and the Vault provider allow only the **main thread** (violations throw `IllegalStateException`)
+- Persistence runs only on the single writer thread of `WriteBehindQueue`; only immutable `Transaction` records go through the queue, never Bukkit objects
+- When async work (HTTP, database) needs an amount, read the value on the main thread first and pass it in; to write back, return to the main thread with `runTask` and then call the API
+- The scheduler is already shut down in `onDisable`: drain synchronously with `queue.close(...)` and do not submit `runTaskAsynchronously` again
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 餘額差 1 分、`0.1 + 0.2` 對不上 | 帳本內用了 `double` | 全程 `long` 最小單位；`double` 只在 Vault 邊界用 `Money.toMinor`（四捨五入） |
-| 轉帳後總額變多或變少 | 先扣後加之間失敗、或收款方溢位 | `Ledger.transfer` 先檢查兩邊再一起改；非 OK 結果保證沒動餘額 |
-| `ArithmeticException: long overflow` | 直接用 `+` 或 `Math.addExact` 沒接 | 一律走 `Money.checkedAdd`，溢位回 `INVALID_AMOUNT` |
-| 玩家輸入 `1e3`、`-5`、`NaN` 被當成錢 | 用 `Double.parseDouble` 解析 | 用 `AmountParser`（regex + BigDecimal），不經過 double |
-| 交貨丟例外後買方沒收到東西也沒退錢 | 保留後沒有 `finally` | 用 `Escrow.trade`；自訂流程時 `Hold.refund()` 放在 `finally` |
-| 交貨例外後物品憑空消失 | 物品已從畫面／背包取出，例外跳過還原 | 在 `Delivery` 內 `catch` → 先還物品 → 重拋（見 examples.md），退款由 `Escrow` 處理 |
-| 訊息顯示 `§a$ 100`／`&a100` 原文 | 把別人 `Economy.format()` 塞進 MiniMessage | 用 `LegacyComponentSerializer` 轉 `Component`，或改用 `EconomyApi.format` 純文字 |
-| 其他插件仍使用舊的經濟 | 優先權不夠，或本插件未註冊 | `ServicePriority.Highest` 註冊；`softdepend: [Vault]`；啟動日誌確認已註冊 |
-| 沒裝 Vault 就 `NoClassDefFoundError` | `EconomyPlugin` 欄位或簽名出現 Vault 型別 | Vault 型別只出現在 `vault/` package；先 `isPluginEnabled("Vault")` 再呼叫 `VaultHook` |
-| 重啟後餘額少一筆 | 寫入失敗或關機時未排空 | 日誌找 `Ledger write failed`（含 uuid 與金額）；確認 `onDisable` 呼叫 `queue.close` |
-| `getOfflinePlayerIfCached` 回 null | 以名字呼叫 Vault 舊方法，玩家從未上線 | 回傳 `FAILURE`／0；呼叫端應改用 UUID 版本 |
+| Balance off by 1 cent, `0.1 + 0.2` does not add up | `double` was used inside the ledger | Use `long` minor units throughout; `double` is used only at the Vault boundary via `Money.toMinor` (rounded) |
+| Total goes up or down after a transfer | Failure between debit and credit, or the receiver overflowed | `Ledger.transfer` checks both sides first and then changes both; a non-OK result guarantees balances are unchanged |
+| `ArithmeticException: long overflow` | Used `+` directly, or `Math.addExact` was not caught | Always use `Money.checkedAdd`; overflow returns `INVALID_AMOUNT` |
+| Player input `1e3`, `-5`, `NaN` is accepted as money | Parsed with `Double.parseDouble` | Use `AmountParser` (regex + BigDecimal), never via double |
+| After a delivery exception the buyer got nothing and no refund | No `finally` after reserving | Use `Escrow.trade`; in custom flows put `Hold.refund()` in `finally` |
+| Items vanish after a delivery exception | Items were already taken from the screen/inventory and the exception skipped restoration | In `Delivery`, `catch` -> restore items first -> rethrow (see examples.md); `Escrow` handles the refund |
+| Messages show raw `§a$ 100` / `&a100` | Another provider's `Economy.format()` was put into MiniMessage | Convert to `Component` with `LegacyComponentSerializer`, or use the plain text from `EconomyApi.format` |
+| Other plugins still use the old economy | Priority too low, or this plugin is not registered | Register with `ServicePriority.Highest`; `softdepend: [Vault]`; confirm registration in the startup log |
+| `NoClassDefFoundError` without Vault installed | A Vault type appears in an `EconomyPlugin` field or signature | Vault types appear only in the `vault/` package; check `isPluginEnabled("Vault")` before calling `VaultHook` |
+| One entry missing after restart | A write failed, or the queue was not drained on shutdown | Look for `Ledger write failed` in the log (includes uuid and amount); confirm `onDisable` calls `queue.close` |
+| `getOfflinePlayerIfCached` returns null | Legacy Vault method called by name for a player who never joined | Return `FAILURE`/0; callers should switch to the UUID variant |

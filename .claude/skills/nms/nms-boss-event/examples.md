@@ -1,6 +1,6 @@
 # examples — nms-boss-event
 
-## 範例 1：顯示任務進度 Boss Bar
+## Example 1: Show a quest progress Boss Bar
 
 **Input:**
 ```
@@ -8,7 +8,7 @@ package_name: com.example.display
 per_player: true
 ```
 
-**Output — 玩家進入任務區域時顯示 Boss Bar:**
+**Output — show a Boss Bar when a player enters the quest zone:**
 ```java
 private final BossBarManager bossBarManager = new BossBarManager(plugin);
 
@@ -19,7 +19,7 @@ public void onEnterZone(PlayerMoveEvent event) {
 
     NmsBossBar bar = bossBarManager.getOrCreate(
         player,
-        "§6§l主線任務：尋找神器",
+        "§6§lMain Quest: Find the Artifact",
         BossEvent.BossBarColor.YELLOW,
         BossEvent.BossBarOverlay.PROGRESS
     );
@@ -28,7 +28,7 @@ public void onEnterZone(PlayerMoveEvent event) {
 
 @EventHandler
 public void onLeaveZone(PlayerMoveEvent event) {
-    // 離開任務區域時隱藏 Bar（不移除，保留狀態）
+    // Hide the bar when leaving the quest zone (do not remove it; keep its state)
     NmsBossBar bar = bossBarManager.getOrCreate(
         event.getPlayer(), "", BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.PROGRESS);
     bar.setVisible(!isOutsideZone(event.getPlayer().getLocation()));
@@ -37,16 +37,16 @@ public void onLeaveZone(PlayerMoveEvent event) {
 
 ---
 
-## 範例 2：每秒更新 Boss Bar 進度
+## Example 2: Update Boss Bar progress every second
 
 **Input:**
 ```
 package_name: com.example.display
 ```
 
-**Output — 競速倒計時 Boss Bar:**
+**Output — race countdown Boss Bar:**
 ```java
-int duration = 60; // 60 秒
+int duration = 60; // 60 seconds
 
 Bukkit.getScheduler().runTaskTimer(plugin, new BukkitRunnable() {
     int remaining = duration;
@@ -60,7 +60,7 @@ Bukkit.getScheduler().runTaskTimer(plugin, new BukkitRunnable() {
         }
 
         float progress = (float) remaining / duration;
-        String title = "§c⏱ 剩餘時間: §f" + remaining + "§c 秒";
+        String title = "§c⏱ Time left: §f" + remaining + "§c s";
 
         for (Player p : Bukkit.getOnlinePlayers()) {
             bossBarManager.update(p, title, progress);
@@ -72,7 +72,7 @@ Bukkit.getScheduler().runTaskTimer(plugin, new BukkitRunnable() {
 
 ---
 
-## 範例 3：Boss 戰 HP 顯示
+## Example 3: Boss fight HP display
 
 **Input:**
 ```
@@ -80,40 +80,40 @@ package_name: com.example.display
 per_player: false
 ```
 
-**Output — 全伺服器共享 Boss HP 顯示（單一 ServerBossEvent 對多玩家）:**
+**Output — server-wide shared boss HP display (a single ServerBossEvent for many players):**
 ```java
-// 建立共享 Boss Bar
+// Create the shared Boss Bar
 NmsBossBar bossBar = new NmsBossBar(
-    "§4§l深淵巨龍 — 100%",
+    "§4§lAbyssal Dragon — 100%",
     BossEvent.BossBarColor.RED,
     BossEvent.BossBarOverlay.NOTCHED_20
 );
-bossBar.setDarkenScreen(true);    // 暗化螢幕
-bossBar.setPlayBossMusic(true);   // 播放 Boss 音樂
+bossBar.setDarkenScreen(true);    // Darken the screen
+bossBar.setPlayBossMusic(true);   // Play boss music
 
-// 對全服玩家顯示
+// Show to all players on the server
 for (Player p : Bukkit.getOnlinePlayers()) {
     bossBar.addPlayer(p);
 }
 
-// Boss 受傷時更新
+// Update when the boss takes damage
 void onBossDamage(double currentHp, double maxHp) {
     float progress = (float) (currentHp / maxHp);
     int percent = (int) (progress * 100);
     bossBar.setProgress(progress);
-    bossBar.setTitle("§4§l深淵巨龍 — " + percent + "%");
+    bossBar.setTitle("§4§lAbyssal Dragon — " + percent + "%");
 
-    // HP 低於 50% 轉為黃色
+    // Turn yellow when HP drops below 50%
     if (progress < 0.5f) {
         bossBar.setColor(BossEvent.BossBarColor.YELLOW);
     }
-    // HP 低於 20% 轉為白色閃爍（實際上改標題顏色）
+    // Turn white when HP drops below 20% (flashing effect; in practice this just changes the bar color)
     if (progress < 0.2f) {
         bossBar.setColor(BossEvent.BossBarColor.WHITE);
     }
 }
 
-// Boss 死亡時移除
+// Remove when the boss dies
 void onBossDeath() {
     bossBar.removeAllPlayers();
 }
@@ -121,7 +121,7 @@ void onBossDeath() {
 
 ---
 
-## 範例 4：每人獨立進度的多任務系統
+## Example 4: Multi-quest system with per-player progress
 
 **Input:**
 ```
@@ -129,9 +129,9 @@ package_name: com.example.display
 per_player: true
 ```
 
-**Output — 每個玩家看到不同的任務進度:**
+**Output — each player sees different quest progress:**
 ```java
-// 更新所有玩家的個人任務進度
+// Refresh every player's personal quest progress
 public void refreshAllBars() {
     for (Player player : Bukkit.getOnlinePlayers()) {
         Quest quest = questManager.getActiveQuest(player);

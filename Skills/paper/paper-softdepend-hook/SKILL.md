@@ -3,60 +3,60 @@ name: paper-softdepend-hook
 description: "安全使用第三方軟依賴（Vault、PlaceholderAPI、packetevents）：softdepend 宣告、isPluginEnabled 先檢查再建構、Hook + Bridge 分離、避開 Bukkit 監聽器簽名陷阱、接 LinkageError、Vault 消費端／提供端、PlaceholderAPI expansion 快照 / Safe soft dependencies on third-party plugins with Hook + Bridge split and class-load boundary tests"
 ---
 
-# Paper Softdepend Hook / 第三方軟依賴接點
+# Paper Softdepend Hook
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-softdepend-hook`
 
-## 目的 / Purpose
+## Purpose
 
-讓插件在**有裝**第三方插件（Vault、PlaceholderAPI、packetevents…）時多一項功能、**沒裝**時照常啟動。
-這是 [`paper-service-api`](../paper-service-api/SKILL.md)（自家插件之間）的第三方版本：差別在於第三方的型別**不在你的 jar 裡**，沒裝時只要 JVM 載入到任何引用它的類別，就會丟 `NoClassDefFoundError`。
+Let a plugin gain extra features when a third-party plugin (Vault, PlaceholderAPI, packetevents, ...) **is installed**, and still start normally when it **is not**.
+This is the third-party counterpart of [`paper-service-api`](../paper-service-api/SKILL.md) (which covers your own plugins): the difference is that third-party types are **not in your jar**, so when the plugin is missing, the JVM throws `NoClassDefFoundError` as soon as it loads any class that references them.
 
-解法是三層分離：
+The solution is a three-layer split:
 
-1. **Hook**：沒有任何第三方型別（欄位、方法簽名、方法本體都沒有，只呼叫 Bridge 的靜態工廠），任何時候都能安全載入；負責 `isPluginEnabled` 檢查、接 `LinkageError`、警告一次、降級。
-2. **Bridge**：**唯一**碰第三方型別的類別，只在檢查通過後才被觸碰。
-3. **自家介面（Port）**：Bridge 實作、其餘程式碼依賴的介面，只含 JDK／Paper 型別，讓業務程式碼完全不知道第三方存在。
+1. **Hook**: contains no third-party types at all (no fields, no method signatures, no method bodies; it only calls the Bridge's static factory), so it can always be loaded safely. It does the `isPluginEnabled` check, catches `LinkageError`, warns once, and degrades.
+2. **Bridge**: the **only** class that touches third-party types, and it is only touched after the check passes.
+3. **Your own interface (Port)**: the interface the Bridge implements and the rest of the code depends on. It contains only JDK/Paper types, so business code never knows the third party exists.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版相同，沒有版本差異行）
-- 純 Paper API；軟依賴以 `compileOnly` 取得：VaultAPI 1.7.1、PlaceholderAPI 2.11.6、packetevents-spigot 2.13.0
-- 不需要 Paperweight
+- Paper 1.21.11 / 26.2 (identical on both versions, no version-specific lines)
+- Pure Paper API; soft dependencies are obtained via `compileOnly`: VaultAPI 1.7.1, PlaceholderAPI 2.11.6, packetevents-spigot 2.13.0
+- Paperweight is not required
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「軟依賴」「softdepend」「soft dependency」「Hook」「Bridge」
 - 「Vault」「經濟插件」「Economy provider」「PlaceholderAPI」「expansion」「packetevents」
 - 「NoClassDefFoundError」「Failed to register events for class」「監聽器沒註冊」
 - 「沒裝某插件也要能啟動」「optional plugin integration」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `dependency` | `Vault` | 第三方插件的 `plugin.yml name`（大小寫要完全一致） |
-| `integration_package` | `com.example.market.integration` | Hook／Bridge／Port 所在 package |
-| `role` | `consumer` / `provider` / `expansion` / `packet` | 取用（Vault 查餘額）、提供（註冊 Economy）、PAPI 變數、封包監聽 |
-| `port_name` | `MoneyPort` | 自家介面名稱（只含 JDK／Paper 型別） |
-| `required` | `false` | `false` → `softdepend`；`true` → 改用 `depend`（缺了就不啟動，不需要本技能） |
+| `dependency` | `Vault` | The third-party plugin's `plugin.yml name` (case must match exactly) |
+| `integration_package` | `com.example.market.integration` | Package containing the Hook/Bridge/Port |
+| `role` | `consumer` / `provider` / `expansion` / `packet` | Consume (Vault balance lookup), provide (register an Economy), PAPI placeholders, packet listening |
+| `port_name` | `MoneyPort` | Name of your own interface (JDK/Paper types only) |
+| `required` | `false` | `false` -> `softdepend`; `true` -> use `depend` instead (the plugin will not start without it, and this skill is not needed) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `plugin.yml` 的 `softdepend` 與 `compileOnly` 依賴
-- `MoneyPort.java`、`NoMoney.java` — 自家介面與「沒有依賴」時的空實作
-- `VaultHook.java` / `VaultBridge.java` — Vault 消費端（查餘額、扣款、格式化）
-- `LedgerPort.java` / `LedgerEconomy.java` / `VaultProviderBridge.java` — 選用：註冊自己的 `Economy` 提供端
+- `softdepend` in `plugin.yml` and the `compileOnly` dependencies
+- `MoneyPort.java`, `NoMoney.java` — your own interface and its no-op implementation for when the dependency is absent
+- `VaultHook.java` / `VaultBridge.java` — Vault consumer (balance lookup, withdrawal, formatting)
+- `LedgerPort.java` / `LedgerEconomy.java` / `VaultProviderBridge.java` — optional: provider side that registers your own `Economy`
 - `SnapshotPublisher.java` / `PlaceholderSnapshot.java` / `MarketExpansion.java` / `PapiHook.java` / `PapiBridge.java` — PlaceholderAPI expansion
-- `JoinListener.java` — 示範「監聽器不碰軟依賴型別」
-- `MarketPlugin.java` — 啟用順序與停用清理
-- 邊界測試（`examples.md`）：在沒有依賴的 classpath 反射載入 Hook
+- `JoinListener.java` — demonstrates a listener that never touches soft-dependency types
+- `MarketPlugin.java` — enable order and disable cleanup
+- Boundary test (`examples.md`): reflectively load the Hook on a classpath without the dependency
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。軟依賴一律 `compileOnly`，**不可打包進 jar**：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Soft dependencies are always `compileOnly` and **must not be shaded into the jar**:
 
 ```groovy
 dependencies {
@@ -67,7 +67,7 @@ dependencies {
 }
 ```
 
-`plugin.yml`（名稱必須與對方的 `name` 完全一致，包含大小寫；`packetevents` 是小寫）：
+`plugin.yml` (the name must match the other plugin's `name` exactly, including case; `packetevents` is lowercase):
 
 ```yaml
 name: Market
@@ -76,19 +76,19 @@ api-version: '26.2'
 softdepend: [Vault, PlaceholderAPI, packetevents]
 ```
 
-`softdepend` 只保證「對方若存在，會先於本插件啟用」，**不保證存在**，也不保證 Vault 背後的經濟插件已註冊服務。
+`softdepend` only guarantees "if the other plugin exists, it is enabled before this plugin". It does **not guarantee it exists**, nor that the economy plugin behind Vault has registered its service.
 
-## 代碼範本 / Code Template
+## Code Template
 
-### 核心規則
+### Core Rules
 
-1. `isPluginEnabled(name)` **先於**任何會載入第三方型別的程式碼（呼叫 Bridge 的靜態方法、`new` Bridge）。
-2. Hook 的欄位、方法簽名、lambda 捕獲變數都不得出現第三方型別；它只持有自家 Port。
-3. Bridge 以外的類別都不可 `import` 第三方 package。
-4. 呼叫 Bridge 的地方一律 `try { … } catch (LinkageError e)`：版本不合或載入失敗時降級並**只警告一次**。
-5. 已註冊給 Bukkit 的 `Listener` 類別**不得**在任何成員簽名出現第三方型別（見下方「監聽器陷阱」）。
+1. `isPluginEnabled(name)` comes **before** any code that would load third-party types (calling a Bridge static method, `new` on a Bridge).
+2. The Hook's fields, method signatures, and lambda-captured variables must not contain third-party types; it holds only your own Port.
+3. No class other than the Bridge may `import` a third-party package.
+4. Every call into the Bridge is wrapped in `try { ... } catch (LinkageError e)`: on a version mismatch or load failure, degrade and **warn only once**.
+5. A `Listener` class registered with Bukkit **must not** have a third-party type in any member signature (see "The Listener Trap" below).
 
-### `MoneyPort.java`（自家介面，只含 JDK／Paper 型別）
+### `MoneyPort.java` (your own interface, JDK/Paper types only)
 
 ```java
 package com.example.market.integration;
@@ -98,37 +98,37 @@ import net.kyori.adventure.text.Component;
 import java.util.UUID;
 
 /**
- * 經濟功能的自家介面：業務程式碼只依賴它，不知道 Vault 存在。
+ * Own interface for economy features: business code depends only on this and does not know Vault exists.
  *
- * <p>規則：所有方法只在主執行緒呼叫（Vault 提供端多半不是執行緒安全）。
- * 失敗語意固定：查詢回 0／false，扣款與入帳回 false。
+ * <p>Rule: call every method on the main thread only (most Vault providers are not thread-safe).
+ * Failure semantics are fixed: queries return 0/false, withdrawals and deposits return false.
  */
 public interface MoneyPort {
 
-    /** 目前有沒有可用的經濟提供端。 */
+    /** Whether an economy provider is currently available. */
     boolean available();
 
     double balance(UUID player);
 
     boolean has(UUID player, double amount);
 
-    /** 成功回 true；餘額不足、無提供端都回 false。 */
+    /** Returns true on success; returns false on insufficient funds or when there is no provider. */
     boolean withdraw(UUID player, double amount);
 
     boolean deposit(UUID player, double amount);
 
     /**
-     * 提供端的金額字串轉成 Component。{@code Economy.format()} 常含舊式色碼（§a、&6），
-     * <b>不可</b>直接塞進 MiniMessage 字串，否則色碼被當成純文字；請用本方法的 Component 當 placeholder。
+     * Converts the provider's amount string into a Component. {@code Economy.format()} often contains legacy color codes (§a, &6),
+     * so it <b>must not</b> be inserted into a MiniMessage string directly, or the color codes are treated as plain text; use this method's Component as the placeholder.
      */
     Component format(double amount);
 
-    /** 去掉所有格式的純文字（寫入記錄檔、PlaceholderAPI 的 raw 值）。 */
+    /** Plain text with all formatting stripped (for log files and the PlaceholderAPI raw value). */
     String plain(double amount);
 }
 ```
 
-### `NoMoney.java`（沒有依賴時的空實作）
+### `NoMoney.java` (no-op implementation when the dependency is absent)
 
 ```java
 package com.example.market.integration;
@@ -138,7 +138,7 @@ import net.kyori.adventure.text.Component;
 import java.util.Locale;
 import java.util.UUID;
 
-/** 沒裝 Vault 或沒有經濟提供端時使用：所有操作都以「拒絕」回應，業務程式碼不必判斷 null。 */
+/** Used when Vault is not installed or there is no economy provider: every operation answers with "refused", so business code never checks for null. */
 public enum NoMoney implements MoneyPort {
     INSTANCE;
 
@@ -179,7 +179,7 @@ public enum NoMoney implements MoneyPort {
 }
 ```
 
-### `VaultBridge.java`（唯一碰 Vault 型別的消費端類別）
+### `VaultBridge.java` (the only consumer-side class that touches Vault types)
 
 ```java
 package com.example.market.integration;
@@ -196,12 +196,12 @@ import org.bukkit.plugin.ServicesManager;
 import java.util.UUID;
 
 /**
- * 唯一碰 {@code net.milkbowl.vault} 型別的消費端類別。
- * <b>Vault 沒裝時這個類別永遠不能被載入</b>：進來的呼叫都由 {@link VaultHook} 先問過
- * {@code isPluginEnabled} 並接 {@link LinkageError}。
+ * The only consumer-side class that touches {@code net.milkbowl.vault} types.
+ * <b>This class must never be loaded when Vault is not installed</b>: every incoming call is first guarded by {@link VaultHook}
+ * with {@code isPluginEnabled} and a {@link LinkageError} catch.
  *
- * <p>每次操作都重新向 ServicesManager 取 {@link Economy}：Vault 只是橋，真正的經濟插件
- * 可能比本插件晚註冊、被 reload 或被停用，快取舊實例會拿到失效的提供端。
+ * <p>Every operation fetches {@link Economy} from the ServicesManager again: Vault is only a bridge, and the real economy plugin
+ * may register after this plugin, be reloaded, or be disabled, so a cached instance would be a stale provider.
  */
 final class VaultBridge implements MoneyPort {
 
@@ -211,7 +211,7 @@ final class VaultBridge implements MoneyPort {
         this.services = services;
     }
 
-    /** 回傳型別刻意是自家介面：呼叫端的方法本體不必為了型別檢查而載入 VaultBridge。 */
+    /** The return type is deliberately your own interface: the caller's method body need not load VaultBridge just for type checking. */
     static MoneyPort create(ServicesManager services) {
         return new VaultBridge(services);
     }
@@ -260,7 +260,7 @@ final class VaultBridge implements MoneyPort {
         if (economy == null) {
             return NoMoney.INSTANCE.format(amount);
         }
-        // format() 的結果常含 § 色碼：用 legacy serializer 解成 Component，再當 placeholder 傳給 MiniMessage
+        // The result of format() often contains § color codes: parse it into a Component with the legacy serializer, then pass it to MiniMessage as a placeholder
         return LegacyComponentSerializer.legacySection().deserialize(economy.format(amount));
     }
 
@@ -271,7 +271,7 @@ final class VaultBridge implements MoneyPort {
 }
 ```
 
-### `VaultHook.java`（消費端 Hook，沒有任何 Vault 型別）
+### `VaultHook.java` (consumer-side Hook, no Vault types)
 
 ```java
 package com.example.market.integration;
@@ -283,10 +283,10 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Vault 的消費端接點。
+ * Consumer-side hook for Vault.
  *
- * <p>本類別沒有 Vault 型別：沒裝 Vault 時仍可安全載入。{@link #money()} 永遠回傳可用的 {@link MoneyPort}，
- * 沒裝或出錯時是 {@link NoMoney}，業務程式碼不需要判斷。
+ * <p>This class has no Vault types, so it can still be loaded safely when Vault is not installed. {@link #money()} always returns a usable {@link MoneyPort};
+ * when Vault is missing or fails it is {@link NoMoney}, so business code needs no checks.
  */
 public final class VaultHook {
 
@@ -301,9 +301,9 @@ public final class VaultHook {
     }
 
     /**
-     * 在 onEnable 呼叫一次。
+     * Call once in onEnable.
      *
-     * @return Vault 是否已啟用並接上（不代表已有經濟提供端，用 {@code money().available()} 判斷）
+     * @return whether Vault is enabled and hooked (this does not mean an economy provider exists; use {@code money().available()} for that)
      */
     public boolean install() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME)) {
@@ -319,7 +319,7 @@ public final class VaultHook {
         }
     }
 
-    /** 提供端註冊：把自家帳本註冊成 Vault Economy。停用時由 {@code ServicesManager.unregisterAll(plugin)} 取消。 */
+    /** Provider registration: registers your own ledger as a Vault Economy. On disable it is removed by {@code ServicesManager.unregisterAll(plugin)}. */
     public boolean registerProvider(LedgerPort ledger) {
         if (!plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME)) return false;
         try {
@@ -346,7 +346,7 @@ public final class VaultHook {
             PLUGIN_NAME + " is present but could not be used; money features are disabled.", e);
     }
 
-    /** 每個呼叫各自接 LinkageError：第三方 jar 版本不合時降級成「拒絕」，不讓例外衝進業務流程。 */
+    /** Each call catches LinkageError on its own: when the third-party jar version mismatches, degrade to "refused" and keep exceptions out of the business flow. */
     private final class Guarded implements MoneyPort {
 
         private final MoneyPort delegate;
@@ -428,14 +428,14 @@ public final class VaultHook {
 }
 ```
 
-### `LedgerPort.java`（選用：提供端——自家帳本介面）
+### `LedgerPort.java` (optional: provider side — your own ledger interface)
 
 ```java
 package com.example.market.integration;
 
 import java.util.UUID;
 
-/** 自家帳本的對外介面（只含 JDK 型別）。{@code LedgerEconomy} 把它轉成 Vault 的 Economy。主執行緒限定。 */
+/** Public interface of your own ledger (JDK types only). {@code LedgerEconomy} converts it into Vault's Economy. Main thread only. */
 public interface LedgerPort {
 
     String currencyName();
@@ -446,14 +446,14 @@ public interface LedgerPort {
 
     double balance(UUID player);
 
-    /** 餘額不足或無帳號回 false，餘額不變。 */
+    /** Returns false on insufficient funds or no account; the balance is unchanged. */
     boolean withdraw(UUID player, double amount);
 
     boolean deposit(UUID player, double amount);
 }
 ```
 
-### `LedgerEconomy.java`（選用：提供端——實作 Vault `Economy`）
+### `LedgerEconomy.java` (optional: provider side — implements Vault `Economy`)
 
 ```java
 package com.example.market.integration;
@@ -468,8 +468,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 把 {@link LedgerPort} 包成 Vault 的 {@link Economy}。只由 {@link VaultProviderBridge} 建構。
- * 不支援銀行；world 參數一律忽略；以名字為參數的舊介面只認「伺服器曾見過的玩家」。
+ * Wraps a {@link LedgerPort} as Vault's {@link Economy}. Constructed only by {@link VaultProviderBridge}.
+ * Banks are not supported; the world parameter is always ignored; the legacy name-based interface only recognizes players the server has seen before.
  */
 final class LedgerEconomy implements Economy {
 
@@ -507,7 +507,7 @@ final class LedgerEconomy implements Economy {
         return new EconomyResponse(0, 0, ResponseType.NOT_IMPLEMENTED, NO_BANK);
     }
 
-    // ---- 基本資訊 ----
+    // ---- Basic info ----
 
     @Override public boolean isEnabled() { return true; }
     @Override public String getName() { return name; }
@@ -516,13 +516,13 @@ final class LedgerEconomy implements Economy {
     @Override public String currencyNamePlural() { return ledger.currencyName(); }
     @Override public String currencyNameSingular() { return ledger.currencyName(); }
 
-    /** 回純文字即可；若要上色可用 § 色碼，消費端（如 VaultBridge）會用 legacy serializer 解析。 */
+    /** Plain text is enough; to add color you may use § color codes, and consumers (such as VaultBridge) parse them with the legacy serializer. */
     @Override
     public String format(double amount) {
         return String.format(Locale.ROOT, "%." + ledger.decimals() + "f %s", amount, ledger.currencyName());
     }
 
-    // ---- 帳號 ----
+    // ---- Accounts ----
 
     @Override public boolean hasAccount(OfflinePlayer player) { return ledger.hasAccount(player.getUniqueId()); }
     @Override public boolean hasAccount(OfflinePlayer player, String world) { return hasAccount(player); }
@@ -533,7 +533,7 @@ final class LedgerEconomy implements Economy {
     @Override @Deprecated public boolean createPlayerAccount(String playerName) { return false; }
     @Override @Deprecated public boolean createPlayerAccount(String playerName, String world) { return false; }
 
-    // ---- 餘額 ----
+    // ---- Balance ----
 
     @Override public double getBalance(OfflinePlayer player) { return ledger.balance(player.getUniqueId()); }
     @Override public double getBalance(OfflinePlayer player, String world) { return getBalance(player); }
@@ -544,7 +544,7 @@ final class LedgerEconomy implements Economy {
     @Override @Deprecated public boolean has(String playerName, double amount) { return getBalance(playerName) >= amount; }
     @Override @Deprecated public boolean has(String playerName, String world, double amount) { return has(playerName, amount); }
 
-    // ---- 存提 ----
+    // ---- Deposits and withdrawals ----
 
     @Override public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) { return withdraw(player, amount); }
     @Override public EconomyResponse withdrawPlayer(OfflinePlayer player, String world, double amount) { return withdraw(player, amount); }
@@ -555,7 +555,7 @@ final class LedgerEconomy implements Economy {
     @Override @Deprecated public EconomyResponse depositPlayer(String playerName, double amount) { return deposit(byName(playerName), amount); }
     @Override @Deprecated public EconomyResponse depositPlayer(String playerName, String world, double amount) { return deposit(byName(playerName), amount); }
 
-    // ---- 銀行：不支援 ----
+    // ---- Banks: not supported ----
 
     @Override public EconomyResponse createBank(String bank, OfflinePlayer player) { return noBank(); }
     @Override @Deprecated public EconomyResponse createBank(String bank, String player) { return noBank(); }
@@ -572,7 +572,7 @@ final class LedgerEconomy implements Economy {
 }
 ```
 
-### `VaultProviderBridge.java`（選用：提供端註冊）
+### `VaultProviderBridge.java` (optional: provider registration)
 
 ```java
 package com.example.market.integration;
@@ -582,8 +582,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 
 /**
- * 註冊自己的 {@code Economy}。只在 Vault 已啟用後由 {@link VaultHook#registerProvider} 呼叫。
- * 優先度用 {@code Normal}：同時有多個經濟插件時讓管理員決定誰贏，不要預設搶 {@code Highest}。
+ * Registers your own {@code Economy}. Called by {@link VaultHook#registerProvider} only after Vault is enabled.
+ * Use {@code Normal} priority: when several economy plugins coexist, let the admin decide which wins; do not grab {@code Highest} by default.
  */
 final class VaultProviderBridge {
 
@@ -597,7 +597,7 @@ final class VaultProviderBridge {
 }
 ```
 
-### `PlaceholderSnapshot.java`（不可變快照）
+### `PlaceholderSnapshot.java` (immutable snapshot)
 
 ```java
 package com.example.market.integration;
@@ -605,13 +605,13 @@ package com.example.market.integration;
 import java.util.Map;
 import java.util.UUID;
 
-/** 發佈給 PlaceholderAPI 讀取的不可變快照：建構後永不變動，可被任意執行緒安全讀取。 */
+/** Immutable snapshot published for PlaceholderAPI to read: never changes after construction and is safe to read from any thread. */
 public record PlaceholderSnapshot(Map<UUID, Double> balances) {
 
     public static final PlaceholderSnapshot EMPTY = new PlaceholderSnapshot(Map.of());
 
     public PlaceholderSnapshot {
-        balances = Map.copyOf(balances); // 防禦性複製：之後呼叫端改原 Map 不影響快照
+        balances = Map.copyOf(balances); // Defensive copy: later changes to the caller's original Map do not affect the snapshot
     }
 
     public double balance(UUID player) {
@@ -620,32 +620,32 @@ public record PlaceholderSnapshot(Map<UUID, Double> balances) {
 }
 ```
 
-### `SnapshotPublisher.java`（主執行緒發佈、任意執行緒讀取）
+### `SnapshotPublisher.java` (publish on the main thread, read from any thread)
 
 ```java
 package com.example.market.integration;
 
 /**
- * 單一寫者（主執行緒）、多讀者（任意執行緒）的發佈點。
- * 只靠 {@code volatile} 引用交換，不需要鎖：快照本身不可變，換掉整個引用即可。
+ * Publication point with a single writer (main thread) and many readers (any thread).
+ * Relies only on swapping a {@code volatile} reference, no lock needed: the snapshot itself is immutable, so replacing the whole reference is enough.
  */
 public final class SnapshotPublisher {
 
     private volatile PlaceholderSnapshot current = PlaceholderSnapshot.EMPTY;
 
-    /** 只在主執行緒呼叫（例如 runTaskTimer），因為資料來源是 Bukkit／Vault 狀態。 */
+    /** Call on the main thread only (for example from runTaskTimer), because the data source is Bukkit/Vault state. */
     public void publish(PlaceholderSnapshot snapshot) {
         this.current = snapshot;
     }
 
-    /** 任意執行緒可讀。 */
+    /** Readable from any thread. */
     public PlaceholderSnapshot current() {
         return current;
     }
 }
 ```
 
-### `MarketExpansion.java`（PlaceholderAPI expansion，Bridge 層）
+### `MarketExpansion.java` (PlaceholderAPI expansion, Bridge layer)
 
 ```java
 package com.example.market.integration;
@@ -657,10 +657,10 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * {@code %market_balance%}（格式化）與 {@code %market_balance_raw%}（純數字）。
+ * {@code %market_balance%} (formatted) and {@code %market_balance_raw%} (plain number).
  *
- * <p><b>PlaceholderAPI 可能從任何執行緒呼叫 {@code onRequest}</b>（聊天、計分板、非同步變數解析）：
- * 這裡禁止呼叫 Bukkit API 與 Vault，只讀 {@link SnapshotPublisher#current()} 的不可變快照。
+ * <p><b>PlaceholderAPI may call {@code onRequest} from any thread</b> (chat, scoreboards, async placeholder parsing):
+ * calling the Bukkit API or Vault here is forbidden; only read the immutable snapshot from {@link SnapshotPublisher#current()}.
  */
 final class MarketExpansion extends PlaceholderExpansion {
 
@@ -687,19 +687,19 @@ final class MarketExpansion extends PlaceholderExpansion {
         return version;
     }
 
-    /** true：expansion 由本插件持有，{@code /papi reload} 不會把它註銷。 */
+    /** true: the expansion is owned by this plugin, so {@code /papi reload} does not unregister it. */
     @Override
     public boolean persist() {
         return true;
     }
 
-    /** 沒有額外的外部條件，註冊一律允許；若依賴另一個插件，在這裡回傳該插件是否已啟用。 */
+    /** No extra external conditions, so registration is always allowed; if it depends on another plugin, return whether that plugin is enabled here. */
     @Override
     public boolean canRegister() {
         return true;
     }
 
-    /** 回 null 表示「不認得這個變數」，PlaceholderAPI 會原樣顯示；玩家為 null（伺服器層級變數）也回 null。 */
+    /** Returning null means "this placeholder is not recognized", and PlaceholderAPI shows it as-is; a null player (server-level placeholder) also returns null. */
     @Override
     public String onRequest(OfflinePlayer player, String params) {
         if (player == null) {
@@ -713,7 +713,7 @@ final class MarketExpansion extends PlaceholderExpansion {
         };
     }
 
-    /** 給 {@code /papi parse} 的 Tab 補全與 {@code /papi info market}。 */
+    /** For tab completion in {@code /papi parse} and for {@code /papi info market}. */
     @Override
     public List<String> getPlaceholders() {
         return List.of("%market_balance%", "%market_balance_raw%");
@@ -728,13 +728,13 @@ package com.example.market.integration;
 
 import org.bukkit.plugin.Plugin;
 
-/** 唯一碰 PlaceholderAPI 型別的註冊入口。PlaceholderAPI 沒裝時不可被載入；呼叫端先檢查並接 LinkageError。 */
+/** The only registration entry point that touches PlaceholderAPI types. It must not be loaded when PlaceholderAPI is not installed; callers check first and catch LinkageError. */
 final class PapiBridge {
 
     private PapiBridge() {
     }
 
-    /** @return 取消註冊用的 Runnable（JDK 型別，Hook 不需要碰 expansion 型別） */
+    /** @return a Runnable for unregistering (a JDK type, so the Hook does not need to touch the expansion type) */
     static Runnable register(Plugin plugin, SnapshotPublisher publisher) {
         MarketExpansion expansion = new MarketExpansion(publisher, plugin.getPluginMeta().getVersion());
         if (!expansion.register()) {
@@ -754,7 +754,7 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.logging.Level;
 
-/** PlaceholderAPI 的接點：沒有 PlaceholderAPI 型別，沒裝時仍可安全載入。 */
+/** Hook for PlaceholderAPI: has no PlaceholderAPI types, so it can still be loaded safely when PlaceholderAPI is not installed. */
 public final class PapiHook {
 
     public static final String PLUGIN_NAME = "PlaceholderAPI";
@@ -768,7 +768,7 @@ public final class PapiHook {
         this.publisher = publisher;
     }
 
-    /** @return 是否已註冊 expansion */
+    /** @return whether the expansion was registered */
     public boolean install() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME)) {
             plugin.getLogger().info(PLUGIN_NAME + " not found; placeholders are disabled.");
@@ -784,7 +784,7 @@ public final class PapiHook {
         }
     }
 
-    /** onDisable：PlaceholderAPI 若先被停用，expansion 已跟著消失，註銷失敗只記 FINE。 */
+    /** onDisable: if PlaceholderAPI was disabled first, the expansion has already gone with it, so an unregister failure is logged at FINE only. */
     public void uninstall() {
         Runnable action = unregister;
         unregister = () -> { };
@@ -797,19 +797,19 @@ public final class PapiHook {
 }
 ```
 
-### 監聽器陷阱（Bukkit 的 `registerEvents`）
+### The Listener Trap (Bukkit's `registerEvents`)
 
-`PluginManager.registerEvents(listener, plugin)` 會對 listener 類別呼叫 `getDeclaredMethods()`，JVM 必須解析**所有**宣告方法（含 lambda 合成的 `lambda$xxx` 方法）的簽名型別。只要其中任何一個方法的參數、回傳值或捕獲變數是未安裝的第三方型別（包含「implements 第三方介面的自家類別」），就丟 `NoClassDefFoundError`。Bukkit 只在 console 印一行
-`Failed to register events for class X because Y does not exist`，**整個監聽器靜默失效**，連不相關的事件也收不到。
+`PluginManager.registerEvents(listener, plugin)` calls `getDeclaredMethods()` on the listener class, and the JVM must resolve the signature types of **all** declared methods (including the synthetic `lambda$xxx` methods generated for lambdas). If the parameter, return value, or captured variable of any one method is an uninstalled third-party type (including "your own class that implements a third-party interface"), a `NoClassDefFoundError` is thrown. Bukkit only prints one line to the console,
+`Failed to register events for class X because Y does not exist`, and **the whole listener silently stops working**, even for unrelated events.
 
 ```text
-// 錯誤：announce 的參數是 Vault 型別，Vault 沒裝時整個 JoinListener 都註冊失敗
+// Wrong: announce takes a Vault type as a parameter, so when Vault is not installed the whole JoinListener fails to register
 public final class JoinListener implements Listener {
-    private void announce(Player p, Economy economy) { ... }   // <- 第三方型別在簽名上
+    private void announce(Player p, Economy economy) { ... }   // <- third-party type in the signature
 }
 ```
 
-正確做法：Listener 只持有**自家 Port**（本技能的 `MoneyPort`），第三方型別全留在 Bridge。
+The correct approach: the Listener holds only **your own Port** (this skill's `MoneyPort`), and all third-party types stay in the Bridge.
 
 ### `JoinListener.java`
 
@@ -824,8 +824,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 /**
- * 成員簽名只有 JDK／Paper／自家型別，沒有 Vault：Vault 沒裝時 {@code registerEvents} 仍然成功。
- * 金額用 {@link MoneyPort#format} 的 Component 當 placeholder，不把 {@code Economy.format()} 字串拼進 MiniMessage。
+ * Member signatures contain only JDK/Paper/own types and no Vault: {@code registerEvents} still succeeds when Vault is not installed.
+ * The amount is passed as the Component from {@link MoneyPort#format} placeholder; the {@code Economy.format()} string is never concatenated into MiniMessage.
  */
 public final class JoinListener implements Listener {
 
@@ -847,7 +847,7 @@ public final class JoinListener implements Listener {
 }
 ```
 
-### `MarketPlugin.java`（啟用順序與清理）
+### `MarketPlugin.java` (enable order and cleanup)
 
 ```java
 package com.example.market;
@@ -877,22 +877,22 @@ public final class MarketPlugin extends JavaPlugin {
     public void onEnable() {
         publisher = new SnapshotPublisher();
 
-        // 建構 Hook 不會載入任何第三方類別；install() 內才檢查並觸碰 Bridge
+        // Constructing a Hook loads no third-party classes; install() checks first and only then touches the Bridge
         vault = new VaultHook(this);
         vault.install();
         papi = new PapiHook(this, publisher);
         papi.install();
 
-        // Listener 只拿自家 Port，Vault 沒裝時也能成功註冊
+        // The Listener takes only your own Port, so it registers successfully even when Vault is not installed
         getServer().getPluginManager().registerEvents(new JoinListener(vault.money()), this);
 
-        // 主執行緒定期發佈快照；PlaceholderAPI 的任意執行緒只讀快照
+        // Publish a snapshot periodically on the main thread; PlaceholderAPI's arbitrary threads only read the snapshot
         getServer().getScheduler().runTaskTimer(this, this::publishSnapshot, 20L, PUBLISH_INTERVAL_TICKS);
     }
 
     @Override
     public void onDisable() {
-        // 先註銷 expansion，再清 Vault 狀態；註冊過的 Economy 一併取消
+        // Unregister the expansion first, then clear Vault state; any registered Economy is unregistered too
         if (papi != null) papi.uninstall();
         if (vault != null) vault.uninstall();
         getServer().getServicesManager().unregisterAll(this);
@@ -908,52 +908,52 @@ public final class MarketPlugin extends JavaPlugin {
 }
 ```
 
-### packetevents 的套用
+### Applying This to packetevents
 
-packetevents 同樣是 Hook + Bridge：Hook 持有 `Object listener`（不用 `PacketListenerCommon` 型別），`install()` 先 `isPluginEnabled("packetevents")`，Bridge 負責 `PacketEvents.getAPI().getEventManager().registerListener(...)`。封包監聽器跑在 **Netty IO 執行緒**，同樣只讀不可變快照、不呼叫 Bukkit API。完整範本見 [`examples.md`](examples.md) 範例 2。
+packetevents is the same Hook + Bridge pattern: the Hook holds an `Object listener` (not the `PacketListenerCommon` type), `install()` first checks `isPluginEnabled("packetevents")`, and the Bridge does `PacketEvents.getAPI().getEventManager().registerListener(...)`. Packet listeners run on the **Netty IO thread**, so likewise they only read an immutable snapshot and call no Bukkit API. See Example 2 in [`examples.md`](examples.md) for the full template.
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/market/
-├── MarketPlugin.java                 ← 組裝：建構 Hook、註冊 Listener、onDisable 清理
+├── MarketPlugin.java                 ← Assembly: build Hooks, register Listener, cleanup in onDisable
 └── integration/
-    ├── MoneyPort.java                ← 自家介面（業務程式碼只依賴它）
+    ├── MoneyPort.java                ← Own interface (business code depends only on this)
     ├── NoMoney.java
-    ├── VaultHook.java                ← 無第三方型別，public
-    ├── VaultBridge.java              ← 唯一碰 Vault 的消費端類別，package-private
-    ├── LedgerPort.java / LedgerEconomy.java / VaultProviderBridge.java   ← 選用：提供端
+    ├── VaultHook.java                ← No third-party types, public
+    ├── VaultBridge.java              ← Only consumer-side class touching Vault, package-private
+    ├── LedgerPort.java / LedgerEconomy.java / VaultProviderBridge.java   ← Optional: provider side
     ├── PapiHook.java                 ← public
     ├── PapiBridge.java               ← package-private
-    ├── MarketExpansion.java          ← 碰 PlaceholderAPI，package-private
+    ├── MarketExpansion.java          ← Touches PlaceholderAPI, package-private
     ├── PlaceholderSnapshot.java
     ├── SnapshotPublisher.java
-    └── JoinListener.java             ← Listener：簽名無第三方型別
+    └── JoinListener.java             ← Listener: no third-party types in signatures
 src/test/java/com/example/market/
-└── SoftDependBoundaryTest.java       ← 測試 classpath 刻意沒有第三方 jar
+└── SoftDependBoundaryTest.java       ← The test classpath deliberately has no third-party jars
 ```
 
-Bridge、Expansion 設為 package-private：integration package 以外不可能誤用。
+Keep the Bridge and Expansion package-private: they cannot be misused from outside the integration package.
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- Vault 的 `Economy` 提供端多半是主執行緒設計且不保證執行緒安全：`MoneyPort` 的所有方法**只在主執行緒呼叫**，Javadoc 寫明
-- PlaceholderAPI 的 `onRequest` / `onPlaceholderRequest` **可能在任何執行緒**執行：只讀 `SnapshotPublisher.current()`，禁止呼叫 Bukkit API 或 Vault
-- 快照由主執行緒（`runTaskTimer`）整份重建後以 `volatile` 引用交換；快照物件建構後永不變動（`Map.copyOf`）
-- packetevents listener 在 Netty IO 執行緒：同樣只讀不可變快照，修改封包只改 clone
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- Vault `Economy` providers are mostly designed for the main thread and are not guaranteed thread-safe: call all `MoneyPort` methods **on the main thread only**, and state this in the Javadoc
+- PlaceholderAPI's `onRequest` / `onPlaceholderRequest` **may run on any thread**: only read `SnapshotPublisher.current()`; calling the Bukkit API or Vault is forbidden
+- The snapshot is rebuilt in full by the main thread (`runTaskTimer`) and swapped in through a `volatile` reference; the snapshot object never changes after construction (`Map.copyOf`)
+- The packetevents listener runs on the Netty IO thread: likewise only read the immutable snapshot, and modify only a clone of a packet
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| `NoClassDefFoundError: net/milkbowl/vault/economy/Economy` | Vault 沒裝，但某個被載入的類別引用了 Vault 型別（欄位、簽名、本體都算） | 只有 Bridge 碰第三方型別；Bridge 在 `isPluginEnabled` 為真後才被觸碰 |
-| `Failed to register events for class X because ... does not exist`，事件完全收不到 | Listener 的某個方法簽名（含 lambda 捕獲變數）出現未安裝的第三方型別 | Listener 只持有自家 Port；用邊界測試重現 |
-| 插件啟動順序錯，Vault 還沒啟用 | 沒宣告 `softdepend`，或名稱大小寫不符 | `softdepend: [Vault, PlaceholderAPI, packetevents]`，名稱與對方 `name` 完全一致 |
-| `Economy` 為 null（Vault 已裝） | Vault 只是橋，經濟插件尚未註冊或已停用 | 每次操作重新 `getRegistration`；用 `MoneyPort.available()` 判斷，不快取 `Economy` |
-| 訊息出現 `§a` 或 `&6` 字樣、顏色壞掉 | 把 `Economy.format()` 字串拼進 MiniMessage | 用 `LegacyComponentSerializer.legacySection()` 轉 Component，再用 `Placeholder.component` |
-| `NoSuchMethodError` / `AbstractMethodError`（第三方 API 版本不合） | 編譯用的版本與伺服器上實際版本不同 | Hook 接 `LinkageError`，降級並只警告一次 |
-| PlaceholderAPI 變數偶爾出現競態或丟例外 | `onRequest` 在非主執行緒呼叫了 Bukkit API | 只讀快照；資料由主執行緒定期發佈 |
-| `/papi reload` 後變數消失 | `persist()` 回 false，expansion 被當成外部 jar 註銷 | `persist()` 回 true，並在 `onDisable` 自行 `unregister()` |
-| `register()` 回 false | 同 identifier 已被註冊，或 `canRegister()` 回 false | 檢查 identifier 是否重複；在 `canRegister()` 實作外部條件 |
-| 停用時丟例外 | 第三方插件已先於本插件停用 | `uninstall()` 接 `LinkageError \| RuntimeException`，記 FINE 即可 |
+| `NoClassDefFoundError: net/milkbowl/vault/economy/Economy` | Vault is not installed, but some loaded class references a Vault type (fields, signatures, and bodies all count) | Only the Bridge touches third-party types; the Bridge is touched only after `isPluginEnabled` is true |
+| `Failed to register events for class X because ... does not exist`, and events are never received | A Listener method signature (including lambda-captured variables) contains an uninstalled third-party type | The Listener holds only your own Port; reproduce it with the boundary test |
+| Plugin startup order is wrong, Vault is not yet enabled | `softdepend` is not declared, or the name's case does not match | `softdepend: [Vault, PlaceholderAPI, packetevents]`, with names matching the other plugin's `name` exactly |
+| `Economy` is null (Vault is installed) | Vault is only a bridge; the economy plugin has not registered yet or has been disabled | Call `getRegistration` again on every operation; use `MoneyPort.available()` to check, and do not cache `Economy` |
+| Messages show `§a` or `&6` literally and colors are broken | The `Economy.format()` string was concatenated into MiniMessage | Convert to a Component with `LegacyComponentSerializer.legacySection()`, then use `Placeholder.component` |
+| `NoSuchMethodError` / `AbstractMethodError` (third-party API version mismatch) | The version compiled against differs from the version on the server | The Hook catches `LinkageError`, degrades, and warns only once |
+| PlaceholderAPI placeholders occasionally race or throw | `onRequest` called the Bukkit API off the main thread | Only read the snapshot; the main thread publishes data periodically |
+| Placeholders vanish after `/papi reload` | `persist()` returns false, so the expansion is unregistered as if it were an external jar | `persist()` returns true, and call `unregister()` yourself in `onDisable` |
+| `register()` returns false | The same identifier is already registered, or `canRegister()` returns false | Check for a duplicate identifier; implement external conditions in `canRegister()` |
+| Exception on disable | The third-party plugin was disabled before this plugin | `uninstall()` catches `LinkageError \| RuntimeException`; logging at FINE is enough |

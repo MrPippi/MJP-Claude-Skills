@@ -3,52 +3,52 @@ name: nms-fake-player
 description: "以真正的 NMS ServerPlayer 建立沒有客戶端的假玩家（機器人／訓練假人）：空連線、皮膚、原版戰鬥與移動物理、NMS 限定在單一套件並在版本不符時只停用該功能（Paper NMS + Paperweight）/ Client-less fake players backed by a real NMS ServerPlayer with vanilla combat and movement, confined NMS and version guard"
 ---
 
-# NMS Fake Player / NMS 假玩家
+# NMS Fake Player
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-fake-player`
 
-## 目的 / Purpose
+## Purpose
 
-建立一個「真的 `ServerPlayer`、但沒有客戶端」的假玩家，用於 PvP 機器人、訓練假人、展示用分身。
-和 Citizens 之類的 NPC 不同：傷害、暴擊、擊退、舉盾、吃東西、走路與跳台階全部走原版邏輯，呼叫端只需要每 tick 餵輸入（前進／橫移／跳／疾跑）與轉頭。
+Create a "real `ServerPlayer` without a client" fake player, for PvP bots, training dummies, and showcase clones.
+Unlike NPCs such as Citizens, damage, critical hits, knockback, shield blocking, eating, walking, and step-up jumping all use vanilla logic; the caller only feeds input every tick (forward/strafe/jump/sprint) and head rotation.
 
-這是插件中最容易隨版本壞掉的 NMS 程式碼，因此範本同時規範：
-- **NMS 只出現在單一套件**，對外只交 Bukkit 型別
-- **版本守門**：版本不符時只停用這個功能（例如 `/bot`），插件其餘功能照常
+This is the NMS code most likely to break across versions, so the template also enforces:
+- **NMS appears in a single package only**, exposing only Bukkit types outward
+- **Version guard**: on a version mismatch, only this feature (e.g. `/bot`) is disabled; the rest of the plugin works as normal
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
-- Paperweight userdev（見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)）
-- 依賴 Paper 修補過的建構子與方法（`ServerGamePacketListenerImpl`、`CommonListenerCookie.createInitial`、`addFreshEntity` 的 CraftBukkit 重載），**同一個 MC 版本換 Paper build 也可能改簽名** → 第一次呼叫必須接 `LinkageError`
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
+- Paperweight userdev (see [`references/paper-nms-platform.md`](references/paper-nms-platform.md))
+- Depends on Paper-patched constructors and methods (`ServerGamePacketListenerImpl`, `CommonListenerCookie.createInitial`, the CraftBukkit overload of `addFreshEntity`); **signatures may change even between Paper builds of the same MC version** -> the first call must catch `LinkageError`
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「假玩家」「fake player」「機器人」「bot」「訓練假人」「PvP bot」
 - 「ServerPlayer NPC」「玩家分身」「不用 Citizens 的 NPC」
 - 「EmptyConnection」「沒有客戶端的玩家」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.bot.nms` | NMS 專用套件（只有這個套件可以 import NMS） |
-| `supported_versions` | `1.21.11`, `26.2` | 允許啟用的 MC 版本 |
-| `name_rule` | `<player>_Bot` | 假玩家名稱規則（≤ 16 字元） |
-| `skin_source` | 挑戰者本人 | 皮膚來源玩家 |
+| `package_name` | `com.example.bot.nms` | Dedicated NMS package (only this package may import NMS) |
+| `supported_versions` | `1.21.11`, `26.2` | MC versions allowed to enable the feature |
+| `name_rule` | `<player>_Bot` | Fake player name rule (max 16 characters) |
+| `skin_source` | the challenger | Player the skin is taken from |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `NmsGuard.java` — 版本守門（**不碰任何 NMS 型別**，版本不符時也能安全載入）
-- `EmptyConnection.java` — 沒有客戶端的連線：丟掉封包，只保留給自己的擊退速度
-- `FakePlayer.java` — 假玩家本體（spawn / tick / input / look / attack / remove），對外只交 Bukkit 型別
-- `BotService.java` — Bukkit 端的管理與降級（接 `LinkageError`、每 tick 驅動、玩家上線補送皮膚）
+- `NmsGuard.java` - version guard (**touches no NMS types**, so it loads safely even on a version mismatch)
+- `EmptyConnection.java` - client-less connection: drops packets, keeping only the knockback velocity addressed to itself
+- `FakePlayer.java` - the fake player itself (spawn / tick / input / look / attack / remove), exposing only Bukkit types outward
+- `BotService.java` - Bukkit-side management and degradation (catches `LinkageError`, drives every tick, resends skin when a player joins)
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。另外建議加一個檢查，確保 NMS／CraftBukkit 類別**沒有被打包**進 jar：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Also add a check to make sure NMS/CraftBukkit classes are **not packaged** into the jar:
 
 ```groovy
 tasks.register('verifyNoServerClassesInJar') {
@@ -66,9 +66,9 @@ tasks.register('verifyNoServerClassesInJar') {
 tasks.named('build') { dependsOn 'verifyNoServerClassesInJar' }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `NmsGuard.java`（版本守門，不碰 NMS）
+### `NmsGuard.java` (version guard, no NMS)
 
 ```java
 package com.example.bot;
@@ -78,8 +78,8 @@ import org.bukkit.Bukkit;
 import java.util.Set;
 
 /**
- * 唯一可以在 NMS 對不上時呼叫的入口：只比對 Bukkit 的版本字串，簽名與欄位都不出現 NMS 型別。
- * 版本相同但 Paper build 改了簽名的情況比不出來 → 呼叫端第一次碰 FakePlayer 時仍要接 LinkageError。
+ * The only entry point that may be called when NMS does not match: it compares only Bukkit's version string, and no NMS type appears in signatures or fields.
+ * It cannot detect the case where the version is the same but the Paper build changed signatures -> the caller must still catch LinkageError on first contact with FakePlayer.
  */
 public final class NmsGuard {
 
@@ -93,7 +93,7 @@ public final class NmsGuard {
 }
 ```
 
-### `EmptyConnection.java`（NMS 套件）
+### `EmptyConnection.java` (NMS package)
 
 ```java
 package com.example.bot.nms;
@@ -109,13 +109,13 @@ import net.minecraft.world.phys.Vec3;
 import java.net.InetSocketAddress;
 
 /**
- * 假玩家的連線：伺服器送給它的封包全部丟掉，只留下「給自己的速度封包」。
+ * The fake player's connection: every packet the server sends to it is dropped, except "velocity packets addressed to itself".
  *
- * <p>原版近戰打到玩家時，把擊退包成 ClientboundSetEntityMotionPacket 送給受害者客戶端，送完就還原伺服器端速度——
- * 真玩家的擊退是客戶端收到封包才動。假玩家沒有客戶端，所以由 FakePlayer#tick() 在下一 tick 套用這裡留下的速度
- * （丟掉這個封包就打不退）。
+ * <p>When vanilla melee hits a player, the knockback is wrapped in a ClientboundSetEntityMotionPacket and sent to the victim's client, then the server-side velocity is restored -
+ * for a real player, knockback only happens once the client receives the packet. A fake player has no client, so FakePlayer#tick() applies the velocity left here on the next tick
+ * (dropping this packet means no knockback).
  *
- * <p>ServerGamePacketListenerImpl 會讀 channel 與 address，因此給一個不連到任何地方的 EmbeddedChannel 與 loopback 位址。
+ * <p>ServerGamePacketListenerImpl reads the channel and address, so give it an EmbeddedChannel that connects nowhere and a loopback address.
  */
 final class EmptyConnection extends Connection {
 
@@ -132,7 +132,7 @@ final class EmptyConnection extends Connection {
         this.ownerId = entityId;
     }
 
-    /** 上一 tick 以來該套用的速度；取走即清空，沒有回 null。 */
+    /** The velocity to apply since the last tick; taking it clears it, null if none. */
     Vec3 takePendingMotion() {
         Vec3 motion = pendingMotion;
         pendingMotion = null;
@@ -163,7 +163,7 @@ final class EmptyConnection extends Connection {
 
     @Override
     public void flushChannel() {
-        // 沒有客戶端
+        // No client
     }
 
     @Override
@@ -173,7 +173,7 @@ final class EmptyConnection extends Connection {
 }
 ```
 
-### `FakePlayer.java`（NMS 套件，對外只交 Bukkit 型別）
+### `FakePlayer.java` (NMS package, exposes only Bukkit types outward)
 
 ```java
 package com.example.bot.nms;
@@ -204,10 +204,10 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 沒有客戶端的假玩家：真的 ServerPlayer，不走登入流程、不進 PlayerList（不觸發 PlayerJoinEvent、不在 tab 與 getOnlinePlayers()）。
- * 只能在主執行緒使用；呼叫端每 tick 呼叫一次 tick()——真玩家的 doTick 由連線驅動，假玩家不呼叫就不會動。
+ * A client-less fake player: a real ServerPlayer that skips the login flow and does not enter PlayerList (no PlayerJoinEvent, not in tab or getOnlinePlayers()).
+ * Main thread only; the caller invokes tick() once per tick - a real player's doTick is driven by the connection, so a fake player does not move unless it is called.
  *
- * <p>第一次碰這個類別的地方要接 LinkageError（不是 Exception）：Paper build 改了建構子／方法簽名時，錯誤在第一次呼叫才出現。
+ * <p>Wherever this class is first touched, catch LinkageError (not Exception): when a Paper build changes constructor/method signatures, the error only appears on the first call.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class FakePlayer {
@@ -220,16 +220,16 @@ public final class FakePlayer {
         this.connection = connection;
     }
 
-    /** 在 at 生成名為 name、皮膚取自 skinFrom 的假玩家，並把皮膚資訊送給所有線上玩家。 */
+    /** Spawn a fake player named name at "at" with the skin taken from skinFrom, and send the skin info to all online players. */
     public static FakePlayer spawn(Location at, String name, Player skinFrom) {
         ServerLevel level = ((CraftWorld) at.getWorld()).getHandle();
         MinecraftServer server = level.getServer();
         ServerPlayer skinOwner = ((CraftPlayer) skinFrom).getHandle();
         GameProfile profile = new GameProfile(UUID.randomUUID(), name, skinOwner.getGameProfile().properties());
 
-        // 沿用皮膚來源玩家的外觀設定（皮膚各層、慣用手）；createDefault() 會把帽子、披風等外層全關
+        // Reuse the skin source player's appearance settings (skin layers, main hand); createDefault() turns off outer layers such as hat and cape
         ServerPlayer handle = new Body(server, level, profile, skinOwner.clientInformation());
-        // 建構時會把它登記進全域成就監聽；不拆的話記憶體洩漏，還可能對全服公告假玩家達成成就
+        // Construction registers it with the global advancement listeners; if not removed it leaks memory and may announce the fake player's advancements server-wide
         handle.getAdvancements().clearTriggers(); // @1.21.11:         handle.getAdvancements().stopListening();
 
         EmptyConnection connection = new EmptyConnection();
@@ -240,15 +240,15 @@ public final class FakePlayer {
         handle.setYHeadRot(at.getYaw());
 
         FakePlayer fake = new FakePlayer(handle, connection);
-        // 客戶端必須先收到玩家資訊，才會畫出之後的生成封包
+        // The client must receive the player info first, or it will not draw the spawn packet that follows
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             fake.showTo(viewer);
         }
         if (!level.addFreshEntity(handle, CreatureSpawnEvent.SpawnReason.CUSTOM)) {
-            fake.hideFromAll(); // 被其他插件取消：收回已送出的玩家資訊，避免客戶端留下幽靈 UUID
+            fake.hideFromAll(); // Cancelled by another plugin: retract the player info already sent so clients do not keep a ghost UUID
             throw new IllegalStateException("Fake player spawn was cancelled: " + name);
         }
-        // 不當成真玩家：怪物目標、睡覺人數、World#getPlayers() 都看 level.players()
+        // Do not treat it as a real player: mob targeting, sleeping player counts, and World#getPlayers() all read level.players()
         level.players().remove(handle);
         return fake;
     }
@@ -257,14 +257,14 @@ public final class FakePlayer {
         return handle.getBukkitEntity();
     }
 
-    /** 還在世界裡且活著。被移除、區塊卸載、死亡都回 false。 */
+    /** Still in the world and alive. Returns false if removed, its chunk unloaded, or dead. */
     public boolean isValid() {
         return !handle.isRemoved() && handle.isAlive();
     }
 
     /**
-     * 每 tick 呼叫一次。先套用上一 tick 收到的擊退，再交給原版 doTick()。
-     * 換世界或重新追蹤時它可能回到 level.players()，因此每 tick 開頭再移出一次。
+     * Call once per tick. First applies the knockback received during the previous tick, then hands off to vanilla doTick().
+     * It may return to level.players() on world change or re-tracking, so remove it again at the start of every tick.
      */
     public void tick() {
         if (!isValid()) return;
@@ -278,7 +278,7 @@ public final class FakePlayer {
         handle.doTick();
     }
 
-    /** 移動輸入，下一次 tick() 交給原版 travel()。forward／strafe 範圍 -1 到 1。 */
+    /** Movement input, handed to vanilla travel() on the next tick(). forward/strafe range from -1 to 1. */
     public void input(float forward, float strafe, boolean jump, boolean sprint) {
         handle.zza = forward;
         handle.xxa = strafe;
@@ -293,20 +293,20 @@ public final class FakePlayer {
     }
 
     /**
-     * 立刻可被攻擊：生成後的無敵來自「客戶端尚未回報載入完成」的逾時，這裡代替不存在的客戶端送出載入完成封包
-     * （會觸發 Paper 的 PlayerClientLoadedWorldEvent）。
+     * Become attackable immediately: the post-spawn invulnerability comes from a timeout waiting for "the client reports loading complete"; here we send the loaded packet in place of the nonexistent client
+     * (this triggers Paper's PlayerClientLoadedWorldEvent).
      */
     public void clearSpawnInvulnerability() {
         handle.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
     }
 
-    /** 原版近戰：揮手 + Player#attack，傷害、暴擊、擊退、破盾都由原版計算。 */
+    /** Vanilla melee: swing + Player#attack; damage, crits, knockback, and shield breaking are all computed by vanilla. */
     public void attack(Entity target) {
         handle.swing(InteractionHand.MAIN_HAND);
         handle.attack(((CraftEntity) target).getHandle());
     }
 
-    /** 讓 viewer 看得到它（listed=false，不出現在 tab）；給生成後才上線的玩家補送。 */
+    /** Make it visible to viewer (listed=false, not shown in tab); resend for players who joined after spawn. */
     public void showTo(Player viewer) {
         send(viewer, ClientboundPlayerInfoUpdatePacket.createSinglePlayerInitializing(handle, false));
     }
@@ -329,9 +329,9 @@ public final class FakePlayer {
     }
 
     /**
-     * 由伺服器計算物理的玩家。真玩家的位置由客戶端回報（isClientAuthoritative 為 true），
-     * 伺服器會跳過部分垂直碰撞；假玩家沒有客戶端，要像生物一樣由伺服器算。
-     * getKnownMovement／getKnownSpeed 對真玩家來自客戶端移動封包，假玩家永遠是零，原版近戰用它判斷橫掃，因此改回伺服器速度。
+     * A player whose physics are computed by the server. A real player's position is reported by the client (isClientAuthoritative is true),
+     * so the server skips some vertical collision; a fake player has no client and must be computed by the server like a mob.
+     * For real players getKnownMovement/getKnownSpeed come from client movement packets and are always zero for a fake player; vanilla melee uses them to decide sweeping, so they are switched back to the server velocity.
      */
     private static final class Body extends ServerPlayer {
 
@@ -357,7 +357,7 @@ public final class FakePlayer {
 }
 ```
 
-### `BotService.java`（Bukkit 端：驅動、降級、補送皮膚）
+### `BotService.java` (Bukkit side: driving, degradation, skin resend)
 
 ```java
 package com.example.bot;
@@ -377,8 +377,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 
 /**
- * 假玩家的 Bukkit 端管理。FakePlayer 只出現在方法本體內，版本不符時本類別仍可安全載入。
- * 任何 LinkageError 都把整個功能關掉（只影響 bot），並只記錄一次。
+ * Bukkit-side management of fake players. FakePlayer appears only inside method bodies, so this class still loads safely on a version mismatch.
+ * Any LinkageError disables the whole feature (affecting only bots) and is logged only once.
  */
 public final class BotService implements Listener {
 
@@ -404,7 +404,7 @@ public final class BotService implements Listener {
         ticker = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tickAll, 1L, 1L);
     }
 
-    /** 主執行緒呼叫。功能已停用或版本不符時回 empty。 */
+    /** Call on the main thread. Returns empty when the feature is disabled or the version does not match. */
     public Optional<Player> spawn(Location at, String name, Player skinFrom) {
         if (!available) return Optional.empty();
         try {
@@ -441,7 +441,7 @@ public final class BotService implements Listener {
         if (!available) return;
         try {
             for (FakePlayer bot : bots) {
-                bot.showTo(event.getPlayer()); // 生成後才上線的玩家也要收到皮膚資訊
+                bot.showTo(event.getPlayer()); // Players who join after spawn must also receive the skin info
             }
         } catch (LinkageError e) {
             disable(e);
@@ -453,7 +453,7 @@ public final class BotService implements Listener {
         try {
             bots.forEach(FakePlayer::remove);
         } catch (LinkageError ignored) {
-            // 已在停用流程中
+            // Already in the disable flow
         }
         bots.clear();
     }
@@ -468,35 +468,35 @@ public final class BotService implements Listener {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/bot/
-├── BotService.java          ← Bukkit 端；不 import NMS
-├── NmsGuard.java            ← 只比版本字串；不 import NMS
-├── brain/                   ← AI 決策（只用 Bukkit 型別，可單元測試）
-└── nms/                     ← 唯一可以 import net.minecraft / craftbukkit 的套件
+├── BotService.java          ← Bukkit side; does not import NMS
+├── NmsGuard.java            ← compares version string only; does not import NMS
+├── brain/                   ← AI decisions (Bukkit types only, unit-testable)
+└── nms/                     ← the only package that may import net.minecraft / craftbukkit
     ├── EmptyConnection.java
     └── FakePlayer.java
 ```
 
-建議用 ArchUnit 或簡單的原始碼掃描測試守住「只有 `nms/` 能 import `net.minecraft`」。
+Use ArchUnit or a simple source-scan test to enforce that "only `nms/` may import `net.minecraft`".
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ `FakePlayer` 的所有方法**只能在主執行緒呼叫**（生成、tick、攻擊、移除）
-- `tick()` 每個伺服器 tick 呼叫**一次**；呼叫兩次就是兩倍速
-- AI 決策可以在非同步預先計算路徑，但結果要回主執行緒才套用到 `input()` / `look()`
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ All `FakePlayer` methods **must be called on the main thread only** (spawn, tick, attack, remove)
+- Call `tick()` **once** per server tick; calling it twice means double speed
+- AI decisions may precompute paths async, but the results must return to the main thread before being applied to `input()` / `look()`
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| `NoSuchMethodError` / `NoClassDefFoundError` | Paper build 改了建構子或方法簽名 | `BotService` 接 `LinkageError` 停用 bot；以新的 dev bundle 重新編譯 |
-| 假玩家打不退 | `EmptyConnection` 把速度封包也丟了 | 保留 owner 的 `ClientboundSetEntityMotionPacket`，下一 tick 套用 |
-| 旁觀者看到對手在打空氣 | 觀看者沒收到玩家資訊封包 | 生成前對所有人 `showTo`，新上線玩家在 join 時補送 |
-| 假玩家出現在 tab／`getOnlinePlayers()` | 走了 `PlayerList.placeNewPlayer` | 改用 `addFreshEntity` 並從 `level.players()` 移出 |
-| 記憶體逐局增加 | 成就監聽未拆 | 建構後與移除時都 `getAdvancements().clearTriggers()`（1.21.11：`stopListening()`） |
-| 生成後幾秒打不到 | 等待客戶端載入完成的逾時 | `clearSpawnInvulnerability()` |
-| 外層皮膚（帽子、披風）沒顯示 | 用了 `ClientInformation.createDefault()` | 沿用來源玩家的 `clientInformation()` |
+| `NoSuchMethodError` / `NoClassDefFoundError` | The Paper build changed a constructor or method signature | `BotService` catches `LinkageError` and disables bots; recompile against the new dev bundle |
+| Fake player cannot be knocked back | `EmptyConnection` also dropped the velocity packet | Keep the owner's `ClientboundSetEntityMotionPacket` and apply it on the next tick |
+| Spectators see the opponent hitting air | Viewers did not receive the player info packet | `showTo` everyone before spawning, and resend on join for newly joined players |
+| Fake player appears in tab / `getOnlinePlayers()` | Went through `PlayerList.placeNewPlayer` | Use `addFreshEntity` and remove it from `level.players()` |
+| Memory grows every match | Advancement listeners not removed | Call `getAdvancements().clearTriggers()` after construction and on removal (1.21.11: `stopListening()`) |
+| Cannot hit it for a few seconds after spawn | Timeout waiting for the client to finish loading | `clearSpawnInvulnerability()` |
+| Outer skin layers (hat, cape) not shown | Used `ClientInformation.createDefault()` | Reuse the source player's `clientInformation()` |

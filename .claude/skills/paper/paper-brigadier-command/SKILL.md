@@ -3,59 +3,59 @@ name: paper-brigadier-command
 description: "以 Paper Brigadier API 註冊指令：LifecycleEvents.COMMANDS、內建 ArgumentTypes、k/m/b 金額自訂參數、權限 requires、補全只讀快照、玩家／主控台處理與 reload 子指令 / Paper Brigadier commands with built-in and custom argument types, permission gates, snapshot-only suggestions and a reload subcommand"
 ---
 
-# Paper Brigadier Command / Paper Brigadier 指令
+# Paper Brigadier Command
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-brigadier-command`
 
-## 目的 / Purpose
+## Purpose
 
-用 Paper 的 Brigadier 指令 API 註冊「有型別參數、有補全、有分層權限」的指令：玩家選擇器（`@p`、玩家名）、世界、物品、座標等內建參數由伺服器解析並補全；自訂參數（例如接受 `1.5k` / `2m` / `1b` 的金額）解析失敗時回傳清楚的錯誤訊息，而不是丟例外。
+Register commands with typed arguments, tab completion, and layered permissions using Paper's Brigadier command API: built-in arguments such as player selectors (`@p`, player names), worlds, items, and positions are parsed and completed by the server; custom arguments (for example an amount accepting `1.5k` / `2m` / `1b`) return a clear error message on parse failure instead of throwing.
 
-**不是所有指令都需要 Brigadier。** 沒有參數補全需求的簡單指令留在 `plugin.yml` 的 `commands:` + `getCommand("x").setExecutor(...)` 即可。**同一個指令名稱不可同時用兩種方式宣告**（會互相覆蓋或行為不明）。
+**Not every command needs Brigadier.** Simple commands without tab-completion needs can stay in `plugin.yml` `commands:` + `getCommand("x").setExecutor(...)`. **Never declare the same command name both ways** (they override each other or behave unpredictably).
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；範本預設 26.2，差異以 `// @1.21.11:` 行尾標註）
-- 純 Paper API（Brigadier 類別隨 `paper-api` 提供），不需要 Paperweight
-- 唯一差異：`CommandSourceStack#getPlayerOrThrow()` 只存在於 26.2；1.21.11 改用 `getExecutor()` 自行判斷
-- 其餘 `Commands`、`ArgumentTypes`、`CustomArgumentType`、`MessageComponentSerializer`、`LifecycleEvents.COMMANDS` 兩版簽名相同
+- Paper 1.21.11 / 26.2 (both compile-verified; the templates default to 26.2, with differences marked by a trailing `// @1.21.11:`)
+- Pure Paper API (the Brigadier classes ship with `paper-api`), no Paperweight needed
+- The only difference: `CommandSourceStack#getPlayerOrThrow()` exists only on 26.2; on 1.21.11 check `getExecutor()` yourself
+- The remaining `Commands`, `ArgumentTypes`, `CustomArgumentType`, `MessageComponentSerializer`, and `LifecycleEvents.COMMANDS` signatures are identical on both versions
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「Brigadier」「指令補全」「tab completion」「指令參數」「自訂參數型別」
 - 「LifecycleEvents.COMMANDS」「Commands.literal」「CommandSourceStack」
 - 「/pay 金額 k m b」「金額縮寫」「子指令」「reload 指令」
 - 「getCommand 還是 Brigadier」「paper-plugin.yml 指令」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `command_package` | `com.example.command` | 指令類別所在 package |
-| `root_literal` | `pay` | 根指令名稱 |
-| `arguments` | `target:player`, `amount:k/m/b` | 參數名稱與型別 |
-| `permission` | `example.pay` | 使用權限節點（宣告在 plugin.yml） |
-| `aliases` | `transfer` | 別名（可空） |
-| `registration` | `onEnable` ／ `bootstrap` | 註冊位置 |
+| `command_package` | `com.example.command` | Package of the command classes |
+| `root_literal` | `pay` | Root command name |
+| `arguments` | `target:player`, `amount:k/m/b` | Argument names and types |
+| `permission` | `example.pay` | Permission node to use it (declared in plugin.yml) |
+| `aliases` | `transfer` | Aliases (may be empty) |
+| `registration` | `onEnable` / `bootstrap` | Where to register |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `CommandSupport.java` — 權限 predicate、玩家檢查、MiniMessage 訊息、錯誤例外、快照補全
-- `Amounts.java` — 純函式：解析 `1.5k` / `2m` / `1b`
-- `AmountArgumentType.java` — 自訂 Brigadier 參數（`CustomArgumentType.Converted`）
-- `PayService.java` — 付款服務介面（由專案自行實作）
+- `CommandSupport.java` - permission predicate, player check, MiniMessage messages, error exceptions, snapshot completion
+- `Amounts.java` - pure function: parses `1.5k` / `2m` / `1b`
+- `AmountArgumentType.java` - custom Brigadier argument (`CustomArgumentType.Converted`)
+- `PayService.java` - payment service interface (implemented by the project)
 - `PayCommand.java` — `/pay <player> <amount>`
-- `ExampleCommand.java` — 含 `reload` 子指令的根指令
-- `ExamplePlugin.java` — `onEnable` 註冊
-- `ExampleBootstrap.java` — （額外）`paper-plugin.yml` bootstrap 註冊
+- `ExampleCommand.java` - root command with a `reload` subcommand
+- `ExamplePlugin.java` - registers in `onEnable`
+- `ExampleBootstrap.java` - (extra) `paper-plugin.yml` bootstrap registration
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`，不需額外依賴。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` is required, with no extra dependencies.
 
-### `plugin.yml`（預設做法，指令走 Brigadier 時**不要**寫 `commands:`）
+### `plugin.yml` (default approach; do **not** write `commands:` when commands go through Brigadier)
 
 ```yaml
 name: Example
@@ -63,8 +63,8 @@ version: '${version}'
 main: com.example.command.ExamplePlugin
 api-version: '26.2'
 
-# 不宣告 commands:；指令由 LifecycleEvents.COMMANDS 註冊。
-# 權限一律在此宣告並給明確 default，伺服器管理員才看得到、也才能用權限插件調整。
+# Do not declare commands:; commands are registered via LifecycleEvents.COMMANDS.
+# Always declare permissions here with an explicit default so server admins can see them and adjust them with a permissions plugin.
 permissions:
   example.pay:
     description: Use /pay
@@ -77,7 +77,7 @@ permissions:
     default: op
 ```
 
-### `paper-plugin.yml`（額外：改用 bootstrap 註冊時）
+### `paper-plugin.yml` (extra: when registering from bootstrap)
 
 ```yaml
 name: Example
@@ -87,11 +87,11 @@ bootstrapper: com.example.command.ExampleBootstrap
 api-version: '26.2'
 ```
 
-- `paper-plugin.yml` **沒有** `commands:` 區段，指令只能走 Brigadier
-- `plugin.yml` 與 `paper-plugin.yml` 不要並存
-- 權限節點請在你的伺服器版本確認 `paper-plugin.yml` 的宣告是否支援；不確定時改在 `onEnable` 用 `PluginManager#addPermission` 註冊
+- `paper-plugin.yml` has **no** `commands:` section; commands can only go through Brigadier
+- Do not keep `plugin.yml` and `paper-plugin.yml` side by side
+- Check on your server version whether `paper-plugin.yml` supports permission declarations; if unsure, register them in `onEnable` with `PluginManager#addPermission`
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `CommandSupport.java`
 
@@ -114,7 +114,7 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
-/** 指令共用工具。全部是無狀態的靜態方法。 */
+/** Shared command utilities. All stateless static methods. */
 public final class CommandSupport {
 
     private static final MiniMessage MINI = MiniMessage.miniMessage();
@@ -122,17 +122,17 @@ public final class CommandSupport {
     private CommandSupport() {}
 
     /**
-     * 權限門檻，給 {@code .requires(...)} 用。
-     * 一律檢查 {@code getSender()}（真正下指令的人），不要檢查 {@code getExecutor()}：
-     * {@code /execute as <別人> run ...} 時 executor 是被代表的實體，不是有權限的人。
+     * Permission gate for {@code .requires(...)}.
+     * Always check {@code getSender()} (whoever actually issued the command), never {@code getExecutor()}:
+     * with {@code /execute as <someone> run ...} the executor is the entity being represented, not the person holding the permission.
      */
     public static Predicate<CommandSourceStack> permission(String node) {
         return source -> source.getSender().hasPermission(node);
     }
 
     /**
-     * 取得「以玩家身分執行」的玩家；主控台或非玩家實體會得到一則清楚的錯誤。
-     * 這個方法會被 {@code executes} 呼叫，執行緒為主執行緒。
+     * Returns the player the command runs as; the console or a non-player entity gets a clear error.
+     * This method is called from {@code executes}, which runs on the main thread.
      */
     public static Player requirePlayer(CommandSourceStack source) throws CommandSyntaxException {
         Player player = source.getPlayerOrThrow(); // @1.21.11: Player player = source.getExecutor() instanceof Player p ? p : null;
@@ -142,12 +142,12 @@ public final class CommandSupport {
         return player;
     }
 
-    /** 傳送 MiniMessage 訊息；玩家輸入的內容一律用 {@code Placeholder.unparsed} 傳入，不要拼進 template。 */
+    /** Sends a MiniMessage message; always pass player input through {@code Placeholder.unparsed}, never concatenate it into the template. */
     public static void send(CommandSender target, String template, TagResolver... resolvers) {
         target.sendMessage(MINI.deserialize(template, resolvers));
     }
 
-    /** 建立會顯示在聊天欄（紅字）的指令錯誤；參數解析失敗與 executes 中途失敗都用它 throw。 */
+    /** Builds a command error shown in chat (red text); throw it for both argument parse failures and mid-executes failures. */
     public static CommandSyntaxException error(String template, TagResolver... resolvers) {
         return new SimpleCommandExceptionType(
             MessageComponentSerializer.message().serialize(MINI.deserialize(template, resolvers))
@@ -155,8 +155,8 @@ public final class CommandSupport {
     }
 
     /**
-     * 以「快照」補全。{@code snapshot} 必須是不可變集合（例如 {@code Set.copyOf(...)}）：
-     * 補全可能不在主執行緒被呼叫，不可在這裡走訪 Bukkit 的可變集合或查資料庫。
+     * Completes from a snapshot. {@code snapshot} must be an immutable collection (for example {@code Set.copyOf(...)}):
+     * completion may be called off the main thread, so never iterate mutable Bukkit collections or query a database here.
      */
     public static CompletableFuture<Suggestions> suggest(Collection<String> snapshot, SuggestionsBuilder builder) {
         String typed = builder.getRemaining().toLowerCase(Locale.ROOT);
@@ -181,7 +181,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import java.util.regex.Pattern;
 
-/** 解析 {@code 100}、{@code 1.5k}、{@code 2m}、{@code 1b}。純函式，可直接單元測試。 */
+/** Parses {@code 100}, {@code 1.5k}, {@code 2m}, {@code 1b}. Pure function, directly unit-testable. */
 public final class Amounts {
 
     private static final Pattern NUMBER = Pattern.compile("\\d+(\\.\\d+)?");
@@ -194,8 +194,8 @@ public final class Amounts {
     private Amounts() {}
 
     /**
-     * 回傳正整數金額；格式錯誤、非正數、不是整數（例如 {@code 1.0001k}）或超出 long 範圍時回 empty，
-     * 由呼叫端轉成使用者看得懂的錯誤訊息。
+     * Returns a positive whole amount; returns empty for a bad format, a non-positive value, a non-integer (for example {@code 1.0001k}), or a value outside the long range,
+     * and the caller turns that into an error message the user can understand.
      */
     public static OptionalLong parse(String text) {
         String normalized = text.strip().toLowerCase(Locale.ROOT);
@@ -244,10 +244,10 @@ import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 金額參數：接受 {@code 100}、{@code 1.5k}、{@code 2m}、{@code 1b}，解析成 {@code long}。
+ * Amount argument: accepts {@code 100}, {@code 1.5k}, {@code 2m}, {@code 1b} and parses it to {@code long}.
  *
- * <p>底層用 {@code StringArgumentType.word()} 傳給客戶端，所以原版客戶端不需要任何模組也能連線。
- * 取值：{@code ctx.getArgument("amount", Long.class)}。
+ * <p>It is sent to the client as {@code StringArgumentType.word()}, so a vanilla client can connect without any mod.
+ * Read it with {@code ctx.getArgument("amount", Long.class)}.
  */
 public final class AmountArgumentType implements CustomArgumentType.Converted<Long, String> {
 
@@ -275,7 +275,7 @@ public final class AmountArgumentType implements CustomArgumentType.Converted<Lo
         return List.of("100", "1.5k", "2m", "1b");
     }
 
-    /** 已輸入純數字時補上 k / m / b。只看輸入字串，不碰任何外部狀態。 */
+    /** Appends k / m / b once a plain number has been typed. Looks only at the typed string and touches no external state. */
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder builder) {
         String typed = builder.getRemaining();
@@ -296,7 +296,7 @@ package com.example.command;
 
 import java.util.UUID;
 
-/** 付款服務；由專案提供實作（資料庫、Vault、ServicesManager 皆可）。呼叫端保證在主執行緒。 */
+/** Payment service; implemented by the project (database, Vault, or ServicesManager all work). Callers are guaranteed to be on the main thread. */
 public interface PayService {
 
     enum Result { OK, INSUFFICIENT, SELF }
@@ -323,7 +323,7 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
-/** {@code /pay <player> <amount>}：目標用內建玩家選擇器，金額用自訂 k/m/b 參數。 */
+/** {@code /pay <player> <amount>}: the target uses the built-in player selector, the amount uses the custom k/m/b argument. */
 public final class PayCommand {
 
     public static final String PERMISSION = "example.pay";
@@ -350,7 +350,7 @@ public final class PayCommand {
         CommandSourceStack source = context.getSource();
         Player from = CommandSupport.requirePlayer(source);
 
-        // 選擇器要用「來源」解析（@p、@s 才有意義）；player() 保證恰好一位，查無玩家時伺服器已回報錯誤
+        // Resolve the selector against the source (so @p and @s make sense); player() guarantees exactly one, and the server already reports an error when no player is found
         List<Player> matches = context.getArgument(ARG_TARGET, PlayerSelectorArgumentResolver.class).resolve(source);
         Player to = matches.get(0);
         long amount = context.getArgument(ARG_AMOUNT, Long.class);
@@ -383,7 +383,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 
-/** {@code /example}（資訊）與 {@code /example reload}（需要 admin 權限）。 */
+/** {@code /example} (info) and {@code /example reload} (requires the admin permission). */
 public final class ExampleCommand {
 
     public static final String PERMISSION_USE = "example.use";
@@ -391,7 +391,7 @@ public final class ExampleCommand {
 
     private final Runnable reload;
 
-    /** @param reload 重載動作；在主執行緒被呼叫，失敗請自行處理並記錄，不要讓例外傳出指令 */
+    /** @param reload reload action; called on the main thread; handle and log failures yourself and never let an exception escape the command */
     public ExampleCommand(Runnable reload) {
         this.reload = reload;
     }
@@ -405,7 +405,7 @@ public final class ExampleCommand {
                 return Command.SINGLE_SUCCESS;
             })
             .then(Commands.literal("reload")
-                // 子節點的 requires 與父節點是「且」的關係：兩者都通過才看得到、才執行得了
+                // A child node's requires is ANDed with its parent's: both must pass for it to be visible and runnable
                 .requires(CommandSupport.permission(PERMISSION_ADMIN))
                 .executes(context -> {
                     reload.run();
@@ -434,13 +434,13 @@ public final class ExamplePlugin extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        // 示範用服務：實務上換成真正的實作（建構子注入，不要用靜態單例）
+        // Demo service: replace with a real implementation in practice (constructor injection, no static singleton)
         PayService payService = (from, to, amount) ->
             from.equals(to) ? PayService.Result.SELF : PayService.Result.OK;
         PayCommand pay = new PayCommand(payService);
         ExampleCommand example = new ExampleCommand(this::reloadConfig);
 
-        // 在 COMMANDS 事件裡才 register：伺服器 /reload 時會重新觸發這個事件
+        // Register only inside the COMMANDS event: the server fires it again on /reload
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             Commands registrar = event.registrar();
             registrar.register(pay.build(), "Pay another player", List.of("transfer"));
@@ -450,7 +450,7 @@ public final class ExamplePlugin extends JavaPlugin {
 }
 ```
 
-### `ExampleBootstrap.java`（額外：`paper-plugin.yml` 的 bootstrap 註冊）
+### `ExampleBootstrap.java` (extra: bootstrap registration for `paper-plugin.yml`)
 
 ```java
 package com.example.command;
@@ -460,11 +460,11 @@ import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 
 /**
- * 在 bootstrap 階段註冊指令（插件主類別尚未建立）。
+ * Registers commands during bootstrap (the main plugin class has not been created yet).
  *
- * <p>限制：此時沒有 JavaPlugin 實例，指令不能直接用 plugin 的 logger／scheduler／config。
- * 需要時改用 {@code context.getLogger()}、{@code context.getDataDirectory()}，或在 executes 執行時才取得服務。
- * 與 {@code ExamplePlugin} 的 onEnable 註冊擇一，不可兩邊都註冊同一個指令。
+ * <p>Limitation: there is no JavaPlugin instance at this point, so commands cannot use the plugin's logger / scheduler / config directly.
+ * Use {@code context.getLogger()} and {@code context.getDataDirectory()} when needed, or obtain services only when executes runs.
+ * Pick either this or the onEnable registration in {@code ExamplePlugin}; never register the same command from both.
  */
 public final class ExampleBootstrap implements PluginBootstrap {
 
@@ -477,64 +477,64 @@ public final class ExampleBootstrap implements PluginBootstrap {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/command/
-├── ExamplePlugin.java        ← onEnable 註冊（或 ExampleBootstrap）
-├── CommandSupport.java       ← 權限、訊息、錯誤、快照補全
-├── Amounts.java              ← 純函式，可單元測試
-├── AmountArgumentType.java   ← 自訂參數
-├── PayCommand.java           ← 一個指令一個類別，build() 回傳 LiteralCommandNode
-├── PayService.java           ← 業務邏輯介面（指令類別只負責解析與回覆）
+├── ExamplePlugin.java        <- registers in onEnable (or ExampleBootstrap)
+├── CommandSupport.java       <- permissions, messages, errors, snapshot completion
+├── Amounts.java              <- pure function, unit-testable
+├── AmountArgumentType.java   <- custom argument
+├── PayCommand.java           <- one class per command; build() returns a LiteralCommandNode
+├── PayService.java           <- business-logic interface (command classes only parse and reply)
 └── ExampleCommand.java
 src/main/resources/
-└── plugin.yml                ← 只有 permissions，沒有 commands:
+└── plugin.yml                <- permissions only, no commands:
 ```
 
-## 規則重點 / Key Rules
+## Key Rules
 
-| 主題 | 做法 |
+| Topic | Approach |
 |------|------|
-| 註冊位置 | `getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> event.registrar().register(node, description, aliases))`；不要在事件外直接註冊 |
-| `register` 簽名 | `register(node)`、`register(node, description)`、`register(node, aliases)`、`register(node, description, aliases)`；別名是 `Collection<String>` |
-| 參數解析 | 內建 `ArgumentTypes.player()`／`players()`／`world()`／`itemStack()`／`finePosition()`…；選擇器與座標回傳的是 **Resolver**，要在 `executes` 裡 `resolve(source)` 才有值（結果依來源位置而定） |
-| 取參數 | `context.getArgument("name", Type.class)`；名稱與 `Commands.argument` 的字串一致，建議抽成常數 |
-| 權限 | `.requires(source -> source.getSender().hasPermission(node))`；同時決定該指令是否出現在客戶端補全 |
-| 回傳值 | 成功回 `Command.SINGLE_SUCCESS`（`1`）；失敗用 `throw CommandSupport.error(...)`，不要回 `0` 後又自己印訊息 |
-| 失敗訊息 | `SimpleCommandExceptionType` + `MessageComponentSerializer.message().serialize(component)`，玩家在聊天欄看到紅字 |
-| 玩家輸入進訊息 | `Placeholder.unparsed(...)`；不可拼進 MiniMessage template（避免標籤注入） |
-| 補全 | 只讀不可變快照（`Set.copyOf` / `volatile` 快照），不在補全裡查資料庫或走訪 Bukkit 可變集合 |
+| Where to register | `getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> event.registrar().register(node, description, aliases))`; never register outside the event |
+| `register` signatures | `register(node)`, `register(node, description)`, `register(node, aliases)`, `register(node, description, aliases)`; aliases are a `Collection<String>` |
+| Argument parsing | Built-in `ArgumentTypes.player()` / `players()` / `world()` / `itemStack()` / `finePosition()` ...; selectors and positions return a **Resolver**, which only yields a value after `resolve(source)` inside `executes` (the result depends on the source position) |
+| Reading arguments | `context.getArgument("name", Type.class)`; the name must match the string in `Commands.argument`, so extract it into a constant |
+| Permissions | `.requires(source -> source.getSender().hasPermission(node))`; this also decides whether the command appears in client-side completion |
+| Return value | Return `Command.SINGLE_SUCCESS` (`1`) on success; on failure `throw CommandSupport.error(...)`, do not return `0` and print the message yourself |
+| Failure messages | `SimpleCommandExceptionType` + `MessageComponentSerializer.message().serialize(component)`; the player sees red text in chat |
+| Player input in messages | `Placeholder.unparsed(...)`; never concatenate into a MiniMessage template (avoids tag injection) |
+| Completion | Read only an immutable snapshot (`Set.copyOf` / `volatile` snapshot); never query a database or iterate mutable Bukkit collections inside completion |
 
-## 玩家與主控台 / Sender Handling
+## Sender Handling
 
-- `getSender()`：真正輸入指令的人／主控台／command block；**權限檢查與回覆訊息用它**
-- `getExecutor()`：指令「代表」的實體（`/execute as <entity> run ...` 時是那個實體）；沒有時可能為 `null`；**針對自己的操作（扣自己的錢、傳送自己）用它**
-- 需要玩家：`CommandSupport.requirePlayer(source)`（26.2 內部呼叫 `getPlayerOrThrow()`，1.21.11 自行判斷 `getExecutor()`）
-- 主控台可用的指令（例如 `reload`）不要呼叫 `requirePlayer`，直接對 `getSender()` 回覆
+- `getSender()`: whoever actually typed the command / the console / a command block; **use it for permission checks and replies**
+- `getExecutor()`: the entity the command "represents" (with `/execute as <entity> run ...` it is that entity); may be `null`; **use it for self-targeted actions (charging your own money, teleporting yourself)**
+- When a player is required: `CommandSupport.requirePlayer(source)` (calls `getPlayerOrThrow()` internally on 26.2; checks `getExecutor()` itself on 1.21.11)
+- Commands the console may use (for example `reload`) must not call `requirePlayer`; reply to `getSender()` directly
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- `executes` 在**主執行緒**執行，可呼叫 Bukkit API；耗時工作（資料庫、HTTP）請自行丟到非同步，完成後回主執行緒回覆並重新驗證玩家仍在線
-- `suggests` / `listSuggestions` **不保證在主執行緒**：只讀不可變快照，不呼叫 Bukkit 世界／實體 API
-- `requires` 會在建立客戶端指令樹時被呼叫，也要保持輕量、無副作用
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- `executes` runs on the **main thread** and may call the Bukkit API; push slow work (database, HTTP) to async yourself, then return to the main thread to reply and re-verify the player is still online
+- `suggests` / `listSuggestions` are **not guaranteed to run on the main thread**: read only an immutable snapshot and never call Bukkit world/entity APIs
+- `requires` is called while building the client command tree, so keep it lightweight and side-effect free
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 何時不要用 Brigadier / When NOT to Use
+## When NOT to Use
 
-- 指令沒有參數或只有少數固定字串、不需要補全 → `plugin.yml` 的 `commands:` + `getCommand("x").setExecutor(...)` 更簡單
-- 想沿用既有 `CommandExecutor` / `TabCompleter` 程式碼，且沒有升級需求 → 維持原樣
-- **同一個指令名稱只能擇一**：Brigadier 與 `plugin.yml commands:` 同名並存會造成行為不明
+- The command has no arguments or only a few fixed strings and needs no completion -> `plugin.yml` `commands:` + `getCommand("x").setExecutor(...)` is simpler
+- You want to keep existing `CommandExecutor` / `TabCompleter` code and have no upgrade need -> leave it as is
+- **Pick one approach per command name**: keeping Brigadier and `plugin.yml commands:` under the same name causes undefined behavior
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 指令不存在／`Unknown command` | 沒在 `COMMANDS` 事件裡註冊，或事件處理器丟了例外 | 確認在 `registerEventHandler(LifecycleEvents.COMMANDS, ...)` 內 register，查看 console 啟動錯誤 |
-| `plugin.yml` 的 `commands:` 與 Brigadier 衝突 | 同名重複宣告 | 擇一；Brigadier 版就刪掉 `commands:` 與 `getCommand()` |
-| 取玩家參數得到 `ClassCastException` | 參數取成 `Player` 而非 Resolver | 取 `PlayerSelectorArgumentResolver.class` 後呼叫 `resolve(source)` |
-| 補全偶發 `ConcurrentModificationException` | 補全在非主執行緒走訪可變集合 | 改用不可變快照 |
-| 子指令沒有權限卻出現在補全 | 子節點沒有 `requires` | 每個需要權限的節點各自 `.requires(...)` |
-| `/execute as` 後權限判斷怪異 | 用 `getExecutor()` 做權限檢查 | 權限用 `getSender()`，對象用 `getExecutor()` |
-| 26.2 編譯過、1.21.11 找不到 `getPlayerOrThrow` | 該方法只在 26.2 | 照 `CommandSupport.requirePlayer` 的 `// @1.21.11:` 寫法 |
-| `paper-plugin.yml` 載入失敗 | 仍寫了 `commands:` | 移除；指令全部走 Brigadier |
+| Command missing / `Unknown command` | Not registered inside the `COMMANDS` event, or the handler threw | Make sure you register inside `registerEventHandler(LifecycleEvents.COMMANDS, ...)` and check the console startup errors |
+| `plugin.yml` `commands:` conflicts with Brigadier | Duplicate declaration under the same name | Pick one; for the Brigadier version delete `commands:` and `getCommand()` |
+| `ClassCastException` when reading a player argument | The argument was read as `Player` instead of a Resolver | Read `PlayerSelectorArgumentResolver.class`, then call `resolve(source)` |
+| Occasional `ConcurrentModificationException` in completion | Completion iterates a mutable collection off the main thread | Use an immutable snapshot |
+| Subcommand shows up in completion without permission | The child node has no `requires` | Give every node that needs a permission its own `.requires(...)` |
+| Odd permission results after `/execute as` | Permission checked with `getExecutor()` | Use `getSender()` for permissions and `getExecutor()` for the target |
+| Compiles on 26.2 but `getPlayerOrThrow` is not found on 1.21.11 | That method exists only on 26.2 | Follow the `// @1.21.11:` form in `CommandSupport.requirePlayer` |
+| `paper-plugin.yml` fails to load | `commands:` is still present | Remove it; all commands go through Brigadier |

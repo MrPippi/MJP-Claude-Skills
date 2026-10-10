@@ -1,6 +1,6 @@
 # examples — paper-config-lang
 
-## 範例 1：處理器讀快照、玩家輸入安全插入訊息
+## Example 1: Handler Reads the Snapshot, Player Input Inserted Safely Into Messages
 
 **Input:**
 ```
@@ -9,7 +9,7 @@ config_keys: max-homes, teleport-cooldown-seconds
 lang_keys: home.set, home.limit, welcome
 ```
 
-**Output — `/sethome` 的處理器：每次呼叫都讀 `settings.current()`，不呼叫 `getConfig()`，不把 `Settings` 存進欄位:**
+**Output — the `/sethome` handler: reads `settings.current()` on every call, never calls `getConfig()`, never stores `Settings` in a field:**
 ```java
 
 import com.example.home.config.HomeConfig;
@@ -39,7 +39,7 @@ public final class SetHomeCommand implements CommandExecutor, Listener {
         if (!(sender instanceof Player player)) {
             return false;
         }
-        Settings now = settings.current();          // 這次指令使用的整份一致快照
+        Settings now = settings.current();          // One consistent snapshot used for this whole command
         HomeConfig config = now.config();
         Lang lang = now.lang();
 
@@ -48,39 +48,39 @@ public final class SetHomeCommand implements CommandExecutor, Listener {
             lang.send(player, "home.limit", Map.of("max", String.valueOf(config.maxHomes())));
             return true;
         }
-        // name 是玩家打的：Map 版會 escape，所以 "<rainbow>" 只會原樣顯示
+        // name is typed by the player: the Map overload escapes it, so "<rainbow>" is displayed literally
         lang.send(player, "home.set", Map.of("name", name));
         return true;
     }
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        // <player> 風格：Placeholder.unparsed 把名字當純文字，不會被 MiniMessage 解析
+        // <player> style: Placeholder.unparsed treats the name as plain text, so MiniMessage does not parse it
         settings.current().lang().send(event.getPlayer(), "welcome",
                 Placeholder.unparsed("player", event.getPlayer().getName()));
     }
 
     private int ownedHomes(Player player) {
-        return 0; // 實際由 Repository 查詢
+        return 0; // In practice, queried from the Repository
     }
 }
 ```
 
-**規則重點:**
-- `{name}` 風格（`Map<String,String>`）：值自動 escape；適合玩家名、家的名稱、聊天內容
-- `<player>` 風格（`TagResolver`）：`Placeholder.unparsed` 是純文字；`Placeholder.component` 只給**程式自己建的** `Component`（例如物品名稱、帶 hover 的片段）
-- 絕對不要 `MiniMessage.deserialize(template.replace("{name}", playerInput))`：玩家可以注入 `<click:run_command:...>` 之類的標籤
+**Key rules:**
+- `{name}` style (`Map<String,String>`): values are escaped automatically; suited to player names, home names, and chat content
+- `<player>` style (`TagResolver`): `Placeholder.unparsed` is plain text; use `Placeholder.component` only for a `Component` **built by your own code** (for example item names or fragments with hover text)
+- Never do `MiniMessage.deserialize(template.replace("{name}", playerInput))`: players could inject tags such as `<click:run_command:...>`
 
 ---
 
-## 範例 2：`/homeadmin reload` 流程與新增一個設定鍵
+## Example 2: The `/homeadmin reload` Flow and Adding a Config Key
 
 **Input:**
 ```
-change: 新增 "teleport-warmup-seconds"（0-30，預設 3）
+change: add "teleport-warmup-seconds" (0-30, default 3)
 ```
 
-**Step 1 — `HomeConfig` 新增欄位、鍵、驗證，並把 `CURRENT_VERSION` 加一（只列出變動的片段）:**
+**Step 1 — add the field, key, and validation to `HomeConfig`, and bump `CURRENT_VERSION` (only the changed fragments are shown):**
 ```java
 
 import java.time.Duration;
@@ -88,17 +88,17 @@ import java.util.List;
 
 public final class WarmupKeyChange {
 
-    // HomeConfig 的 record 多一個 Duration teleportWarmup 欄位，DEFAULTS 多 Duration.ofSeconds(3)
+    // The HomeConfig record gains a Duration teleportWarmup field, and DEFAULTS gains Duration.ofSeconds(3)
     public static final int CURRENT_VERSION = 3;
 
     public static final String KEY_WARMUP = "teleport-warmup-seconds";
 
-    // KEYS 一起更新，否則 ConfigLoader 讀不到新鍵
+    // Update KEYS too, otherwise ConfigLoader cannot read the new key
     public static final List<String> KEYS = List.of(
             HomeConfig.KEY_VERSION, HomeConfig.KEY_MAX_HOMES, HomeConfig.KEY_COOLDOWN,
             HomeConfig.KEY_CONFIRM, HomeConfig.KEY_DEFAULT_NAME, KEY_WARMUP);
 
-    // from(...) 裡：int warmup = intIn(raw, KEY_WARMUP, 0, 30, 3, warnings);
+    // Inside from(...): int warmup = intIn(raw, KEY_WARMUP, 0, 30, 3, warnings);
     public static final Duration DEFAULT_WARMUP = Duration.ofSeconds(3);
 
     private WarmupKeyChange() {
@@ -106,7 +106,7 @@ public final class WarmupKeyChange {
 }
 ```
 
-**Step 2 — 出貨的 `config.yml`（版本紀錄多一行、number 加一、新鍵附註解）:**
+**Step 2 — the shipped `config.yml` (one more version-history line, number bumped, new key with a comment):**
 ```yaml
 # Version history (bump config-version when you add, rename or retype a key):
 #   1: first release
@@ -118,38 +118,38 @@ config-version: 3
 teleport-warmup-seconds: 3
 ```
 
-**Step 3 — 在已部署的伺服器上 reload，管理員看到的結果:**
+**Step 3 — reload on an already-deployed server; what the admin sees:**
 ```
 > /homeadmin reload
 Home settings reloaded with 1 warning(s):
  - config.yml is config-version 2 but the plugin expects 3; new keys are not added to existing files, copy them from the bundled config.yml and bump the number
 ```
-功能照常運作（`teleport-warmup-seconds` 走分層預設 3 秒）。管理員貼上新鍵並把 `config-version` 改成 `3` 後再 reload，警告消失。
+The feature keeps working (`teleport-warmup-seconds` uses the layered default of 3 seconds). After the admin pastes the new key and changes `config-version` to `3`, reloading again clears the warning.
 
-**reload 的時序（`SettingsService.reload`）:**
+**Reload sequence (`SettingsService.reload`):**
 
-| 階段 | 執行緒 | 做什麼 |
+| Step | Thread | What happens |
 |------|--------|--------|
-| 1 | 主 | 指令呼叫 `reload(cb)`；已有 reload 在跑 → 立刻回 `busy` |
-| 2 | 非同步 | `ConfigLoader.load()`、`Lang.load()`：讀檔、解析、驗證，收集警告 |
-| 3 | 主 | 成功 → `current.set(新快照)`；失敗 → 舊快照不動 |
-| 4 | 主 | `cb`：用「目前」的 `Lang` 把結果與警告回報給指令發送者 |
+| 1 | Main | The command calls `reload(cb)`; if a reload is already running -> returns `busy` immediately |
+| 2 | Async | `ConfigLoader.load()`, `Lang.load()`: read files, parse, validate, collect warnings |
+| 3 | Main | Success -> `current.set(new snapshot)`; failure -> old snapshot untouched |
+| 4 | Main | `cb`: reports the result and warnings to the command sender using the "current" `Lang` |
 
-**部署檢查清單（寫進 PR 的測試計畫）:**
-- [ ] 已部署的 `config.yml` 沒有 `teleport-warmup-seconds`：reload 後警告出現，傳送等待 3 秒
-- [ ] 管理員貼上 `teleport-warmup-seconds: 10` 並把 `config-version` 改成 3：reload 無警告，等待 10 秒
-- [ ] 寫 `teleport-warmup-seconds: abc`：警告 `must be a whole number`，等待仍是預設 3 秒
+**Deploy checklist (put it in the PR test plan):**
+- [ ] The deployed `config.yml` has no `teleport-warmup-seconds`: after reload a warning appears and the teleport waits 3 seconds
+- [ ] The admin pastes `teleport-warmup-seconds: 10` and changes `config-version` to 3: reload shows no warning and the wait is 10 seconds
+- [ ] Writing `teleport-warmup-seconds: abc`: warns `must be a whole number`, and the wait stays at the default 3 seconds
 
 ---
 
-## 範例 3：JUnit 死鍵／缺鍵測試與設定驗證測試
+## Example 3: JUnit Dead-Key / Missing-Key Test and Config Validation Test
 
 **Input:**
 ```
-test_goal: lang.yml 的每個葉鍵都有程式在讀（死鍵）、程式讀的每個鍵都在 lang.yml（缺鍵）、壞設定值回退預設並給警告
+test_goal: every leaf key in lang.yml is read by some code (dead keys), every key the code reads exists in lang.yml (missing keys), and bad config values fall back to defaults with a warning
 ```
 
-**Output — `LangKeysTest.java`（不需要 Bukkit 伺服器，只讀原始碼與 jar 內的 lang.yml）:**
+**Output — `LangKeysTest.java` (no Bukkit server needed; it only reads the source code and the bundled lang.yml):**
 ```java
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -173,9 +173,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
 /**
- * 死鍵：lang.yml 的葉鍵沒有任何原始碼字串常值在讀 → 刪掉它。
- * 缺鍵：原始碼 line("…")／send(…, "…") 用到的鍵不在 lang.yml → 玩家會看到 [missing …]。
- * 組鍵（"dialog.pref." + id）用「以 . 結尾的前綴常值」覆蓋；掃不到的才加進 DYNAMIC_PREFIXES。
+ * Dead key: a leaf key in lang.yml that no source string literal reads -> delete it.
+ * Missing key: a key used in source via line("...") / send(..., "...") that is not in lang.yml -> players would see [missing ...].
+ * Composed keys ("dialog.pref." + id) are covered by a prefix literal ending in "."; only add to DYNAMIC_PREFIXES what the scan cannot find.
  */
 class LangKeysTest {
 
@@ -222,7 +222,7 @@ class LangKeysTest {
         for (String key : lang.getKeys(true)) {
             boolean leaf = !lang.isConfigurationSection(key);
             if (leaf && !lang.isString(key)) {
-                bad.add(key + " = " + lang.get(key)); // on/off/yes/no 值被解析成布林
+                bad.add(key + " = " + lang.get(key)); // on/off/yes/no values were parsed as booleans
             }
             for (String segment : key.split("\\.")) {
                 if (segment.equals("true") || segment.equals("false")) {
@@ -265,7 +265,7 @@ class LangKeysTest {
         }
     }
 
-    /** 掃所有 .java 的雙引號字串常值（略過註解，所以註解裡提到的鍵不算有人讀）。 */
+    /** Scans the double-quoted string literals of all .java files (skipping comments, so a key mentioned only in a comment does not count as read). */
     private static Set<String> literals(Path root) throws IOException {
         Set<String> out = new HashSet<>();
         Pattern literal = Pattern.compile("\"((?:[^\"\\\\\\n]|\\\\.)*)\"");
@@ -285,7 +285,7 @@ class LangKeysTest {
 }
 ```
 
-**Output — `HomeConfigTest.java`（`HomeConfig.from` 純 JDK，不需要 Bukkit）:**
+**Output — `HomeConfigTest.java` (`HomeConfig.from` is pure JDK; no Bukkit needed):**
 ```java
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -328,4 +328,4 @@ class HomeConfigTest {
 }
 ```
 
-**執行:** `./gradlew test`。`LangKeysTest` 的工作目錄是模組根目錄（Gradle 預設），所以 `Path.of("src", "main", "java")` 找得到原始碼。
+**Run:** `./gradlew test`. The working directory of `LangKeysTest` is the module root (the Gradle default), so `Path.of("src", "main", "java")` finds the source code.

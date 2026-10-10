@@ -1,6 +1,6 @@
 # examples — nms-custom-menu
 
-## 範例 1：開啟基礎 3 列 GUI
+## Example 1: Open a basic 3-row GUI
 
 **Input:**
 ```
@@ -10,22 +10,22 @@ menu_type: GENERIC_9x3
 rows: 3
 ```
 
-**Output — 在指令中開啟 GUI:**
+**Output — open the GUI from a command:**
 ```java
 @Override
 public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
     if (!(sender instanceof Player player)) return true;
 
-    // 必須在主執行緒呼叫
+    // Must be called on the main thread
     ServerPlayer nms = ((CraftPlayer) player).getHandle();
-    nms.openMenu(new CustomMenuProvider("§6商店"));
+    nms.openMenu(new CustomMenuProvider("§6Shop"));
     return true;
 }
 ```
 
 ---
 
-## 範例 2：預填 GUI 物品並攔截點擊
+## Example 2: Pre-fill GUI items and intercept clicks
 
 **Input:**
 ```
@@ -34,16 +34,16 @@ menu_class_name: ShopMenu
 rows: 3
 ```
 
-**Output — 在 CustomMenu 建構子中預填物品，並在 Listener 處理點擊:**
+**Output — pre-fill items in the CustomMenu constructor and handle clicks in the listener:**
 ```java
-// CustomMenu 建構子新增（在 slot 注册後）
+// Added to the CustomMenu constructor (after slot registration)
 public CustomMenu(int syncId, Inventory playerInventory) {
     super(MenuType.GENERIC_9x3, syncId);
-    // ...（原有 slot 注册）
+    // ... (existing slot registration)
 
-    // 預填 GUI 內容（直接操作 menuInventory）
-    menuInventory.setItem(0, createShopItem(Material.DIAMOND_SWORD, "§b傳說之劍", 1000));
-    menuInventory.setItem(1, createShopItem(Material.GOLDEN_APPLE, "§e黃金蘋果", 50));
+    // Pre-fill GUI contents (operate on menuInventory directly)
+    menuInventory.setItem(0, createShopItem(Material.DIAMOND_SWORD, "§bLegendary Sword", 1000));
+    menuInventory.setItem(1, createShopItem(Material.GOLDEN_APPLE, "§eGolden Apple", 50));
 }
 
 private static net.minecraft.world.item.ItemStack createShopItem(
@@ -51,13 +51,13 @@ private static net.minecraft.world.item.ItemStack createShopItem(
     org.bukkit.inventory.ItemStack bukkit = new org.bukkit.inventory.ItemStack(material);
     ItemMeta meta = bukkit.getItemMeta();
     meta.setDisplayName(name);
-    meta.setLore(List.of("§7價格: §6" + price + " 金幣"));
+    meta.setLore(List.of("§7Price: §6" + price + " coins"));
     bukkit.setItemMeta(meta);
     return CraftItemStack.asNMSCopy(bukkit);
 }
 ```
 
-**Listener 處理點擊購買:**
+**Listener handles click-to-purchase:**
 ```java
 @EventHandler
 public void onInventoryClick(InventoryClickEvent event) {
@@ -65,14 +65,14 @@ public void onInventoryClick(InventoryClickEvent event) {
     event.setCancelled(true);
 
     int slot = event.getRawSlot();
-    if (slot == 0) purchaseItem(event.getWhoClicked(), "傳說之劍", 1000);
-    if (slot == 1) purchaseItem(event.getWhoClicked(), "黃金蘋果", 50);
+    if (slot == 0) purchaseItem(event.getWhoClicked(), "Legendary Sword", 1000);
+    if (slot == 1) purchaseItem(event.getWhoClicked(), "Golden Apple", 50);
 }
 ```
 
 ---
 
-## 範例 3：帶有資料同步的倒計時 GUI
+## Example 3: Countdown GUI with data synchronization
 
 **Input:**
 ```
@@ -81,9 +81,9 @@ menu_class_name: TimerMenu
 rows: 1
 ```
 
-**Output — 每秒更新 GUI 標題顯示倒計時（透過重開 GUI 更新標題）:**
+**Output — update the GUI title every second to show a countdown (title updated by re-sending the open-screen packet):**
 ```java
-// 使用 BukkitRunnable 定期更新
+// Use a BukkitRunnable for periodic updates
 new BukkitRunnable() {
     int remaining = 60;
 
@@ -95,15 +95,15 @@ new BukkitRunnable() {
             return;
         }
 
-        // 重新開啟 GUI 更新標題（NMS 方式）
+        // Re-open the GUI to update the title (NMS approach)
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
         if (nms.containerMenu instanceof CustomMenu) {
-            // 發送標題更新封包
+            // Send the title update packet
             nms.connection.send(
                 new net.minecraft.network.protocol.game.ClientboundOpenScreenPacket(
                     nms.containerMenu.containerId,
                     nms.containerMenu.getType(),
-                    net.minecraft.network.chat.Component.literal("§c剩餘時間: " + remaining + "s")
+                    net.minecraft.network.chat.Component.literal("§cTime left: " + remaining + "s")
                 )
             );
         }

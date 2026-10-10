@@ -3,65 +3,65 @@ name: paper-client-side-effects
 description: "只用 Paper API 做每位玩家各自看到的錯覺：虛擬世界邊界紅框、個人時間／天氣、hidePlayer 可見性、夜視並在事件後重新套用 / Per-player illusions with Paper API only: virtual world border vignette, personal time/weather, hidePlayer visibility, night vision with reconcile-after-event"
 ---
 
-# Paper Client-Side Effects / 玩家端視覺效果
+# Paper Client-Side Effects
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-client-side-effects`
 
-## 目的 / Purpose
+## Purpose
 
-需要「只有某位玩家看得到」的效果時（低血量紅框、個人時間／天氣、在大廳隱藏其他玩家、被動夜視），**先用 Paper API，再考慮封包或 NMS**。這些效果都有現成方法，不需要 `nms-packet-sender`：
+When you need an effect that "only one player can see" (low-health vignette, personal time/weather, hiding other players in the lobby, passive night vision), **use the Paper API first, then consider packets or NMS**. All of these effects have ready-made methods and do not need `nms-packet-sender`:
 
-| 效果 | API | 清除方式 |
+| Effect | API | How to clear |
 |------|-----|----------|
-| 紅色暈影 | `Server#createWorldBorder` + `Player#setWorldBorder` | `setWorldBorder(null)` |
-| 個人時間 | `Player#setPlayerTime(long, boolean)` | `resetPlayerTime()` |
-| 個人天氣 | `Player#setPlayerWeather(WeatherType)` | `resetPlayerWeather()` |
-| 隱藏玩家 | `Player#hidePlayer(Plugin, Player)` | `showPlayer(Plugin, Player)` |
-| 夜視 | `addPotionEffect` 無限時長 | 事件後 `reconcile()` 重新套用 |
+| Red vignette | `Server#createWorldBorder` + `Player#setWorldBorder` | `setWorldBorder(null)` |
+| Personal time | `Player#setPlayerTime(long, boolean)` | `resetPlayerTime()` |
+| Personal weather | `Player#setPlayerWeather(WeatherType)` | `resetPlayerWeather()` |
+| Hide player | `Player#hidePlayer(Plugin, Player)` | `showPlayer(Plugin, Player)` |
+| Night vision | `addPotionEffect` with infinite duration | Reapply with `reconcile()` after events |
 
-這類 bug 的共同根源是「**套上去之後被別人悄悄拿掉或換掉**」：真邊界變了、玩家換世界、死亡重生、喝牛奶、`/effect clear`。解法是把「想要的狀態」放在中央的 `EffectState`，每個觸發事件之後呼叫 `reconcile()` 重新套用，而不是在每個事件裡各自補洞。
+The common root of these bugs is "**the effect is silently removed or replaced by something else after being applied**": the real border changed, the player changed worlds, died and respawned, drank milk, or `/effect clear` was run. The fix is to keep the "desired state" in a central `EffectState` and call `reconcile()` after every triggering event to reapply it, instead of patching each event separately.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（本技能用到的方法與事件兩版簽名相同，皆經編譯驗證）
-- 純 Paper API，不需要 Paperweight、不需要 ProtocolLib／PacketEvents
+- Paper 1.21.11 / 26.2 (the methods and events used here have identical signatures in both versions; both are compile-verified)
+- Pure Paper API; no Paperweight, ProtocolLib, or PacketEvents needed
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「虛擬世界邊界」「紅色邊框」「低血量紅框」「virtual world border」「warning distance」
 - 「個人時間」「個人天氣」「setPlayerTime」「setPlayerWeather」
 - 「隱藏玩家」「hidePlayer」「大廳顯示玩家」「per-viewer visibility」
 - 「夜視被牛奶清掉」「EntityPotionEffectEvent」「重新套用效果」「restore effect」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.effects` | 輸出 package |
-| `low_health_threshold` | `8.0` | 低於此血量開始紅框（半顆心為 1） |
-| `effects` | `border, time, weather, night-vision, visibility` | 需要哪些效果 |
-| `preference_source` | `SettingsApi`（見 `paper-service-api`） | 玩家偏好從哪裡來 |
-| `visibility_rule` | 只在大廳隱藏非好友 | 決定「誰看不到誰」 |
+| `base_package` | `com.example.effects` | Output package |
+| `low_health_threshold` | `8.0` | Health below which the vignette starts (half a heart is 1) |
+| `effects` | `border, time, weather, night-vision, visibility` | Which effects are needed |
+| `preference_source` | `SettingsApi` (see `paper-service-api`) | Where player preferences come from |
+| `visibility_rule` | Hide non-friends only in the lobby | Decides "who cannot see whom" |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `EffectPrefs.java` — 單一玩家的偏好（不可變 record + enum）
-- `EffectPreferences.java` — 偏好來源介面
-- `BorderTint.java` — 紅框強度與警告距離的純計算
-- `LowHealthBorderEffect.java` — 虛擬邊界的套用／清除
-- `PersonalTimeWeatherEffect.java` — 個人時間與天氣
-- `NightVisionEffect.java` — 無限夜視
-- `EffectState.java` — 中央狀態與 `reconcile()`
-- `EffectListener.java` — 觸發 `reconcile()` 的事件
-- `PlayerVisibilityService.java` — 外掛範圍的 `hidePlayer`
-- `SettingsApi.java` / `SettingsHook.java` — 偏好來源接點（見 `paper-service-api`）
-- `EffectsPlugin.java` — 組裝
+- `EffectPrefs.java` — a single player's preferences (immutable record + enum)
+- `EffectPreferences.java` — preference source interface
+- `BorderTint.java` — pure calculation of vignette intensity and warning distance
+- `LowHealthBorderEffect.java` — apply/clear the virtual border
+- `PersonalTimeWeatherEffect.java` — personal time and weather
+- `NightVisionEffect.java` — infinite night vision
+- `EffectState.java` — central state and `reconcile()`
+- `EffectListener.java` — events that trigger `reconcile()`
+- `PlayerVisibilityService.java` — plugin-scoped `hidePlayer`
+- `SettingsApi.java` / `SettingsHook.java` — preference source hook (see `paper-service-api`)
+- `EffectsPlugin.java` — assembly
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` is needed:
 
 ```groovy
 dependencies {
@@ -69,14 +69,14 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `EffectPrefs.java`（偏好，不可變）
+### `EffectPrefs.java`(preferences, immutable)
 
 ```java
 package com.example.effects;
 
-/** 單一玩家想要的效果。不可變：改偏好就產生新的 record。 */
+/** The effects a single player wants. Immutable: changing a preference produces a new record. */
 public record EffectPrefs(
     boolean lowHealthBorder,
     boolean nightVision,
@@ -84,11 +84,11 @@ public record EffectPrefs(
     WeatherPreset weather
 ) {
 
-    /** 沒有任何偏好（全部關閉、時間天氣跟隨伺服器）。 */
+    /** No preferences (everything off, time and weather follow the server). */
     public static final EffectPrefs NONE =
         new EffectPrefs(false, false, TimePreset.SERVER, WeatherPreset.SERVER);
 
-    /** 個人時間。{@code relative=false} 固定在該時刻；{@code true} 是相對伺服器時間的位移（仍會流動）。 */
+    /** Personal time. {@code relative=false} fixes the time at that moment; {@code true} is an offset relative to server time (still flows). */
     public enum TimePreset {
         SERVER(0L, true),
         DAWN(0L, false),
@@ -122,7 +122,7 @@ public record EffectPrefs(
 }
 ```
 
-### `EffectPreferences.java`（偏好來源）
+### `EffectPreferences.java`(preference source)
 
 ```java
 package com.example.effects;
@@ -130,8 +130,8 @@ package com.example.effects;
 import java.util.UUID;
 
 /**
- * 玩家偏好的來源。實作只能讀記憶體快取（主執行緒呼叫），不可在這裡做 IO；
- * 取不到時回 {@link EffectPrefs#NONE}。
+ * Source of player preferences. Implementations may only read an in-memory cache (called on the main thread)
+ * and must not do IO here; return {@link EffectPrefs#NONE} when nothing is available.
  */
 @FunctionalInterface
 public interface EffectPreferences {
@@ -140,14 +140,15 @@ public interface EffectPreferences {
 }
 ```
 
-### `BorderTint.java`（紅框計算，純函式）
+### `BorderTint.java`(vignette calculation, pure functions)
 
 ```java
 package com.example.effects;
 
 /**
- * 紅框怎麼算。客戶端在「離邊界的距離 &lt; 警告距離」時畫紅色暈影，強度約為 1 - 距離 / 警告距離，
- * 所以把警告距離設成「距離 / (1 - 想要的強度)」就能控制深淺。無 Bukkit 依賴，可直接單元測試。
+ * How the vignette is calculated. The client draws the red vignette when "distance to border &lt; warning distance",
+ * with an intensity of about 1 - distance / warningDistance, so setting the warning distance to
+ * "distance / (1 - desired intensity)" controls how strong it looks. No Bukkit dependency; directly unit-testable.
  */
 public final class BorderTint {
 
@@ -157,12 +158,12 @@ public final class BorderTint {
 
     private BorderTint() {}
 
-    /** 上次送出（或這次想送）的內容；{@link #NONE} 代表玩家看的是真邊界。 */
+    /** What was last sent (or what we want to send this time); {@link #NONE} means the player sees the real border. */
     public record Sent(int level, int warningDistance, double size, double centerX, double centerZ) {
         public static final Sent NONE = new Sent(0, 0, 0.0, 0.0, 0.0);
     }
 
-    /** 0 = 不顯示；1..3 = 越低血越深。 */
+    /** 0 = hidden; 1..3 = deeper as health gets lower. */
     public static int level(double health, double threshold) {
         if (threshold <= 0.0 || health >= threshold) return 0;
         double ratio = health / threshold;
@@ -183,7 +184,7 @@ public final class BorderTint {
         return (int) Math.max(1.0, Math.min(wanted, MAX_WARNING_DISTANCE));
     }
 
-    /** 級數、邊界大小／中心變了，或警告距離差到看得出來才重送，避免每次掃描都發封包。 */
+    /** Resend only when the level, border size/center changed, or the warning distance differs noticeably, so not every scan sends a packet. */
     public static boolean needsResend(Sent last, Sent target) {
         return last.level() != target.level()
             || Double.compare(last.size(), target.size()) != 0
@@ -194,7 +195,7 @@ public final class BorderTint {
 }
 ```
 
-### `LowHealthBorderEffect.java`（虛擬邊界）
+### `LowHealthBorderEffect.java`(virtual border)
 
 ```java
 package com.example.effects;
@@ -209,10 +210,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 低血量紅框。虛擬邊界抄玩家所在世界真邊界的中心與大小，只改警告距離，
- * 所以擋人的仍是伺服器上的真邊界，虛擬邊界只影響畫面。
+ * Low-health vignette. The virtual border copies the center and size of the real border in the player's world
+ * and only changes the warning distance, so the real server-side border is still what blocks players;
+ * the virtual border only affects the screen.
  *
- * <p>不在 {@link #sent} 裡＝玩家看的是真邊界。只在主執行緒碰。
+ * <p>Not in {@link #sent} = the player sees the real border. Touch only on the main thread.
  */
 public final class LowHealthBorderEffect {
 
@@ -225,7 +227,7 @@ public final class LowHealthBorderEffect {
         this.threshold = threshold;
     }
 
-    /** 冪等：可在定時器與任何 reconcile 裡呼叫，只有內容變了才真的送。 */
+    /** Idempotent: may be called from the timer and any reconcile; only actually sends when the content changed. */
     public void apply(Player player, boolean enabled) {
         UUID id = player.getUniqueId();
         int level = enabled ? BorderTint.level(player.getHealth(), threshold) : 0;
@@ -249,18 +251,18 @@ public final class LowHealthBorderEffect {
         sent.put(id, target);
     }
 
-    /** 換回真邊界。換世界時一定要先呼叫：手上的虛擬邊界抄的是舊世界。 */
+    /** Switches back to the real border. Always call this first when changing worlds: the current virtual border was copied from the old world. */
     public void clear(Player player) {
         player.setWorldBorder(null);
         sent.remove(player.getUniqueId());
     }
 
-    /** 只忘記紀錄（玩家登出時用；虛擬邊界不跟著存檔）。 */
+    /** Only forgets the record (used on player quit; the virtual border is not saved). */
     public void forget(UUID player) {
         sent.remove(player);
     }
 
-    /** 停用時把每個人換回真邊界，否則紅框會留到他們下次換世界或重登。 */
+    /** On disable, switches everyone back to the real border; otherwise the vignette stays until their next world change or relog. */
     public void clearAll() {
         for (UUID id : Map.copyOf(sent).keySet()) {
             Player player = server.getPlayer(id);
@@ -271,7 +273,7 @@ public final class LowHealthBorderEffect {
 }
 ```
 
-### `PersonalTimeWeatherEffect.java`（個人時間與天氣）
+### `PersonalTimeWeatherEffect.java`(personal time and weather)
 
 ```java
 package com.example.effects;
@@ -280,8 +282,9 @@ import org.bukkit.WeatherType;
 import org.bukkit.entity.Player;
 
 /**
- * 個人時間與天氣。兩者是玩家身上的欄位：換世界、死亡都不會清，登出就沒了（不進 playerdata）。
- * 仍放進 reconcile：其他插件也可能呼叫 reset，重複套用只是多送一個小封包。
+ * Personal time and weather. Both are fields on the player: they are not cleared by world changes or death,
+ * and are gone on quit (not saved to playerdata). Still included in reconcile: other plugins may call reset,
+ * and reapplying only costs one extra small packet.
  */
 public final class PersonalTimeWeatherEffect {
 
@@ -290,7 +293,7 @@ public final class PersonalTimeWeatherEffect {
         if (time == EffectPrefs.TimePreset.SERVER) {
             player.resetPlayerTime();
         } else {
-            // relative=false：固定在該時刻；relative=true：相對伺服器時間的位移
+            // relative=false: fixed at that moment; relative=true: offset relative to server time
             player.setPlayerTime(time.ticks(), time.relative());
         }
 
@@ -308,7 +311,7 @@ public final class PersonalTimeWeatherEffect {
 }
 ```
 
-### `NightVisionEffect.java`（被動夜視）
+### `NightVisionEffect.java`(passive night vision)
 
 ```java
 package com.example.effects;
@@ -317,7 +320,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-/** 無限、環境（ambient）、無粒子、無圖示的夜視：看起來像被動 buff，而不是一瓶藥水。 */
+/** Infinite, ambient, no particles, no icon night vision: looks like a passive buff rather than a potion. */
 public final class NightVisionEffect {
 
     public void apply(Player player) {
@@ -331,9 +334,11 @@ public final class NightVisionEffect {
     }
 
     /**
-     * 玩家身上是否已經是「我們的」無限夜視 —— 不是任何夜視都算。
-     * 只檢查「有沒有」會誤判：玩家關閉偏好時喝了有限時長的夜視藥水，之後打開偏好看到「已有夜視」就跳過，
-     * 藥水一到期就失去夜視（EXPIRATION 不是需要攔的清除原因）。檢查 {@code isInfinite()} 才會立刻覆蓋成永久。
+     * Whether the player already has "our" infinite night vision -- not just any night vision.
+     * Checking only for presence gives false positives: if the player drank a finite night vision potion while the
+     * preference was off, then turned the preference on and we skipped because "night vision already present",
+     * they would lose night vision as soon as the potion expires (EXPIRATION is not a removal reason we intercept).
+     * Checking {@code isInfinite()} overwrites it with a permanent one immediately.
      */
     public boolean isActive(Player player) {
         PotionEffect effect = player.getPotionEffect(PotionEffectType.NIGHT_VISION);
@@ -342,7 +347,7 @@ public final class NightVisionEffect {
 }
 ```
 
-### `EffectState.java`（中央狀態與 reconcile）
+### `EffectState.java`(central state and reconcile)
 
 ```java
 package com.example.effects;
@@ -356,9 +361,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 每位玩家「想要的效果」的唯一來源，以及把它重新套用到玩家身上的 {@link #reconcile}。
- * 所有觸發事件（加入、換世界、重生、真邊界變動、效果被移除）都只做一件事：呼叫 reconcile，
- * 不在各個事件裡各自補洞。只在主執行緒碰；沒有 static 可變狀態。
+ * The single source of each player's "desired effects", plus {@link #reconcile}, which reapplies them to the player.
+ * Every triggering event (join, world change, respawn, real border change, effect removed) does exactly one thing:
+ * call reconcile, instead of patching each event separately. Touch only on the main thread; no static mutable state.
  */
 public final class EffectState {
 
@@ -378,13 +383,13 @@ public final class EffectState {
         this.nightVision = nightVision;
     }
 
-    /** 從偏好來源重新讀取並套用（登入、設定頁切換之後呼叫）。 */
+    /** Re-reads from the preference source and applies (call after login or a settings page toggle). */
     public void refresh(Player player) {
         desired.put(player.getUniqueId(), preferences.prefsOf(player.getUniqueId()));
         reconcile(player);
     }
 
-    /** 把「想要的狀態」重新套用到玩家身上。冪等，可重複呼叫。 */
+    /** Reapplies the "desired state" to the player. Idempotent; may be called repeatedly. */
     public void reconcile(Player player) {
         if (!player.isOnline()) return;
         EffectPrefs prefs = desired.getOrDefault(player.getUniqueId(), EffectPrefs.NONE);
@@ -393,17 +398,17 @@ public final class EffectState {
         if (prefs.nightVision()) {
             nightVision.apply(player);
         } else if (nightVision.isActive(player)) {
-            nightVision.remove(player); // 只移除我們的無限夜視，不動別人給的有限藥水
+            nightVision.remove(player); // Remove only our infinite night vision; leave finite potions given by others alone
         }
     }
 
-    /** 換世界：舊世界的虛擬邊界先清掉，再依新世界的真邊界重算。 */
+    /** World change: clear the old world's virtual border first, then recalculate from the new world's real border. */
     public void worldChanged(Player player) {
         border.clear(player);
         reconcile(player);
     }
 
-    /** 某個世界的真邊界變了：該世界所有玩家的虛擬邊界都要重抄。 */
+    /** A world's real border changed: every player's virtual border in that world must be re-copied. */
     public void realBorderChanged(World world) {
         for (Player player : world.getPlayers()) {
             border.clear(player);
@@ -411,7 +416,7 @@ public final class EffectState {
         }
     }
 
-    /** 定時掃描：血量變化沒有事件（setHealth 不發事件），只有邊界需要追。 */
+    /** Periodic scan: health changes have no event (setHealth fires none); only the border needs to be tracked. */
     public void tick() {
         for (Player player : server.getOnlinePlayers()) {
             EffectPrefs prefs = desired.getOrDefault(player.getUniqueId(), EffectPrefs.NONE);
@@ -419,7 +424,7 @@ public final class EffectState {
         }
     }
 
-    /** 此玩家目前是否想要夜視（給事件過濾用）。 */
+    /** Whether this player currently wants night vision (for event filtering). */
     public boolean wantsNightVision(UUID player) {
         return desired.getOrDefault(player, EffectPrefs.NONE).nightVision();
     }
@@ -429,7 +434,7 @@ public final class EffectState {
         border.forget(player);
     }
 
-    /** 停用：虛擬邊界、個人時間天氣、我們的夜視全部還原。 */
+    /** Disable: restore virtual borders, personal time/weather, and our night vision. */
     public void restoreAll() {
         border.clearAll();
         for (Player player : server.getOnlinePlayers()) {
@@ -441,7 +446,7 @@ public final class EffectState {
 }
 ```
 
-### `EffectListener.java`（觸發 reconcile 的事件）
+### `EffectListener.java`(events that trigger reconcile)
 
 ```java
 package com.example.effects;
@@ -466,9 +471,10 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.UUID;
 
 /**
- * 每個事件只做一件事：排到「下一 tick」呼叫 reconcile。
- * 不在事件當下改效果：事件發生時狀態還沒落定（真邊界尚未改、藥水尚未移除、玩家尚未重生完成），
- * 在 {@link EntityPotionEffectEvent} 裡直接 add 同一個效果也容易互相觸發。
+ * Every event does exactly one thing: schedule a reconcile call for the "next tick".
+ * Effects are not changed at event time: the state has not settled yet (the real border is not changed yet, the
+ * potion is not removed yet, the player has not finished respawning), and adding the same effect directly inside
+ * {@link EntityPotionEffectEvent} easily triggers itself.
  */
 public final class EffectListener implements Listener {
 
@@ -487,13 +493,13 @@ public final class EffectListener implements Listener {
         Player player = event.getPlayer();
         later(() -> {
             state.refresh(player);
-            visibility.joined(player); // 新玩家 ↔ 既有玩家，兩個方向都重算
+            visibility.joined(player); // new player <-> existing players: recalculate in both directions
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        visibility.quit(event.getPlayer()); // 先放出來再忘記
+        visibility.quit(event.getPlayer()); // show first, then forget
         state.forget(event.getPlayer().getUniqueId());
     }
 
@@ -502,20 +508,20 @@ public final class EffectListener implements Listener {
         Player player = event.getPlayer();
         later(() -> {
             state.worldChanged(player);
-            visibility.refreshAll(); // 規則可能依世界而定
+            visibility.refreshAll(); // the rule may depend on the world
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
-        later(() -> state.worldChanged(player)); // 重生可能跨世界；死亡也清掉了所有藥水效果
+        later(() -> state.worldChanged(player)); // respawn may cross worlds; death also cleared all potion effects
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBorderBounds(WorldBorderBoundsChangeEvent event) {
         World world = event.getWorld();
-        later(() -> state.realBorderChanged(world)); // 事件發生時還是舊大小，等下一 tick
+        later(() -> state.realBorderChanged(world)); // still the old size at event time; wait for the next tick
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -530,7 +536,7 @@ public final class EffectListener implements Listener {
         later(() -> state.realBorderChanged(world));
     }
 
-    /** 牛奶、/effect clear、死亡、有限藥水覆蓋：任何讓夜視消失或變成有限的原因。 */
+    /** Milk, /effect clear, death, finite potion overwrite: any reason night vision disappears or becomes finite. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPotionEffect(EntityPotionEffectEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -539,7 +545,7 @@ public final class EffectListener implements Listener {
         boolean cleared = event.getAction() == EntityPotionEffectEvent.Action.CLEARED;
         if (!cleared && modified != PotionEffectType.NIGHT_VISION) return;
         PotionEffect incoming = event.getNewEffect();
-        if (incoming != null && incoming.isInfinite()) return; // 我們自己剛套上去的
+        if (incoming != null && incoming.isInfinite()) return; // we just applied this ourselves
         UUID id = player.getUniqueId();
         later(() -> {
             Player current = plugin.getServer().getPlayer(id);
@@ -553,7 +559,7 @@ public final class EffectListener implements Listener {
 }
 ```
 
-### `PlayerVisibilityService.java`（外掛範圍的隱藏玩家）
+### `PlayerVisibilityService.java`(plugin-scoped player hiding)
 
 ```java
 package com.example.effects;
@@ -568,15 +574,16 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 依規則替每位觀看者隱藏／顯示其他玩家，用 {@code hidePlayer(plugin, target)}：
- * 隱藏屬於本插件，不會蓋掉其他插件藏的人，也不會被其他插件的 showPlayer 放出來。
+ * Hides/shows other players for each viewer according to a rule, using {@code hidePlayer(plugin, target)}:
+ * the hiding belongs to this plugin, so it does not override players hidden by other plugins and is not undone
+ * by another plugin's showPlayer.
  *
- * <p>注意：{@code hidePlayer} 會連 TAB 名單一起移除（Bukkit 行為）。需要保留 TAB 時，改用 TAB 插件自己的可見性，
- * 或接受這個副作用。{@link #hidden} 只在主執行緒碰。
+ * <p>Note: {@code hidePlayer} also removes the player from the TAB list (Bukkit behavior). If the TAB list must be
+ * kept, use the TAB plugin's own visibility or accept this side effect. {@link #hidden} is touched only on the main thread.
  */
 public final class PlayerVisibilityService {
 
-    /** 該不該讓 viewer 看不到 target。 */
+    /** Whether viewer should be unable to see target. */
     @FunctionalInterface
     public interface Policy {
         boolean shouldHide(Player viewer, Player target);
@@ -584,7 +591,7 @@ public final class PlayerVisibilityService {
 
     private final Plugin plugin;
     private final Policy policy;
-    /** 觀看者 → 本插件替他藏著的人。 */
+    /** Viewer -> the players this plugin is hiding for them. */
     private final Map<UUID, Set<UUID>> hidden = new HashMap<>();
 
     public PlayerVisibilityService(Plugin plugin, Policy policy) {
@@ -592,7 +599,7 @@ public final class PlayerVisibilityService {
         this.policy = policy;
     }
 
-    /** 重新計算某位觀看者的畫面，只動有變的那幾個人。 */
+    /** Recalculates one viewer's view, touching only the players that changed. */
     public void refresh(Player viewer) {
         Set<UUID> before = hidden.getOrDefault(viewer.getUniqueId(), Set.of());
         Set<UUID> after = new HashSet<>();
@@ -620,8 +627,9 @@ public final class PlayerVisibilityService {
     }
 
     /**
-     * 新玩家加入：他要對既有觀看者隱藏（既有觀看者重算），也要依規則決定他自己看得到誰（他自己重算）。
-     * 兩個方向都要做，只做一邊會出現「我看不到他、他卻看得到我」。
+     * A new player joins: they may need to be hidden from existing viewers (recalculate existing viewers), and the
+     * rule also decides whom they can see (recalculate them). Both directions are required; doing only one gives
+     * "I cannot see them but they can see me".
      */
     public void joined(Player joined) {
         refresh(joined);
@@ -631,8 +639,8 @@ public final class PlayerVisibilityService {
     }
 
     /**
-     * 登出：先把他從每個觀看者那裡放出來再丟掉紀錄。Bukkit 依 UUID 記著隱藏；
-     * 若他離線後才放，已經拿不到 Player 物件，重登就會一直是藏的。
+     * Quit: show them to every viewer first, then drop the record. Bukkit remembers hiding by UUID;
+     * if we only show them after they go offline there is no Player object any more, and they stay hidden after relogging.
      */
     public void quit(Player quitting) {
         UUID id = quitting.getUniqueId();
@@ -651,7 +659,7 @@ public final class PlayerVisibilityService {
         }
     }
 
-    /** 停用：全部放出來，否則藏著的人要等到重登才回來。 */
+    /** Disable: show everyone, otherwise hidden players only come back after relogging. */
     public void showAll() {
         for (Map.Entry<UUID, Set<UUID>> entry : hidden.entrySet()) {
             Player viewer = plugin.getServer().getPlayer(entry.getKey());
@@ -666,29 +674,29 @@ public final class PlayerVisibilityService {
 }
 ```
 
-### `SettingsApi.java`（設定插件的 api，只含 JDK 型別）
+### `SettingsApi.java`(the Settings plugin's api, JDK types only)
 
 ```java
 package com.example.settings.api;
 
 import java.util.UUID;
 
-/** Settings 插件提供的偏好查詢（只讀記憶體快取，主執行緒呼叫）。見 {@code paper-service-api}。 */
+/** Preference queries provided by the Settings plugin (read-only in-memory cache, called on the main thread). See {@code paper-service-api}. */
 public interface SettingsApi {
 
     boolean lowHealthBorder(UUID player);
 
     boolean nightVision(UUID player);
 
-    /** {@code SERVER / DAWN / NOON / DUSK / MIDNIGHT / AHEAD_6H}；其他值視為 SERVER。 */
+    /** {@code SERVER / DAWN / NOON / DUSK / MIDNIGHT / AHEAD_6H}; other values are treated as SERVER. */
     String time(UUID player);
 
-    /** {@code SERVER / CLEAR / RAIN}；其他值視為 SERVER。 */
+    /** {@code SERVER / CLEAR / RAIN}; other values are treated as SERVER. */
     String weather(UUID player);
 }
 ```
 
-### `SettingsHook.java`（使用端：偏好來源實作）
+### `SettingsHook.java`(consumer side: preference source implementation)
 
 ```java
 package com.example.effects;
@@ -699,7 +707,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.UUID;
 import java.util.logging.Level;
 
-/** 從 Settings 插件取偏好；不可用或版本不合時回 {@link EffectPrefs#NONE}，功能降級而不是崩潰。 */
+/** Gets preferences from the Settings plugin; returns {@link EffectPrefs#NONE} when unavailable or the version does not match, degrading instead of crashing. */
 public final class SettingsHook implements EffectPreferences {
 
     private static final String PLUGIN_NAME = "Settings";
@@ -743,7 +751,7 @@ public final class SettingsHook implements EffectPreferences {
 }
 ```
 
-### `EffectsPlugin.java`（組裝）
+### `EffectsPlugin.java`(assembly)
 
 ```java
 package com.example.effects;
@@ -769,7 +777,7 @@ public final class EffectsPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EffectListener(this, state, visibility), this);
         getServer().getScheduler().runTaskTimer(this, state::tick, SCAN_PERIOD_TICKS, SCAN_PERIOD_TICKS);
 
-        // /reload 或熱載入後，既有玩家也要套用
+        // After /reload or hot loading, existing players must be applied too
         for (Player player : getServer().getOnlinePlayers()) {
             state.refresh(player);
         }
@@ -782,50 +790,50 @@ public final class EffectsPlugin extends JavaPlugin {
         if (visibility != null) visibility.showAll();
     }
 
-    /** 範例規則：不在同一個世界的人互相看不到。換成你的大廳／好友規則。 */
+    /** Example rule: players in different worlds cannot see each other. Replace with your lobby/friends rule. */
     private boolean hideFromViewer(Player viewer, Player target) {
         return !viewer.getWorld().equals(target.getWorld());
     }
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/effects/
 ├── EffectsPlugin.java
 ├── EffectPrefs.java
 ├── EffectPreferences.java
-├── BorderTint.java                    ← 純函式，可單元測試
-├── EffectState.java                   ← 中央狀態 + reconcile()
-├── EffectListener.java                ← 事件 → 下一 tick reconcile
+├── BorderTint.java                    <- pure functions, unit-testable
+├── EffectState.java                   <- central state + reconcile()
+├── EffectListener.java                <- event -> reconcile on the next tick
 ├── LowHealthBorderEffect.java
 ├── PersonalTimeWeatherEffect.java
 ├── NightVisionEffect.java
 ├── PlayerVisibilityService.java
-└── SettingsHook.java                  ← compileOnly 依賴 Settings 的 api package
+└── SettingsHook.java                  <- compileOnly dependency on the Settings api package
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- 所有方法**只在主執行緒**呼叫：`Player#setWorldBorder`、`addPotionEffect`、`hidePlayer` 都碰到實體與追蹤狀態
-- `EffectState`、`LowHealthBorderEffect`、`PlayerVisibilityService` 內的 `HashMap` 不是執行緒安全的，原因同上：不要從非同步執行緒碰
-- 偏好來源（`EffectPreferences`）必須讀記憶體快取；資料庫載入完成後才呼叫 `refresh`，載入在非同步、套用回主執行緒（見 [`references/paper-threading.md`](references/paper-threading.md)）
-- 事件裡用 `runTask` 排到下一 tick 後，**重新用 UUID 取 `Player`**，因為玩家可能已離線
+- Call all methods **on the main thread only**: `Player#setWorldBorder`, `addPotionEffect`, and `hidePlayer` all touch entities and tracking state
+- The `HashMap`s inside `EffectState`, `LowHealthBorderEffect`, and `PlayerVisibilityService` are not thread-safe, for the same reason: do not touch them from async threads
+- The preference source (`EffectPreferences`) must read an in-memory cache; call `refresh` only after the database load finishes, load async and apply back on the main thread (see [`references/paper-threading.md`](references/paper-threading.md))
+- After scheduling to the next tick with `runTask` inside an event, **look up the `Player` again by UUID**, because the player may have gone offline
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 現象 | 原因 | 解法 |
+| Symptom | Cause | Solution |
 |------|------|------|
-| 紅框一直留著 | 停用／換世界／關閉偏好時沒 `setWorldBorder(null)` | `clear` 在三個路徑都要呼叫；`onDisable` 用 `clearAll` |
-| 真邊界縮小後紅框位置不對 | 虛擬邊界是舊的複本 | 聽 `WorldBorderBoundsChangeEvent`／`FinishEvent`／`CenterChangeEvent`，下一 tick 重抄；定時掃描兜底 |
-| 換世界後紅框畫在舊世界座標 | 沒清掉舊世界的虛擬邊界 | `PlayerChangedWorldEvent` 先 `clear` 再重算 |
-| 血量被 `setHealth` 改掉後紅框沒更新 | 該路徑不發事件 | 用定時掃描（本技能 4 tick）而不是聽傷害事件 |
-| 喝牛奶／`/effect clear`／死亡後夜視消失 | 沒有重新套用 | `EntityPotionEffectEvent` → 下一 tick `reconcile()` |
-| 開啟偏好後夜視只撐到舊藥水到期 | 用「有沒有夜視」判斷，被有限藥水騙過 | 判斷 `effect.isInfinite()` |
-| 新加入的玩家看得到本該被隱藏的人 | 只處理了既有觀看者 | `joined()` 兩個方向都重算 |
-| 隱藏的玩家重登後一直是隱形 | 登出前沒 `showPlayer` | `quit()` 先放出來再丟紀錄 |
-| 被藏的玩家從 TAB 名單消失 | `hidePlayer` 的 Bukkit 行為 | 接受此行為，或改由 TAB 插件控制 |
-| 事件裡直接加效果沒生效／無限遞迴 | 事件當下狀態未落定、自己觸發自己 | 一律 `runTask` 後再 `reconcile`，並略過自己套上去的無限效果 |
-| `NoClassDefFoundError: SettingsApi` | Settings 未安裝且 API 型別出現在欄位／簽名 | API 型別只放方法本體的 `try` 內（見 `paper-service-api`） |
-| 需要影響整個畫面以外的東西（假方塊、假實體） | Paper API 做不到 | 才改用 `nms-packet-sender` |
+| Vignette stays forever | `setWorldBorder(null)` not called on disable / world change / preference off | Call `clear` on all three paths; use `clearAll` in `onDisable` |
+| Vignette position wrong after the real border shrinks | The virtual border is a stale copy | Listen to `WorldBorderBoundsChangeEvent`/`FinishEvent`/`CenterChangeEvent` and re-copy on the next tick; the periodic scan is the safety net |
+| Vignette drawn at old-world coordinates after a world change | The old world's virtual border was not cleared | In `PlayerChangedWorldEvent`, `clear` first and then recalculate |
+| Vignette not updated after health is changed by `setHealth` | That path fires no event | Use a periodic scan (4 ticks in this skill) instead of listening to damage events |
+| Night vision gone after milk / `/effect clear` / death | Not reapplied | `EntityPotionEffectEvent` -> `reconcile()` on the next tick |
+| After enabling the preference, night vision only lasts until the old potion expires | Checked "has night vision" and was fooled by a finite potion | Check `effect.isInfinite()` |
+| A newly joined player can see players who should be hidden | Only existing viewers were handled | `joined()` recalculates in both directions |
+| A hidden player stays invisible after relogging | `showPlayer` not called before quit | `quit()` shows them first, then drops the record |
+| A hidden player disappears from the TAB list | Bukkit behavior of `hidePlayer` | Accept this behavior, or let a TAB plugin control it |
+| Adding an effect directly in an event has no effect / recurses infinitely | State not settled at event time; triggers itself | Always `reconcile` after `runTask`, and skip the infinite effect we applied ourselves |
+| `NoClassDefFoundError: SettingsApi` | Settings is not installed and the API type appears in a field/signature | Keep API types only inside a method body `try` (see `paper-service-api`) |
+| Need something beyond screen-wide effects (fake blocks, fake entities) | The Paper API cannot do it | Only then switch to `nms-packet-sender` |

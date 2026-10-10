@@ -1,6 +1,6 @@
 # examples — nms-packet-interceptor
 
-## 範例 1：記錄所有 Clientbound 封包（除錯用）
+## Example 1: Log all packets (for debugging)
 
 **Input:**
 ```
@@ -10,30 +10,30 @@ manager_name: LoggerManager
 handler_id: debug_packet_logger
 ```
 
-**使用端:**
+**Usage:**
 ```java
-// 在 onEnable()
+// In onEnable()
 LoggerManager manager = new LoggerManager(
     (player, inbound) -> {
-        // Serverbound: 客戶端送來的封包
+        // Serverbound: packet sent by the client
         getLogger().fine("[IN ] " + player.getName() + " → " + inbound.getClass().getSimpleName());
         return inbound;
     },
     (player, outbound) -> {
-        // Clientbound: 伺服器送出的封包
+        // Clientbound: packet sent by the server
         getLogger().fine("[OUT] " + player.getName() + " ← " + outbound.getClass().getSimpleName());
         return outbound;
     }
 );
 Bukkit.getPluginManager().registerEvents(new InterceptorListener(manager), this);
 
-// 對已在線玩家手動 inject（reload 場景）
+// Manually inject for players already online (reload scenario)
 Bukkit.getOnlinePlayers().forEach(manager::inject);
 ```
 
 ---
 
-## 範例 2：取消玩家的聊天封包（靜音系統）
+## Example 2: Cancel a player's chat packets (mute system)
 
 **Input:**
 ```
@@ -43,7 +43,7 @@ manager_name: MuteManager
 handler_id: mute_interceptor
 ```
 
-**使用端:**
+**Usage:**
 ```java
 import net.minecraft.network.protocol.game.ServerboundChatPacket;
 
@@ -51,23 +51,23 @@ Set<UUID> mutedPlayers = ConcurrentHashMap.newKeySet();
 
 MuteManager manager = new MuteManager(
     (player, packet) -> {
-        // 攔截 Serverbound 聊天封包
+        // Intercept the Serverbound chat packet
         if (packet instanceof ServerboundChatPacket chat &&
             mutedPlayers.contains(player.getUniqueId())) {
-            // 通知玩家（切回主執行緒）
+            // Notify the player (switch back to the main thread)
             Bukkit.getScheduler().runTask(plugin, () ->
-                player.sendMessage(Component.text("你已被靜音", NamedTextColor.RED)));
-            return null; // 取消封包
+                player.sendMessage(Component.text("You have been muted", NamedTextColor.RED)));
+            return null; // cancel the packet
         }
         return packet;
     },
-    null // 不處理 outbound
+    null // outbound not handled
 );
 ```
 
 ---
 
-## 範例 3：修改 Clientbound Scoreboard 封包（隱藏特定分數）
+## Example 3: Modify a Clientbound Scoreboard packet (hide a specific score)
 
 **Input:**
 ```
@@ -77,17 +77,17 @@ manager_name: HiddenScoreManager
 handler_id: hidden_score
 ```
 
-**使用端:**
+**Usage:**
 ```java
 import net.minecraft.network.protocol.game.ClientboundSetScorePacket;
 
 HiddenScoreManager manager = new HiddenScoreManager(
-    null, // 不處理 inbound
+    null, // inbound not handled
     (player, packet) -> {
         if (packet instanceof ClientboundSetScorePacket scorePacket) {
-            // 隱藏特定玩家的分數
+            // Hide a specific player's score
             if (scorePacket.owner().equals("[HIDDEN]")) {
-                return null; // 不讓玩家看到這筆
+                return null; // do not let the player see this entry
             }
         }
         return packet;
@@ -97,7 +97,7 @@ HiddenScoreManager manager = new HiddenScoreManager(
 
 ---
 
-## 範例 4：動畫延遲與速率限制（反外掛用途）
+## Example 4: Swing rate limiting (anti-cheat)
 
 **Input:**
 ```
@@ -107,7 +107,7 @@ manager_name: RateLimitManager
 handler_id: rate_limit
 ```
 
-**使用端：偵測單位時間內 ServerboundSwingPacket 頻率過高:**
+**Usage: detect an excessive ServerboundSwingPacket rate per time window:**
 ```java
 import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import java.util.concurrent.ConcurrentHashMap;
@@ -126,9 +126,9 @@ RateLimitManager manager = new RateLimitManager(
             while (!times.isEmpty() && now - times.peek() > WINDOW_MS) times.poll();
 
             if (times.size() > MAX_SWINGS) {
-                // 觸發反外掛動作（async 安全呼叫）
+                // Trigger the anti-cheat action (safe call from async)
                 Bukkit.getScheduler().runTask(plugin, () ->
-                    player.kick(Component.text("Auto-Clicker 偵測")));
+                    player.kick(Component.text("Auto-Clicker detected")));
                 return null;
             }
         }

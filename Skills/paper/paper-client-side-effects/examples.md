@@ -1,6 +1,6 @@
 # examples — paper-client-side-effects
 
-## 範例 1：玩家在設定頁切換偏好，立即套用
+## Example 1: Player toggles a preference on the settings page, applied immediately
 
 **Input:**
 ```
@@ -9,13 +9,13 @@ effects: border, time, weather, night-vision
 preference_source: SettingsApi
 ```
 
-**Output — 設定頁寫入偏好後只呼叫 `refresh`，由 `reconcile()` 決定要套用或還原:**
+**Output — after the settings page writes the preference it only calls `refresh`; `reconcile()` decides whether to apply or restore:**
 ```java
 import com.example.effects.EffectState;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
-/** 設定頁在主執行緒寫完偏好後呼叫。偏好從 SettingsHook 重新讀取，不在這裡手動套用任何效果。 */
+/** Called by the settings page on the main thread after the preference is written. Preferences are re-read from SettingsHook; no effect is applied manually here. */
 public final class SettingsPageActions {
 
     private final EffectState state;
@@ -31,19 +31,19 @@ public final class SettingsPageActions {
 }
 ```
 
-**為什麼不在切換當下直接 `addPotionEffect`:** 關閉夜視時 `reconcile()` 只移除「無限」夜視，不會誤刪玩家自己喝的有限藥水；開啟時若身上是有限夜視，會被覆蓋成永久。
+**Why not call `addPotionEffect` directly when toggling:** when night vision is turned off, `reconcile()` removes only the infinite night vision, so a finite potion the player drank themselves is not deleted by mistake; when turned on, a finite night vision already on the player is overwritten with a permanent one.
 
 ---
 
-## 範例 2：只在大廳隱藏非好友，離開大廳自動恢復
+## Example 2: Hide non-friends only in the lobby, restored automatically when leaving
 
 **Input:**
 ```
 effects: visibility
-visibility_rule: 大廳內，只看得到好友；其他世界看得到所有人
+visibility_rule: In the lobby only friends are visible; in other worlds everyone is visible
 ```
 
-**Output — 規則只回答「該不該藏」，服務負責只動有變的人:**
+**Output — the rule only answers "should this player be hidden"; the service only touches players whose state changed:**
 ```java
 import com.example.effects.PlayerVisibilityService;
 import org.bukkit.World;
@@ -72,21 +72,21 @@ public final class LobbyFriendsPolicy implements PlayerVisibilityService.Policy 
 }
 ```
 
-**接線:** `new PlayerVisibilityService(plugin, new LobbyFriendsPolicy(world -> world.getName().equals("lobby"), friendsLookup))`。
-好友名單或「大廳」定義變動沒有事件時，用 20 tick 左右的定時器呼叫 `refreshAll()`；它只對差異呼叫 `hidePlayer`／`showPlayer`，成本是線上人數的平方次快取查詢，沒有封包。
+**Wiring:** `new PlayerVisibilityService(plugin, new LobbyFriendsPolicy(world -> world.getName().equals("lobby"), friendsLookup))`.
+When the friends list or the "lobby" definition changes without an event, call `refreshAll()` from a timer of about 20 ticks; it calls `hidePlayer`/`showPlayer` only for differences, costing a quadratic number of cache lookups in the online player count and sending no packets.
 
-**注意:** `hidePlayer` 同時把被藏的人從 TAB 名單移除。
+**Note:** `hidePlayer` also removes the hidden player from the TAB list.
 
 ---
 
-## 範例 3：真邊界縮小時，低血量玩家的紅框跟著更新
+## Example 3: When the real border shrinks, the low-health vignette updates with it
 
 **Input:**
 ```
 effects: border
 ```
 
-**Output — 管理員用指令縮邊界；紅框由 `WorldBorderBoundsChangeEvent` 與定時掃描共同修正，不需要在指令裡碰玩家:**
+**Output — an admin shrinks the border with a command; the vignette is corrected by `WorldBorderBoundsChangeEvent` together with the periodic scan, so the command never touches players:**
 ```java
 import org.bukkit.World;
 
@@ -96,11 +96,11 @@ public final class BorderCommands {
 
     private BorderCommands() {}
 
-    /** 縮邊界。EffectListener 會在下一 tick 重抄每位玩家的虛擬邊界，之後由 tick() 追著漸變。 */
+    /** Shrinks the border. EffectListener re-copies each player's virtual border on the next tick, and tick() then follows the gradual change. */
     public static void shrink(World world, double newSize, Duration over) {
         world.getWorldBorder().setSize(newSize, over.toSeconds());
     }
 }
 ```
 
-**驗證流程（手動）:** 對自己 `/effect give @s instant_damage` 直到血量低於門檻 → 出現紅框 → `/worldborder set 100 30` → 紅框的警告距離隨邊界逐步變化，不會停在舊大小 → 補血後紅框消失並回到真邊界。
+**Verification (manual):** run `/effect give @s instant_damage` on yourself until health drops below the threshold -> the vignette appears -> `/worldborder set 100 30` -> the vignette's warning distance changes gradually with the border instead of staying at the old size -> after healing the vignette disappears and the player returns to the real border.

@@ -3,46 +3,46 @@ name: nms-scoreboard
 description: "透過 NMS Scoreboard/Objective/Team API 操作 sidebar、tablist 顯示名稱與計分板（Paper NMS + Mojang-mapped）/ Operate sidebar, tablist, and scoreboard via NMS Scoreboard/Objective/Team API"
 ---
 
-# NMS Scoreboard / NMS 計分板操作
+# NMS Scoreboard
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-scoreboard`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `Scoreboard`、`Objective`、`Team` 直接操作 sidebar 計分板、tablist 顯示名稱、玩家 prefix/suffix，繞過 Bukkit Scoreboard API 的封包延遲與限制。
+Operate the sidebar scoreboard, tablist display names, and player prefix/suffix directly through NMS `Scoreboard`, `Objective`, and `Team`, bypassing the packet delay and limitations of the Bukkit Scoreboard API.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both versions compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「scoreboard」「sidebar」「tablist」「Objective NMS」「Team NMS」
 - 「計分板」「nms scoreboard」「player list name」「prefix suffix」
 - 「顯示板」「nms sidebar」「分數顯示」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.display` | 產出類別所在 package |
-| `manager_class_name` | `ScoreboardManager` | 管理器類名稱 |
-| `display_slot` | `sidebar` / `list` / `below_name` | 顯示位置 |
-| `per_player` | `true` | 是否每人一個獨立計分板 |
+| `package_name` | `com.example.display` | Package of the generated classes |
+| `manager_class_name` | `ScoreboardManager` | Name of the manager class |
+| `display_slot` | `sidebar` / `list` / `below_name` | Display position |
+| `per_player` | `true` | Whether each player gets an independent scoreboard |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ScoreboardManager.java` — 計分板建立與更新工具
-- `SidebarDisplay.java` — Sidebar 行內容管理
-- `TeamManager.java` — Team prefix/suffix/tablist 管理
+- `ScoreboardManager.java` — scoreboard creation and update utility
+- `SidebarDisplay.java` — sidebar line content management
+- `TeamManager.java` — team prefix/suffix/tablist management
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -50,7 +50,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ScoreboardManager.java`
 
@@ -78,8 +78,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Per-player sidebar：每位玩家一個不掛在伺服器上的 NMS Scoreboard，只透過封包同步給該玩家。
- * 1.20.3+ 分數的持有者為 {@link ScoreHolder}（不再是 String）。
+ * Per-player sidebar: each player gets an NMS Scoreboard that is not attached to the server and is synced to that player only through packets.
+ * Since 1.20.3 the holder of a score is a {@link ScoreHolder} (no longer a String).
  */
 @SuppressWarnings("UnstableApiUsage")
 public class ScoreboardManager {
@@ -87,14 +87,14 @@ public class ScoreboardManager {
     private static final String OBJECTIVE_NAME = "mps_sidebar";
     private final Map<UUID, Scoreboard> playerBoards = new HashMap<>();
 
-    /** 取得或建立玩家專屬的 NMS Scoreboard（per-player 模式）。 */
+    /** Gets or creates the player's own NMS Scoreboard (per-player mode). */
     public Scoreboard getOrCreate(Player player) {
         return playerBoards.computeIfAbsent(player.getUniqueId(), k -> {
             Scoreboard board = new Scoreboard();
             Objective obj = board.addObjective(
                 OBJECTIVE_NAME,
                 ObjectiveCriteria.DUMMY,
-                Component.literal("§6§l我的伺服器"),
+                Component.literal("§6§lMy Server"),
                 ObjectiveCriteria.RenderType.INTEGER,
                 true,
                 null
@@ -104,7 +104,7 @@ public class ScoreboardManager {
         });
     }
 
-    /** 設定 sidebar 某行的分數（行 = 分數，數字大的在上方），並同步給玩家。 */
+    /** Sets the score of a sidebar line (line = score, larger numbers appear higher) and syncs it to the player. */
     public void setLine(Player player, String entry, int score) {
         Scoreboard board = getOrCreate(player);
         Objective obj = board.getObjective(OBJECTIVE_NAME);
@@ -114,7 +114,7 @@ public class ScoreboardManager {
             entry, OBJECTIVE_NAME, score, Optional.empty(), Optional.empty()));
     }
 
-    /** 移除某行，並同步給玩家。 */
+    /** Removes a line and syncs it to the player. */
     public void removeLine(Player player, String entry) {
         Scoreboard board = getOrCreate(player);
         Objective obj = board.getObjective(OBJECTIVE_NAME);
@@ -123,7 +123,7 @@ public class ScoreboardManager {
         handle(player).connection.send(new ClientboundResetScorePacket(entry, OBJECTIVE_NAME));
     }
 
-    /** 將整個 Scoreboard 推送給玩家（objective → display slot → 所有分數）。 */
+    /** Pushes the whole Scoreboard to the player (objective -> display slot -> all scores). */
     public void apply(Player player) {
         ServerPlayer nms = handle(player);
         Scoreboard board = getOrCreate(player);
@@ -137,7 +137,7 @@ public class ScoreboardManager {
         }
     }
 
-    /** 清除玩家計分板資料，並通知客戶端移除 objective。 */
+    /** Clears the player's scoreboard data and tells the client to remove the objective. */
     public void remove(Player player) {
         Scoreboard board = playerBoards.remove(player.getUniqueId());
         if (board == null || !player.isOnline()) return;
@@ -154,7 +154,7 @@ public class ScoreboardManager {
 }
 ```
 
-### `SidebarDisplay.java`（行內容封裝）
+### `SidebarDisplay.java` (line content encapsulation)
 
 ```java
 package com.example.display;
@@ -185,15 +185,15 @@ public class SidebarDisplay {
         this.title = title;
     }
 
-    /** 新增一行（score 大的在上方）。 */
+    /** Adds a line (larger score appears higher). */
     public SidebarDisplay addLine(String text, int score) {
         lines.put(text, score);
         return this;
     }
 
     /**
-     * 建立僅存在於封包層的 sidebar 並推送給玩家。
-     * 獨立的 Scoreboard 不是 ServerScoreboard，沒有 getStartTrackingPackets()，因此手動組封包。
+     * Builds a sidebar that exists only at the packet level and pushes it to the player.
+     * A standalone Scoreboard is not a ServerScoreboard and has no getStartTrackingPackets(), so the packets are assembled manually.
      */
     public void show(Player player) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
@@ -217,7 +217,7 @@ public class SidebarDisplay {
 }
 ```
 
-### `TeamManager.java`（prefix/suffix/tablist）
+### `TeamManager.java` (prefix/suffix/tablist)
 
 ```java
 package com.example.display;
@@ -238,7 +238,7 @@ public class TeamManager {
         this.scoreboard = ((CraftServer) Bukkit.getServer()).getServer().getScoreboard();
     }
 
-    /** 建立或取得 Team，設定 prefix 與 suffix。 */
+    /** Creates or gets a Team and sets its prefix and suffix. */
     public PlayerTeam setTeam(String teamName, String prefix, String suffix) {
         PlayerTeam team = scoreboard.getPlayerTeam(teamName);
         if (team == null) {
@@ -249,14 +249,14 @@ public class TeamManager {
         return team;
     }
 
-    /** 將玩家加入 Team。 */
+    /** Adds a player to a Team. */
     public void addPlayer(Player player, String teamName) {
         PlayerTeam team = scoreboard.getPlayerTeam(teamName);
         if (team == null) team = scoreboard.addPlayerTeam(teamName);
         scoreboard.addPlayerToTeam(player.getName(), team);
     }
 
-    /** 移除玩家的 Team 歸屬。 */
+    /** Removes the player's Team membership. */
     public void removePlayer(Player player) {
         scoreboard.removePlayerFromTeam(player.getName(),
             scoreboard.getPlayersTeam(player.getName()));
@@ -264,7 +264,7 @@ public class TeamManager {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -275,17 +275,17 @@ src/main/java/com/example/
     └── TeamManager.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ 所有 Scoreboard/Objective/Team 操作**必須在主執行緒呼叫**
-- ✅ `connection.send()` 可在任意執行緒呼叫，但封包建構需在主執行緒完成
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ All Scoreboard/Objective/Team operations **must be called on the main thread**
+- ✅ `connection.send()` may be called from any thread, but packet construction must be completed on the main thread
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| Sidebar 不顯示 | Objective 未設到 SIDEBAR slot | 確認 `setDisplayObjective(DisplaySlot.SIDEBAR, ...)` |
-| Team prefix 無效 | prefix 超過 64 字元限制 | 截短字串 |
-| 玩家離線後 NPE | playerBoards 持有 UUID | 在 PlayerQuitEvent 呼叫 `remove()` |
-| 分數行重複 | entry 字串相同 | 每行使用不同的 `"§a"` 等顏色前綴區分 |
+| Sidebar is not displayed | The Objective was not set to the SIDEBAR slot | Confirm `setDisplayObjective(DisplaySlot.SIDEBAR, ...)` |
+| Team prefix has no effect | The prefix exceeds the 64-character limit | Shorten the string |
+| NPE after a player goes offline | playerBoards still holds the UUID | Call `remove()` in PlayerQuitEvent |
+| Duplicate score lines | The entry strings are identical | Make each line distinct with a different color prefix such as `"§a"` |

@@ -1,15 +1,15 @@
 # examples — nms-fake-player
 
-## 範例 1：會追擊並近戰的 PvP 機器人
+## Example 1: A PvP bot that chases and fights in melee
 
 **Input:**
 ```
 package_name: com.example.bot.nms
 name_rule: <player>_Bot
-skin_source: 挑戰者本人
+skin_source: the challenger
 ```
 
-**Output — AI 決策只用 Bukkit 型別（放在 `brain/`，可單元測試），每 tick 由 BotService 呼叫:**
+**Output — AI decisions use only Bukkit types (placed in `brain/`, unit-testable), called every tick by BotService:**
 ```java
 package com.example.bot.brain;
 
@@ -17,13 +17,13 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 
-/** 簡單追擊：面向目標、前進，距離 3 格內且攻擊冷卻好了就出手。 */
+/** Simple chase: face the target, move forward, attack when within 3 blocks and the attack cooldown is ready. */
 public final class ChaseBrain {
 
     private static final double REACH = 3.0;
     private int cooldownTicks;
 
-    /** 回傳本 tick 要不要攻擊；移動與轉頭寫進 out。 */
+    /** Returns whether to attack this tick; movement and look direction are written to out. */
     public boolean think(Location self, Player target, Steering out) {
         Vector toTarget = target.getLocation().toVector().subtract(self.toVector());
         double distance = toTarget.length();
@@ -35,13 +35,13 @@ public final class ChaseBrain {
             return false;
         }
         if (distance <= REACH) {
-            cooldownTicks = 12; // 約等於劍的攻擊冷卻
+            cooldownTicks = 12; // roughly the sword attack cooldown
             return true;
         }
         return false;
     }
 
-    /** 本 tick 的輸出（避免在 brain 內碰 NMS）。 */
+    /** This tick's output (keeps NMS out of the brain). */
     public static final class Steering {
         public float yaw, pitch, forward, strafe;
         public boolean jump, sprint;
@@ -54,7 +54,7 @@ public final class ChaseBrain {
 }
 ```
 
-**BotService 的 tick 中套用（`FakePlayer` 只在 `try` 內出現，接 `LinkageError`）:**
+**Applied in BotService's tick (`FakePlayer` appears only inside `try`, catching `LinkageError`):**
 ```java
 ChaseBrain.Steering steering = new ChaseBrain.Steering();
 boolean attack = brain.think(bot.bukkit().getLocation(), target, steering);
@@ -68,17 +68,17 @@ bot.tick();
 
 ---
 
-## 範例 2：舉盾的訓練假人
+## Example 2: A training dummy that raises a shield
 
 **Input:**
 ```
 package_name: com.example.dummy.nms
-skin_source: 伺服器管理員
+skin_source: the server admin
 ```
 
-**Output — 在 FakePlayer 加入「使用物品」，讓假人舉盾（原版會計算格擋與破盾）:**
+**Output — add "use item" to FakePlayer so the dummy raises its shield (vanilla computes blocking and shield breaking):**
 ```java
-    /** 開始使用手上的物品（盾牌、食物）。 */
+    /** Start using the held item (shield, food). */
     public void useItem(boolean offHand) {
         handle.startUsingItem(offHand ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
     }
@@ -88,18 +88,18 @@ skin_source: 伺服器管理員
     }
 ```
 
-**呼叫端：生成後給副手盾牌並持續舉盾:**
+**Caller: after spawning, give an offhand shield and keep it raised:**
 ```java
 Player dummy = botService.spawn(arena, "Dummy", admin).orElseThrow();
 dummy.getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
-// 每 tick：bot.useItem(true); bot.tick();
+// Every tick: bot.useItem(true); bot.tick();
 ```
 
 ---
 
-## 範例 3：守住「NMS 只在 nms 套件」的測試
+## Example 3: A test that keeps NMS confined to the nms package
 
-**Output — 純 JUnit 原始碼掃描（不需要伺服器）:**
+**Output — pure JUnit source scan (no server needed):**
 ```java
 import org.junit.jupiter.api.Test;
 

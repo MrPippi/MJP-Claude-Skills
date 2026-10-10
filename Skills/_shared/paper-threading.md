@@ -1,25 +1,25 @@
-# Paper API 執行緒規則 / Paper API Threading Rules
+# Paper API Threading Rules / Paper API 執行緒規則
 
-`Skills/paper/` 技能共用的執行緒規則。NMS 與 Netty 層的規則見 [`nms-threading.md`](nms-threading.md)。
+Threading rules shared by the `Skills/paper/` skills. For NMS and Netty-level rules, see [`nms-threading.md`](nms-threading.md).
 
 ---
 
-## 1. 哪段程式碼跑在哪個執行緒
+## 1. Which Code Runs on Which Thread
 
-| 情境 | 執行緒 | 可以呼叫 Bukkit API？ |
+| Situation | Thread | Can call Bukkit API? |
 |------|--------|---------------------|
-| 事件 listener、指令、`runTask` / `runTaskTimer` | **主執行緒** | ✅ |
-| `runTaskAsynchronously`、自建 `ExecutorService` | 非同步 | ❌ |
-| JDBC、HTTP、檔案 IO | 必須在非同步 | ❌ |
-| Dialog 的 `DialogAction.customClick` 回呼 | **不保證在主執行緒** | ❌（先切回主執行緒） |
-| PlaceholderAPI `onRequest` / `onPlaceholderRequest` | 任何執行緒 | ❌（只讀快照） |
-| PacketEvents / ProtocolLib listener | Netty IO 執行緒 | ❌（只讀快照） |
-| `teleportAsync` / `getChunkAtAsync` 的完成回呼 | 主執行緒（Paper 保證） | ✅，但要重新驗證狀態 |
-| `onDisable` | 主執行緒；scheduler 已不接受新任務 | ✅，且要**同步**寫回資料 |
+| Event listeners, commands, `runTask` / `runTaskTimer` | **Main thread** | ✅ |
+| `runTaskAsynchronously`, a self-created `ExecutorService` | Async | ❌ |
+| JDBC, HTTP, file IO | Must be async | ❌ |
+| Dialog `DialogAction.customClick` callback | **Not guaranteed to be on the main thread** | ❌ (switch back to the main thread first) |
+| PlaceholderAPI `onRequest` / `onPlaceholderRequest` | Any thread | ❌ (read snapshots only) |
+| PacketEvents / ProtocolLib listeners | Netty IO thread | ❌ (read snapshots only) |
+| Completion callbacks of `teleportAsync` / `getChunkAtAsync` | Main thread (guaranteed by Paper) | ✅, but re-validate state |
+| `onDisable` | Main thread; the scheduler no longer accepts new tasks | ✅, and data must be written back **synchronously** |
 
 ---
 
-## 2. 標準流程：快照 → 非同步 → 回主執行緒重新驗證
+## 2. Standard Flow: Snapshot → Async → Back to Main Thread and Re-validate
 
 ```java
 import org.bukkit.Bukkit;
@@ -34,15 +34,15 @@ public final class AsyncFlow {
     private AsyncFlow() {}
 
     /**
-     * 在非同步執行 work（例如查資料庫），完成後回到主執行緒交給 onMain。
-     * lambda 只攜帶 UUID / 字串 / 數字，不攜帶 Player 等 Bukkit 物件。
+     * Runs work async (e.g. a database query), then returns to the main thread and hands the result to onMain.
+     * The lambda carries only UUIDs / strings / numbers, never Bukkit objects such as Player.
      */
     public static <T> void load(Plugin plugin, UUID playerId, Function<UUID, T> work,
                                 java.util.function.BiConsumer<Player, T> onMain) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             T result = work.apply(playerId);
             Bukkit.getScheduler().runTask(plugin, () -> {
-                Player player = Bukkit.getPlayer(playerId);   // 重新取得：玩家可能已離線
+                Player player = Bukkit.getPlayer(playerId);   // Fetch again: the player may have gone offline
                 if (player == null || !player.isOnline()) return;
                 onMain.accept(player, result);
             });
@@ -51,14 +51,14 @@ public final class AsyncFlow {
 }
 ```
 
-重點：
-- 非同步階段**不要**碰 `Player`、`World`、`ItemStack` 等 Bukkit 物件
-- 回到主執行緒後**重新驗證**：玩家是否還在線、GUI 是否仍開著、餘額是否仍足夠
-- 插件停用中呼叫 `runTask` 會丟 `IllegalPluginAccessException`；可能在停用期間觸發的回呼先檢查 `plugin.isEnabled()`
+Key points:
+- In the async phase, **do not** touch Bukkit objects such as `Player`, `World`, `ItemStack`
+- After returning to the main thread, **re-validate**: is the player still online, is the GUI still open, is the balance still sufficient
+- Calling `runTask` while the plugin is being disabled throws `IllegalPluginAccessException`; callbacks that may fire during disable should check `plugin.isEnabled()` first
 
 ---
 
-## 3. 非主執行緒回呼（Dialog、PAPI、封包）
+## 3. Non-Main-Thread Callbacks (Dialog, PAPI, Packets)
 
 ```java
 import org.bukkit.Bukkit;
@@ -68,7 +68,7 @@ public final class MainThread {
 
     private MainThread() {}
 
-    /** 從任意執行緒安全地切回主執行緒；插件停用中則直接放棄。 */
+    /** Safely switch back to the main thread from any thread; give up if the plugin is being disabled. */
     public static void run(Plugin plugin, Runnable task) {
         if (!plugin.isEnabled()) return;
         if (Bukkit.isPrimaryThread()) {
@@ -78,13 +78,13 @@ public final class MainThread {
         try {
             Bukkit.getScheduler().runTask(plugin, task);
         } catch (IllegalStateException e) {
-            // 停用途中 scheduler 拒收（IllegalPluginAccessException 繼承自 IllegalStateException）
+            // The scheduler rejected the task mid-disable (IllegalPluginAccessException extends IllegalStateException)
         }
     }
 }
 ```
 
-PAPI 與封包 listener 不切執行緒，而是讀**不可變快照**：主執行緒定期建立新快照，再以 `volatile` 欄位整份替換。
+PAPI and packet listeners do not switch threads; they read an **immutable snapshot** instead: the main thread periodically builds a new snapshot, then swaps the whole thing via a `volatile` field.
 
 ```java
 import java.util.Map;
@@ -94,12 +94,12 @@ public final class BalanceSnapshot {
 
     private volatile Map<UUID, Long> balances = Map.of();
 
-    /** 主執行緒或寫入執行緒呼叫：整份替換，不修改舊 Map。 */
+    /** Called from the main thread or the writer thread: replace the whole map, never modify the old one. */
     public void publish(Map<UUID, Long> fresh) {
         this.balances = Map.copyOf(fresh);
     }
 
-    /** 任何執行緒呼叫（PAPI、封包）。 */
+    /** Called from any thread (PAPI, packets). */
     public long get(UUID playerId) {
         return balances.getOrDefault(playerId, 0L);
     }
@@ -108,7 +108,7 @@ public final class BalanceSnapshot {
 
 ---
 
-## 4. 非同步傳送與區塊載入
+## 4. Async Teleport and Chunk Loading
 
 ```java
 import org.bukkit.Location;
@@ -119,21 +119,21 @@ public final class Teleports {
 
     private Teleports() {}
 
-    /** Paper 的 teleportAsync 會先非同步載入區塊；完成回呼在主執行緒。 */
+    /** Paper's teleportAsync loads the chunk async first; the completion callback runs on the main thread. */
     public static void to(Player player, Location target) {
         player.teleportAsync(target, PlayerTeleportEvent.TeleportCause.PLUGIN).thenAccept(success -> {
             if (!success || !player.isOnline()) return;
-            // 這裡在主執行緒：可安全發訊息、播放音效
+            // On the main thread here: safe to send messages and play sounds
         });
     }
 }
 ```
 
-需要先檢查落點時用 `world.getChunkAtAsync(x, z)`，完成後在主執行緒讀取方塊，見 `paper-safe-teleport`。
+When the landing spot must be checked first, use `world.getChunkAtAsync(x, z)` and read blocks on the main thread after completion; see `paper-safe-teleport`.
 
 ---
 
-## 5. 定時任務與停用
+## 5. Scheduled Tasks and Disabling
 
 ```java
 import org.bukkit.plugin.Plugin;
@@ -156,7 +156,7 @@ public final class SafeTicker {
             try {
                 tick.run();
             } catch (RuntimeException e) {
-                // 每 tick 執行的任務：例外只記錄一次，避免洗版；任務本身不中斷
+                // Task that runs every tick: log the exception only once to avoid log spam; the task itself keeps running
                 if (!errorLogged) {
                     errorLogged = true;
                     plugin.getLogger().log(Level.SEVERE, "Ticker failed (further errors suppressed)", e);
@@ -165,24 +165,24 @@ public final class SafeTicker {
         }, 20L, 20L);
     }
 
-    /** onDisable 呼叫：對半初始化狀態也安全。 */
+    /** Called from onDisable: safe even in a partially initialized state. */
     public void stop() {
         if (task != null) task.cancel();
     }
 }
 ```
 
-`onDisable` 的順序：
-1. 取消所有定時任務
-2. 關閉本插件開啟的 GUI／Dialog
-3. **同步**把待寫入的資料寫回（scheduler 已關閉，不能再排非同步任務）
-4. 關閉 HTTP server、executor、資料庫連線
+`onDisable` order:
+1. Cancel all scheduled tasks
+2. Close the GUIs / Dialogs this plugin opened
+3. Write pending data back **synchronously** (the scheduler is already shut down, so no more async tasks can be queued)
+4. Close the HTTP server, executors, and database connections
 
 ---
 
-## 6. 不做的事
+## 6. What Not to Do
 
-- 不在非同步執行緒呼叫 `player.sendMessage()` 以外的 Bukkit API（`sendMessage` 雖然執行緒安全，仍建議統一在主執行緒）
-- 不在主執行緒做 JDBC／HTTP
-- 不用 `synchronized` 包 Bukkit 物件；改用快照或 `ConcurrentHashMap<UUID, …>`
-- 本庫範本不支援 Folia（BlockoSMP、Bydsmp 皆未使用）；需要 Folia 時改用 region scheduler
+- Do not call Bukkit APIs other than `player.sendMessage()` from an async thread (`sendMessage` is thread-safe, but it is still recommended to do it on the main thread consistently)
+- Do not do JDBC / HTTP on the main thread
+- Do not wrap Bukkit objects in `synchronized`; use snapshots or `ConcurrentHashMap<UUID, …>` instead
+- This repository's templates do not support Folia (neither BlockoSMP nor Bydsmp uses it); switch to the region scheduler if Folia is needed

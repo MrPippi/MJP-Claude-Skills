@@ -1,14 +1,14 @@
 # examples — paper-economy-ledger
 
-## 範例 1：Ledger、解析與格式化的 JUnit 測試
+## Example 1: JUnit tests for Ledger, parsing and formatting
 
 **Input:**
 ```
 base_package: com.example.economy
-currencies: coins（2 位小數）、gems（0 位）
+currencies: coins (2 decimals), gems (0 decimals)
 ```
 
-**Output — `Ledger` 是純 Java，不需要 MockBukkit 或伺服器:**
+**Output — `Ledger` is plain Java, no MockBukkit or server needed:**
 ```java
 package com.example.economy.domain;
 
@@ -42,7 +42,7 @@ class LedgerTest {
         ledger = new Ledger(List.of(COINS, GEMS), () -> 1_000L, log::addAll);
         ledger.open(alice);
         ledger.open(bob);
-        log.clear(); // 忽略開戶的 STARTING 交易
+        log.clear(); // ignore the STARTING transactions from opening the account
     }
 
     @Test
@@ -93,7 +93,7 @@ class LedgerTest {
 
         ledger.restore(bob, "coins", Money.MAX);
         assertEquals(EconomyResult.INVALID_AMOUNT, ledger.transfer(alice, bob, "coins", 1L, "pay"));
-        assertEquals(OptionalLong.of(10_000L), ledger.balance(alice, "coins")); // 付款方沒被扣
+        assertEquals(OptionalLong.of(10_000L), ledger.balance(alice, "coins")); // the payer was not debited
         assertTrue(log.isEmpty());
     }
 
@@ -113,9 +113,9 @@ class LedgerTest {
             "12.5.1", "9999999999999999999", "5 coins"}) {
             assertTrue(AmountParser.parse(bad, 2).isEmpty(), "should reject: " + bad);
         }
-        assertTrue(AmountParser.parse("1.5", 0).isEmpty()); // 整數幣不收小數
-        assertTrue(AmountParser.parse("9000000000001", 2).isPresent());   // 約 9e12 主單位 = 9e14 最小單位，在上限內
-        assertTrue(AmountParser.parse("90000000000000b", 0).isEmpty());   // 超過 Money.MAX
+        assertTrue(AmountParser.parse("1.5", 0).isEmpty()); // an integer-only currency rejects fractions
+        assertTrue(AmountParser.parse("9000000000001", 2).isPresent());   // ~9e12 major = 9e14 minor units, within the cap
+        assertTrue(AmountParser.parse("90000000000000b", 0).isEmpty());   // exceeds Money.MAX
     }
 
     @Test
@@ -123,7 +123,7 @@ class LedgerTest {
         assertEquals("1,234.50", MoneyFormat.number(123_450L, COINS));
         assertEquals("$ 1,234.50", MoneyFormat.full(123_450L, COINS));
         assertEquals("999.99", MoneyFormat.shortNumber(99_999L, COINS));
-        assertEquals("1.9k", MoneyFormat.shortNumber(199_999L, COINS)); // 1,999.99 → 1.9k，不是 2k
+        assertEquals("1.9k", MoneyFormat.shortNumber(199_999L, COINS)); // 1,999.99 -> 1.9k, not 2k
         assertEquals("1k", MoneyFormat.shortNumber(100_000L, COINS));
         assertEquals("3m", MoneyFormat.shortNumber(300_000_000L, COINS));
         assertEquals("4b", MoneyFormat.shortNumber(4_000_000_000L, GEMS));
@@ -142,15 +142,15 @@ class LedgerTest {
 
 ---
 
-## 範例 2：以託管完成「買物品」交易（交貨丟例外時錢與物品都不丟）
+## Example 2: Buying an item through escrow (neither money nor items are lost when delivery throws)
 
 **Input:**
 ```
-情境: 買方 Alice 用 coins 向賣方 Bob 買 16 個鑽石；庫存以 Map 表示（真實插件換成 Inventory 操作，規則相同）
-需求: 缺貨 → 退款；交貨途中丟例外 → 物品還回賣方、錢退回買方、例外繼續往外丟
+Scenario: buyer Alice buys 16 diamonds from seller Bob with coins; stock is a Map (a real plugin would use Inventory operations, same rules)
+Requirement: out of stock -> refund; exception during delivery -> items go back to the seller, money back to the buyer, and the exception keeps propagating
 ```
 
-**Output — `Delivery` 內先還原物品再重拋；退款由 `Escrow.trade` 的 `finally` 負責:**
+**Output — `Delivery` restores the items first and then rethrows; the refund is handled by the `finally` in `Escrow.trade`:**
 ```java
 package com.example.economy.trade;
 
@@ -162,7 +162,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** 在主執行緒呼叫。stock 是「玩家 → 物品 → 數量」，只用來示範還原順序。 */
+/** Call on the main thread. stock is "player -> item -> count", used only to demonstrate the restore order. */
 public final class ItemTrade {
 
     private final Escrow escrow;
@@ -177,7 +177,7 @@ public final class ItemTrade {
         return escrow.trade(buyer, seller, currency, price, "market:" + item, () -> transfer(seller, buyer, item, count));
     }
 
-    /** 缺貨回 false（Escrow 會退款）；中途失敗先把已搬動的物品搬回，再重拋讓 Escrow 退款。 */
+    /** Returns false when out of stock (Escrow refunds); on a mid-way failure, move the already-moved items back first, then rethrow so Escrow refunds. */
     private boolean transfer(UUID from, UUID to, String item, int count) {
         Map<String, Integer> source = stock.computeIfAbsent(from, k -> new HashMap<>());
         if (source.getOrDefault(item, 0) < count) {
@@ -188,12 +188,12 @@ public final class ItemTrade {
             grant(to, item, count);
             return true;
         } catch (RuntimeException e) {
-            source.merge(item, count, Integer::sum); // 先還物品
-            throw e;                                 // 再重拋；錢由 Escrow 的 finally 退
+            source.merge(item, count, Integer::sum); // restore the items first
+            throw e;                                 // then rethrow; the money is refunded by Escrow's finally
         }
     }
 
-    /** 真實插件：把物品放進買方背包，放不下的掉在腳下或丟例外。 */
+    /** Real plugin: put the items into the buyer's inventory; what does not fit drops at their feet or throws an exception. */
     private void grant(UUID to, String item, int count) {
         stock.computeIfAbsent(to, k -> new HashMap<>()).merge(item, count, Integer::sum);
     }
@@ -213,7 +213,7 @@ public final class ItemTrade {
 }
 ```
 
-**JUnit — 驗證「例外時錢退回」的不變量:**
+**JUnit — verifying the invariant "money is refunded on exception":**
 ```java
 package com.example.economy.domain;
 
@@ -267,7 +267,7 @@ class EscrowTest {
             escrow.trade(buyer, seller, "coins", 2_500L, "t", () -> {
                 throw new IllegalStateException("inventory exploded");
             }));
-        assertEquals(OptionalLong.of(10_000L), ledger.balance(buyer, "coins")); // 錢沒丟
+        assertEquals(OptionalLong.of(10_000L), ledger.balance(buyer, "coins")); // the money was not lost
         assertEquals(OptionalLong.of(10_000L), ledger.balance(seller, "coins"));
     }
 
@@ -291,15 +291,15 @@ class EscrowTest {
 
 ---
 
-## 範例 3：`/pay` 指令（解析簡寫金額、轉帳、顯示結果）
+## Example 3: The `/pay` command (parse shorthand amounts, transfer, show the result)
 
 **Input:**
 ```
-指令: /pay <player> <amount>   例如 /pay Bob 1.5k
-幣種: coins
+Command: /pay <player> <amount>   e.g. /pay Bob 1.5k
+Currency: coins
 ```
 
-**Output — 指令只做「解析 → 呼叫 API → 把結果翻成訊息」；訊息用純文字金額，不拼接 Vault 的 format():**
+**Output — the command only does "parse -> call the API -> turn the result into a message"; messages use plain-text amounts and never concatenate Vault's format():**
 ```java
 package com.example.economy.command;
 
@@ -332,7 +332,7 @@ public final class PayCommand implements CommandExecutor {
             return true;
         }
         if (args.length != 2) {
-            return false; // 顯示 plugin.yml 的 usage
+            return false; // shows the usage from plugin.yml
         }
         OfflinePlayer target = Bukkit.getOfflinePlayerIfCached(args[0]);
         OptionalLong amount = api.parse(CURRENCY, args[1]);
@@ -345,7 +345,7 @@ public final class PayCommand implements CommandExecutor {
             return true;
         }
         EconomyResult result = api.transfer(payer.getUniqueId(), target.getUniqueId(), CURRENCY, amount.getAsLong(), "pay");
-        String shown = api.format(CURRENCY, amount.getAsLong()); // 純文字：Component.text 不會解析色碼，也不經 MiniMessage
+        String shown = api.format(CURRENCY, amount.getAsLong()); // plain text: Component.text does not parse color codes and does not go through MiniMessage
         payer.sendMessage(Component.text(switch (result) {
             case OK -> "Sent " + shown + " to " + target.getName() + ".";
             case INSUFFICIENT -> "You do not have " + shown + ".";
@@ -357,7 +357,7 @@ public final class PayCommand implements CommandExecutor {
 }
 ```
 
-**消費別人 Vault 提供端的 `format()` 時（舊式色碼要轉成 Component，不能進 MiniMessage）:**
+**When consuming another provider's Vault `format()` (convert legacy color codes to a Component; never feed them to MiniMessage):**
 ```java
 package com.example.economy.command;
 
@@ -369,7 +369,7 @@ public final class VaultText {
     private VaultText() {
     }
 
-    /** Economy.format() 可能回傳 "§a$100.00" 或 "&a$100.00"：先統一成 §，再轉成 Component。 */
+    /** Economy.format() may return "§a$100.00" or "&a$100.00": normalize to § first, then convert to a Component. */
     public static Component fromFormat(String formatted) {
         return LegacyComponentSerializer.legacySection().deserialize(formatted.replace('&', '§'));
     }

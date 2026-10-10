@@ -3,7 +3,7 @@ import path from 'path';
 import { renderMarkdown, type Heading } from '@/shared/markdown/render';
 import { GITHUB_REPO_URL } from '@/config/site';
 import { withBasePath } from '@/config/routes';
-import { DOC_SOURCES, docHref, type BilingualText, type DocLink, type DocSection, type DocSource } from '../registry';
+import { DOC_SOURCES, docHref, type BilingualText, type DocLang, type DocLink, type DocSection, type DocSource } from '../registry';
 
 export type { BilingualText };
 
@@ -11,13 +11,13 @@ export interface DocPage extends DocSource {
   title: BilingualText;
   html: string;
   headings: Heading[];
-  /** English translation from data/docs/en/<section>/<slug>.md; null when none exists. */
-  english: { html: string; headings: Heading[] } | null;
+  /** Body in the language that is not `sourceLang`, from data/docs/<lang>/<section>/<slug>.md; null when none exists. */
+  translation: { lang: DocLang; html: string; headings: Heading[] } | null;
   githubUrl: string;
 }
 
 const REPO_ROOT = path.resolve(process.cwd(), '..');
-const DOCS_EN_DIR = path.join(process.cwd(), 'data', 'docs', 'en');
+const DOCS_DATA_DIR = path.join(process.cwd(), 'data', 'docs');
 const CJK = /[㐀-鿿]/;
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
 
@@ -60,11 +60,12 @@ function splitH1(markdown: string): { h1: string | null; body: string } {
 }
 
 /** Links in the translation resolve against the original source file, so relative targets stay identical. */
-async function loadEnglish(source: DocSource): Promise<DocPage['english']> {
-  const enPath = path.join(DOCS_EN_DIR, source.section, `${source.slug}.md`);
-  if (!fs.existsSync(enPath)) return null;
-  const { body } = splitH1(fs.readFileSync(enPath, 'utf8'));
-  return renderMarkdown(body, { resolveLink: createLinkResolver(source.file) });
+async function loadTranslation(source: DocSource): Promise<DocPage['translation']> {
+  const lang: DocLang = source.sourceLang === 'en' ? 'zh' : 'en';
+  const filePath = path.join(DOCS_DATA_DIR, lang, source.section, `${source.slug}.md`);
+  if (!fs.existsSync(filePath)) return null;
+  const { body } = splitH1(fs.readFileSync(filePath, 'utf8'));
+  return { lang, ...(await renderMarkdown(body, { resolveLink: createLinkResolver(source.file) })) };
 }
 
 async function loadPage(source: DocSource): Promise<DocPage> {
@@ -75,7 +76,7 @@ async function loadPage(source: DocSource): Promise<DocPage> {
     title: splitBilingualTitle(h1 ?? source.slug),
     html,
     headings,
-    english: await loadEnglish(source),
+    translation: await loadTranslation(source),
     githubUrl: `${GITHUB_REPO_URL}/blob/main/${source.file}`,
   };
 }

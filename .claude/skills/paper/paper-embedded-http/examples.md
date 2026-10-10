@@ -1,6 +1,6 @@
 # examples — paper-embedded-http
 
-## 範例 1：排行榜 JSON API + 靜態頁面
+## Example 1: Leaderboard JSON API + static page
 
 **Input:**
 ```
@@ -12,7 +12,7 @@ refresh_ticks: 200
 static_resource: web/index.html
 ```
 
-**Output — 主執行緒把排行榜轉成 JSON 發布（HTTP 執行緒看不到 Bukkit）:**
+**Output - the main thread converts the leaderboard to JSON and publishes it (HTTP threads never see Bukkit):**
 ```java
 package com.example.leaderboard;
 
@@ -24,10 +24,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Supplier;
 
-/** 主執行緒任務：取排行榜資料（呼叫端保證在主執行緒）→ 排序取前 N → 發布。 */
+/** Main-thread task: fetch leaderboard data (the caller guarantees the main thread) -> sort and take the top N -> publish. */
 public final class LeaderboardSnapshotTask implements Runnable {
 
-    /** 發布用的唯讀資料列；name 可含任何字元，Gson 會跳脫。 */
+    /** Read-only row for publishing; name may contain any characters, and Gson escapes them. */
     public record Row(String name, long score) {
     }
 
@@ -65,7 +65,7 @@ public final class LeaderboardSnapshotTask implements Runnable {
 }
 ```
 
-**接線 — 兩條路由（排行榜 + 線上玩家）加一個靜態頁，在 `onEnable` 內:**
+**Wiring - two routes (leaderboard + online players) plus a static page, inside `onEnable`:**
 ```java
 SnapshotStore board = new SnapshotStore();
 SnapshotStore players = new SnapshotStore();
@@ -80,7 +80,7 @@ if (web.start()) {
 }
 ```
 
-**`src/main/resources/web/index.html` — 以 `textContent` 顯示名稱，避免 XSS（存成 UTF-8 無 BOM）:**
+**`src/main/resources/web/index.html` - display names via `textContent` to avoid XSS (save as UTF-8 without BOM):**
 ```html
 <!doctype html>
 <html lang="zh-Hant">
@@ -112,7 +112,7 @@ if (web.start()) {
 
 ---
 
-## 範例 2：nginx / Caddy 反向代理（公開存取）
+## Example 2: nginx / Caddy reverse proxy (public access)
 
 **Input:**
 ```
@@ -120,7 +120,7 @@ public_host: stats.example.com
 upstream: 127.0.0.1:8080
 ```
 
-**Output — nginx（TLS 與對外限流在代理；插件的 `trusted-proxies` 要填 `127.0.0.1`）:**
+**Output - nginx (TLS and external rate limiting live in the proxy; the plugin's `trusted-proxies` must contain `127.0.0.1`):**
 ```nginx
 limit_req_zone $binary_remote_addr zone=mcweb:10m rate=10r/s;
 
@@ -137,14 +137,14 @@ server {
 
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
-        # 用覆蓋而不是附加：不信任客戶端自己送來的 X-Forwarded-For
+        # Overwrite rather than append: do not trust the client's own X-Forwarded-For
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_read_timeout 10s;
     }
 }
 ```
 
-**Output — Caddy（自動 TLS）:**
+**Output - Caddy (automatic TLS):**
 ```caddy
 stats.example.com {
     @readonly method GET HEAD
@@ -157,7 +157,7 @@ stats.example.com {
 }
 ```
 
-**Output — 插件 `config.yml`:**
+**Output - plugin `config.yml`:**
 ```yaml
 web:
   enabled: true
@@ -168,32 +168,32 @@ web:
 
 ---
 
-## 範例 3：不 sleep 驗證限流與客戶端位址解析
+## Example 3: Verify rate limiting and client address resolution without sleeping
 
 **Input:**
 ```
-test: token bucket 補充與 X-Forwarded-For 規則
+test: token bucket refill and X-Forwarded-For rules
 ```
 
-**Output — 時間是參數，直接餵毫秒:**
+**Output - time is a parameter, so feed milliseconds directly:**
 ```java
 package com.example.web;
 
 public final class RateLimiterCheck {
 
     public static void main(String[] args) {
-        RateLimiter limiter = new RateLimiter(60);          // 每分鐘 60 = 每秒 1 個
+        RateLimiter limiter = new RateLimiter(60);          // 60 per minute = 1 per second
 
         long t = 0;
         int allowed = 0;
         for (int i = 0; i < 100; i++) {
             if (limiter.allow("203.0.113.9", t)) allowed++;
         }
-        System.out.println("burst allowed = " + allowed);    // 60（桶子容量）
+        System.out.println("burst allowed = " + allowed);    // 60 (bucket capacity)
 
-        System.out.println(limiter.allow("203.0.113.9", t + 1_000));   // true：1 秒補回 1 個
-        System.out.println(limiter.allow("203.0.113.9", t + 1_000));   // false：又空了
-        System.out.println(limiter.allow("198.51.100.7", t));          // true：另一個 IP 有自己的桶
+        System.out.println(limiter.allow("203.0.113.9", t + 1_000));   // true: 1 token refilled after 1 second
+        System.out.println(limiter.allow("203.0.113.9", t + 1_000));   // false: empty again
+        System.out.println(limiter.allow("198.51.100.7", t));          // true: another IP has its own bucket
     }
 }
 ```

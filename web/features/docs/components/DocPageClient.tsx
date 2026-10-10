@@ -4,19 +4,19 @@ import type { DocPage } from '../api/docs';
 import { DocArticle } from './DocArticle';
 import { useLanguage } from '@/shared/i18n';
 
-/** Docs sources are authored in Chinese; English mode uses the translation when one exists. */
+/** Shows the source body when its language matches the UI language, otherwise the translation (if any). */
 export function DocPageClient({ page }: { page: DocPage }) {
   const { t, lang } = useLanguage();
   const isEn = lang === 'en';
-  const english = isEn ? page.english : null;
+  const body = page.translation?.lang === (isEn ? 'en' : 'zh') ? page.translation : page;
   return (
     <DocArticle
       eyebrow={t.docs.sections[page.section]}
       title={isEn ? page.title.en : page.title.zh}
       description={isEn ? undefined : page.title.en}
       icon={page.icon}
-      html={english ? english.html : page.html}
-      headings={english ? english.headings : page.headings}
+      html={body.html}
+      headings={body.headings}
       githubUrl={page.githubUrl}
     />
   );

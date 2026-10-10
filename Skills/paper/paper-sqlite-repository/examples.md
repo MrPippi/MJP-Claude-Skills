@@ -1,15 +1,15 @@
 # examples — paper-sqlite-repository
 
-## 範例 1：用記憶體 SQLite 測試 Repository（不需要 MockBukkit）
+## Example 1: Test the Repository with in-memory SQLite (no MockBukkit needed)
 
 **Input:**
 ```
 base_package: com.example.homes
 domain_type: Home
-db_file: （測試用 jdbc:sqlite::memory:）
+db_file: (jdbc:sqlite::memory: for tests)
 ```
 
-**Output — JUnit 5 測試，只依賴 sqlite-jdbc 與領域型別:**
+**Output — JUnit 5 tests that depend only on sqlite-jdbc and the domain type:**
 ```java
 package com.example.homes.persistence;
 
@@ -102,7 +102,7 @@ class SqliteHomeRepositoryTest {
         flusher.markSaved(new Home(owner, "mine", "world", 9, 12, 9, 0f, 0f));
         flusher.markDeleted(owner, "mine");
 
-        flusher.close(5);   // 同步排空，等同 onDisable
+        flusher.close(5);   // Drain synchronously, same as onDisable
 
         assertEquals(5.0, repository.find(owner, "base").orElseThrow().x());
         assertTrue(repository.find(owner, "mine").isEmpty());
@@ -110,19 +110,19 @@ class SqliteHomeRepositoryTest {
 }
 ```
 
-重點：`SqliteDatabase.inMemory` 每個實例是獨立資料庫，所以測試之間不會互相污染；整個測試不啟動伺服器、不 mock 任何 Bukkit 型別。
+Key points: each `SqliteDatabase.inMemory` instance is an independent database, so tests do not contaminate each other; the whole test starts no server and mocks no Bukkit types.
 
 ---
 
-## 範例 2：遷移新增欄位（含「從舊版升級」的測試）
+## Example 2: Add a column via migration (with an "upgrade from an old version" test)
 
 **Input:**
 ```
-change: homes 資料表新增 created_at（建立時間，毫秒）
-shipped_versions: user_version = 1 已經在玩家伺服器上
+change: add created_at (creation time, milliseconds) to the homes table
+shipped_versions: user_version = 1 is already on player servers
 ```
 
-**Output — 只往 `STEPS` 後面加一個步驟；v1 完全不動:**
+**Output — append a single step to `STEPS`; leave v1 completely untouched:**
 ```java
 package com.example.homes.persistence;
 
@@ -134,7 +134,7 @@ public final class HomeSchema {
     }
 
     public static final List<SchemaMigrations.Step> STEPS = List.of(
-        // v1（已發布，不可修改）
+        // v1 (published, must not be modified)
         SchemaMigrations.Step.of(
             """
             CREATE TABLE homes (
@@ -150,7 +150,7 @@ public final class HomeSchema {
             )
             """
         ),
-        // v2：舊資料沒有建立時間，預設 0 代表「未知」
+        // v2: old data has no creation time; the default 0 means "unknown"
         SchemaMigrations.Step.of(
             "ALTER TABLE homes ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0"
         )
@@ -158,7 +158,7 @@ public final class HomeSchema {
 }
 ```
 
-**測試升級路徑：先停在 v1，塞一筆舊資料，再跑完整遷移:**
+**Test the upgrade path: stop at v1, insert an old row, then run the full migration:**
 ```java
 package com.example.homes.persistence;
 
@@ -183,7 +183,7 @@ class HomeSchemaUpgradeTest {
         SqliteDatabase database = SqliteDatabase.inMemory(LOG);
         database.open();
         try {
-            // 只套用第一步 = 模擬舊版伺服器
+            // Apply only the first step = simulate an old server
             SchemaMigrations.run(database.connection(), HomeSchema.STEPS.subList(0, 1), LOG);
             assertEquals(1, SchemaMigrations.currentVersion(database.connection()));
 
@@ -194,7 +194,7 @@ class HomeSchemaUpgradeTest {
                 ps.executeUpdate();
             }
 
-            // 現在套用完整列表 = 升級
+            // Now apply the full list = upgrade
             SchemaMigrations.run(database.connection(), HomeSchema.STEPS, LOG);
 
             assertEquals(HomeSchema.STEPS.size(), SchemaMigrations.currentVersion(database.connection()));
@@ -237,18 +237,18 @@ class HomeSchemaUpgradeTest {
 }
 ```
 
-之後 `SqliteHomeRepository` 的 `save`／`read` 再把 `created_at` 納入 SQL；**遷移步驟本身永遠不要為了配合新程式碼而回頭修改**。
+Afterwards, include `created_at` in the SQL of `SqliteHomeRepository`'s `save`/`read`; **never go back and modify a migration step just to fit new code**.
 
 ---
 
-## 範例 3：加入／離開時載入家，並在關閉時落盤
+## Example 3: Load homes on join, and flush on shutdown
 
 **Input:**
 ```
-scenario: 玩家加入時非同步載入家，結果回主執行緒；/sethome 只更新 dirty map
+scenario: load homes asynchronously when a player joins and return the result to the main thread; /sethome only updates the dirty map
 ```
 
-**Output — Listener 與指令只經 `HomeService`，不碰 JDBC:**
+**Output — the Listener and command go only through `HomeService` and never touch JDBC:**
 ```java
 package com.example.homes;
 
@@ -275,7 +275,7 @@ public final class HomeJoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         homes.loadHomes(player.getUniqueId(), loaded -> {
-            // callback 在主執行緒；玩家可能在查詢期間離線，先確認
+            // The callback runs on the main thread; the player may have gone offline during the query, so check first
             if (!player.isOnline()) {
                 return;
             }
@@ -283,7 +283,7 @@ public final class HomeJoinListener implements Listener {
         });
     }
 
-    /** /sethome：在主執行緒讀位置，轉成純資料後交給 write-behind。 */
+    /** /sethome: read the location on the main thread, convert it to plain data, then hand it to write-behind. */
     public void setHome(Player player, String name) {
         var location = player.getLocation();
         homes.setHome(new Home(player.getUniqueId(), name, location.getWorld().getName(),
@@ -297,7 +297,7 @@ public final class HomeJoinListener implements Listener {
 }
 ```
 
-要點：
-- `Location` 在主執行緒轉成 `Home`（純資料）後才進入持久層
-- `loadHomes` 的 callback 在主執行緒，玩家可能已離線，使用前檢查 `isOnline()`
-- 伺服器關閉時由 `HomesPlugin.onDisable` → `HomeFlusher.close` 同步補寫尚未落盤的變更
+Key points:
+- `Location` is converted to `Home` (plain data) on the main thread before entering the persistence layer
+- The `loadHomes` callback runs on the main thread and the player may already be offline, so check `isOnline()` before using it
+- On server shutdown, `HomesPlugin.onDisable` -> `HomeFlusher.close` synchronously writes any changes not yet persisted

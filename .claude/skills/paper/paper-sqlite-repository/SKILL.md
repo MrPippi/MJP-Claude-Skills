@@ -3,61 +3,61 @@ name: paper-sqlite-repository
 description: "Paper 插件的 SQLite 持久化：單一連線（WAL、busy_timeout、foreign_keys）、PRAGMA user_version 遷移、Repository 介面與 PreparedStatement 實作、單一寫入執行緒的 write-behind、onDisable 同步落盤 / SQLite persistence for Paper plugins with versioned migrations, a Bukkit-free repository, and a single-writer write-behind flusher"
 ---
 
-# Paper SQLite Repository / SQLite 持久化
+# Paper SQLite Repository
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-sqlite-repository`
 
-## 目的 / Purpose
+## Purpose
 
-給 Paper 插件一套小而可靠的 SQLite 持久化骨架：
+A small, reliable SQLite persistence skeleton for Paper plugins:
 
-- **一條連線、一個寫入執行緒**：SQLite 同一時間只有一個寫入者，與其用連線池，不如用一條連線加 WAL 與 `busy_timeout`。
-- **版本化遷移**：用 `PRAGMA user_version` 記錄已套用的步驟數，步驟只能往後加，已發布的步驟不得重排或修改。
-- **Repository 介面不含 Bukkit**：領域型別只用 JDK 型別，實作只用 `PreparedStatement`，因此可以用 `jdbc:sqlite::memory:` 直接單元測試，不需要 MockBukkit。
-- **write-behind**：主執行緒只改記憶體並標記 dirty，由單一執行緒批次寫入；`onDisable` 時排程器已關閉，必須同步落盤。
+- **One connection, one writer thread**: SQLite allows only one writer at a time, so instead of a connection pool, use a single connection with WAL and `busy_timeout`.
+- **Versioned migrations**: `PRAGMA user_version` records the number of applied steps; steps may only be appended, and published steps must never be reordered or modified.
+- **Bukkit-free Repository interface**: domain types use only JDK types and the implementation uses only `PreparedStatement`, so it can be unit-tested directly with `jdbc:sqlite::memory:` without MockBukkit.
+- **write-behind**: the main thread only changes memory and marks entries dirty; a single thread writes them in batches. The scheduler is already shut down during `onDisable`, so the final flush must be synchronous.
 
-本技能的範例領域是「玩家家（home）」。
+The example domain of this skill is the player home.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（只用 Bukkit 排程器與 JDBC，兩版相同）
-- 純 Paper API，不需要 Paperweight
-- 驅動 `org.xerial:sqlite-jdbc` 含 JNI 原生函式庫，**不要 shade／relocate**，改由 `plugin.yml` 的 `libraries:` 讓伺服器下載
+- Paper 1.21.11 / 26.2(uses only the Bukkit scheduler and JDBC; identical on both versions)
+- Pure Paper API; Paperweight is not needed
+- The `org.xerial:sqlite-jdbc` driver contains a JNI native library: **do not shade/relocate it**; let the server download it through `libraries:` in `plugin.yml`
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「SQLite」「資料庫」「持久化」「persistence」「repository」
-- 「schema 遷移」「migration」「user_version」「資料表升級」
-- 「write-behind」「非同步存檔」「寫入執行緒」「onDisable 存檔」
-- 「sqlite-jdbc」「WAL」「SQLITE_BUSY」「database is locked」
+- "SQLite", "資料庫", "持久化", "persistence", "repository"
+- "schema 遷移", "migration", "user_version", "資料表升級"
+- "write-behind", "非同步存檔", "寫入執行緒", "onDisable 存檔"
+- "sqlite-jdbc", "WAL", "SQLITE_BUSY", "database is locked"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.homes` | 插件根 package |
-| `domain_type` | `Home` | 領域型別（record，只用 JDK 型別） |
-| `table` | `homes` | 資料表名稱 |
-| `db_file` | `homes.db` | 放在 `getDataFolder()` 下的檔名 |
-| `write_mode` | `write-behind` / `write-through` | 寫入策略；高頻更新用 write-behind |
+| `base_package` | `com.example.homes` | Plugin root package |
+| `domain_type` | `Home` | Domain type (record, JDK types only) |
+| `table` | `homes` | Table name |
+| `db_file` | `homes.db` | File name under `getDataFolder()` |
+| `write_mode` | `write-behind` / `write-through` | Write strategy; use write-behind for high-frequency updates |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `DataAccessException.java` — 資料存取的 unchecked 例外
-- `SqliteDatabase.java` — 單一連線的開關與 pragma
-- `SchemaMigrations.java` — 依 `user_version` 逐步遷移，每步一個交易
-- `HomeSchema.java` — 這個插件的有序遷移步驟
-- `Home.java` / `HomeRepository.java` — 領域型別與介面（無 Bukkit）
-- `SqliteHomeRepository.java` — `PreparedStatement` 實作
-- `HomeFlusher.java` — dirty map + 單一寫入執行緒
-- `HomeService.java` — 非同步讀取、結果回主執行緒
-- `HomesPlugin.java` — 生命週期接線與 `onDisable` 同步 flush
+- `DataAccessException.java` — unchecked exception for data access
+- `SqliteDatabase.java` — open/close of the single connection, and pragmas
+- `SchemaMigrations.java` — step-by-step migration driven by `user_version`, one transaction per step
+- `HomeSchema.java` — this plugin's ordered migration steps
+- `Home.java` / `HomeRepository.java` — domain type and interface (no Bukkit)
+- `SqliteHomeRepository.java` — `PreparedStatement` implementation
+- `HomeFlusher.java` — dirty map + single writer thread
+- `HomeService.java` — async reads, results returned to the main thread
+- `HomesPlugin.java` — lifecycle wiring and synchronous flush in `onDisable`
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。驅動只用 `compileOnly`，不打包：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). The driver is `compileOnly` only and is not bundled:
 
 ```groovy
 dependencies {
@@ -71,7 +71,7 @@ dependencies {
 test { useJUnitPlatform() }
 ```
 
-`plugin.yml`（`libraries:` 只有 `plugin.yml` 支援；`paper-plugin.yml` 要改用 `PluginLoader`）：
+`plugin.yml` (`libraries:` is supported only in `plugin.yml`; with `paper-plugin.yml` use a `PluginLoader` instead):
 
 ```yaml
 name: Homes
@@ -81,14 +81,14 @@ libraries:
   - org.xerial:sqlite-jdbc:3.49.1.0
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `DataAccessException.java`
 
 ```java
 package com.example.homes.persistence;
 
-/** 資料存取失敗。unchecked，讓 onEnable 的 catch 與非同步任務的錯誤處理都接得到。 */
+/** Data access failure. Unchecked, so both the catch in onEnable and error handling in async tasks can catch it. */
 public final class DataAccessException extends RuntimeException {
 
     public DataAccessException(String message) {
@@ -117,8 +117,8 @@ import java.sql.Statement;
 import org.slf4j.Logger;
 
 /**
- * 一個 SQLite 資料庫的連線生命週期：開、交出連線、關。不碰 SQL，也不是執行緒安全的——
- * 由持有它的 Repository 決定怎麼序列化存取（本範本用 {@code synchronized}）。
+ * Connection lifecycle of one SQLite database: open, hand out the connection, close. It does not touch SQL and is not thread-safe;
+ * the Repository that owns it decides how to serialize access (this template uses {@code synchronized}).
  */
 public final class SqliteDatabase {
 
@@ -128,7 +128,7 @@ public final class SqliteDatabase {
 
     private Connection connection;
 
-    /** 檔案資料庫；父目錄不存在時 {@link #open()} 會建立。 */
+    /** File database; {@link #open()} creates the parent directory if it does not exist. */
     public SqliteDatabase(Path file, Logger logger) {
         this.file = file.toAbsolutePath();
         this.jdbcUrl = "jdbc:sqlite:" + this.file;
@@ -141,17 +141,17 @@ public final class SqliteDatabase {
         this.logger = logger;
     }
 
-    /** 測試用：{@code jdbc:sqlite::memory:}，每條連線一個獨立資料庫（所以只能用單一連線）。 */
+    /** For tests: {@code jdbc:sqlite::memory:}; each connection is its own database (so only a single connection can be used). */
     public static SqliteDatabase inMemory(Logger logger) {
         return new SqliteDatabase(logger);
     }
 
     /**
-     * 開連線並套用 pragma。
+     * Opens the connection and applies pragmas.
      * <ul>
-     *   <li>{@code journal_mode=WAL}：讀不必等寫（記憶體資料庫會忽略）</li>
-     *   <li>{@code busy_timeout=3000}：拿不到鎖時等三秒，而不是立刻丟 SQLITE_BUSY</li>
-     *   <li>{@code foreign_keys=ON}：SQLite 預設關閉，且是每條連線各自的設定</li>
+     *   <li>{@code journal_mode=WAL}: reads need not wait for writes (ignored by in-memory databases)</li>
+     *   <li>{@code busy_timeout=3000}: wait three seconds for the lock instead of throwing SQLITE_BUSY immediately</li>
+     *   <li>{@code foreign_keys=ON}: off by default in SQLite, and a per-connection setting</li>
      * </ul>
      */
     public void open() {
@@ -162,7 +162,7 @@ public final class SqliteDatabase {
             if (file != null && file.getParent() != null) {
                 Files.createDirectories(file.getParent());
             }
-            // 明確載入驅動，失敗時的訊息比 "No suitable driver" 直接
+            // Load the driver explicitly; the failure message is clearer than "No suitable driver"
             Class.forName("org.sqlite.JDBC");
             Connection opened = DriverManager.getConnection(jdbcUrl);
             try (Statement stmt = opened.createStatement()) {
@@ -176,7 +176,7 @@ public final class SqliteDatabase {
         }
     }
 
-    /** 開著的連線。每次使用都經過這裡，不要存成欄位（close 之後的延遲任務會拿到已關閉的連線）。 */
+    /** The open connection. Always go through here; do not store it in a field (delayed tasks after close would get a closed connection). */
     public Connection connection() {
         if (connection == null) {
             throw new DataAccessException("Database is closed: " + jdbcUrl);
@@ -195,7 +195,7 @@ public final class SqliteDatabase {
         }
     }
 
-    /** 對「從沒開過」與「已經關過」都安全，onEnable 半路失敗時走的就是這條。 */
+    /** Safe for both "never opened" and "already closed"; this is the path taken when onEnable fails halfway. */
     public void close() {
         if (connection == null) {
             return;
@@ -225,18 +225,18 @@ import java.util.List;
 import org.slf4j.Logger;
 
 /**
- * 依 {@code PRAGMA user_version} 套用有序遷移。
+ * Applies ordered migrations according to {@code PRAGMA user_version}.
  *
- * <p>規則：步驟列表只能<b>往後加</b>，已發布的步驟不得重排、修改或刪除；
- * 第 N 個步驟（從 0 起算）成功後 user_version 變成 N+1。每個步驟在一個交易內，
- * 失敗就 rollback，資料庫停在上一個完整版本。
+ * <p>Rules: the step list may only be <b>appended to</b>; published steps must not be reordered, modified or deleted.
+ * After step N (0-based) succeeds, user_version becomes N+1. Each step runs in one transaction;
+ * on failure it is rolled back and the database stays at the last complete version.
  */
 public final class SchemaMigrations {
 
     private SchemaMigrations() {
     }
 
-    /** 一個遷移步驟：一組要依序執行的 SQL。 */
+    /** One migration step: a list of SQL statements to run in order. */
     public record Step(List<String> sql) {
 
         public Step {
@@ -248,7 +248,7 @@ public final class SchemaMigrations {
         }
     }
 
-    /** 把資料庫升級到 {@code steps.size()}。資料庫版本比程式新時拒絕啟動，避免降級毀資料。 */
+    /** Upgrades the database to {@code steps.size()}. Refuses to start when the database is newer than the code, to avoid data loss from a downgrade. */
     public static void run(Connection connection, List<Step> steps, Logger logger) throws SQLException {
         int current = currentVersion(connection);
         if (current > steps.size()) {
@@ -268,7 +268,7 @@ public final class SchemaMigrations {
             for (String sql : step.sql()) {
                 stmt.executeUpdate(sql);
             }
-            // PRAGMA 不能綁定參數；index 是我們自己的整數，不是外部輸入
+            // PRAGMA cannot bind parameters; index is our own integer, not external input
             stmt.executeUpdate("PRAGMA user_version = " + (index + 1));
             connection.commit();
         } catch (SQLException e) {
@@ -299,7 +299,7 @@ package com.example.homes.persistence;
 
 import java.util.List;
 
-/** 這個插件的遷移步驟。只能往後加；要改欄位就新增一個步驟，不要改舊步驟。 */
+/** This plugin's migration steps. Append only; to change a column, add a new step instead of editing an old one. */
 public final class HomeSchema {
 
     private HomeSchema() {
@@ -322,7 +322,7 @@ public final class HomeSchema {
             )
             """
         )
-        // v2 以後：在這裡往後加，例如
+        // v2 onward: append here, for example
         // , SchemaMigrations.Step.of("ALTER TABLE homes ADD COLUMN created_at INTEGER NOT NULL DEFAULT 0")
     );
 }
@@ -335,7 +335,7 @@ package com.example.homes.domain;
 
 import java.util.UUID;
 
-/** 玩家的一個家。領域型別只用 JDK 型別，所以不需要 Bukkit 就能建立與測試。 */
+/** A player's home. The domain type uses only JDK types, so it can be created and tested without Bukkit. */
 public record Home(UUID owner, String name, String world, double x, double y, double z, float yaw, float pitch) {
 
     public Home {
@@ -356,8 +356,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 家的持久層介面。實作必須是執行緒安全的（讀在非同步執行緒、寫在單一寫入執行緒），
- * 呼叫端不得在主執行緒呼叫（會做磁碟 IO）。
+ * Persistence interface for homes. Implementations must be thread-safe (reads on async threads, writes on the single writer thread);
+ * callers must not call it on the main thread (it performs disk IO).
  */
 public interface HomeRepository {
 
@@ -365,10 +365,10 @@ public interface HomeRepository {
 
     Optional<Home> find(UUID owner, String name);
 
-    /** 新增或覆寫同 owner + name 的家。 */
+    /** Inserts or overwrites the home with the same owner + name. */
     void save(Home home);
 
-    /** 刪除；不存在時回 false。 */
+    /** Deletes; returns false if it does not exist. */
     boolean delete(UUID owner, String name);
 }
 ```
@@ -392,8 +392,8 @@ import com.example.homes.domain.Home;
 import com.example.homes.domain.HomeRepository;
 
 /**
- * 只用 PreparedStatement（值一律以 {@code ?} 綁定）、一律 try-with-resources。
- * 單一連線被寫入執行緒與非同步讀取共用，所以每個方法都 {@code synchronized}。
+ * Uses only PreparedStatement (values are always bound with {@code ?}) and always try-with-resources.
+ * The single connection is shared by the writer thread and async reads, so every method is {@code synchronized}.
  */
 public final class SqliteHomeRepository implements HomeRepository {
 
@@ -407,7 +407,7 @@ public final class SqliteHomeRepository implements HomeRepository {
         this.logger = logger;
     }
 
-    /** 開連線並跑遷移。失敗時丟 {@link DataAccessException}，由 onEnable 決定是否停用插件。 */
+    /** Opens the connection and runs migrations. Throws {@link DataAccessException} on failure; onEnable decides whether to disable the plugin. */
     public synchronized void initialize() {
         database.open();
         try {
@@ -484,7 +484,7 @@ public final class SqliteHomeRepository implements HomeRepository {
         }
     }
 
-    /** 多筆寫入包成一個交易：比逐筆自動提交快很多，也不會留下寫一半的狀態。 */
+    /** Wraps multiple writes in one transaction: much faster than per-row auto-commit, and never leaves a half-written state. */
     public synchronized void saveAll(List<Home> homes) {
         try {
             var connection = database.connection();
@@ -536,11 +536,11 @@ import com.example.homes.domain.Home;
 import com.example.homes.domain.HomeRepository;
 
 /**
- * write-behind：任何執行緒呼叫 {@link #markSaved}／{@link #markDeleted} 只改 dirty map；
- * 單一寫入執行緒負責把 dirty map 排空到資料庫。
+ * write-behind: calling {@link #markSaved}/{@link #markDeleted} from any thread only changes the dirty map;
+ * the single writer thread drains the dirty map into the database.
  *
- * <p>dirty map 的值是「最新意圖」：{@code Optional.of(home)} = 要寫入，{@code Optional.empty()} = 要刪除。
- * 排空時用 {@code remove(key, value)}，若寫入期間又有更新，新值會留在 map 裡等下一輪。
+ * <p>The dirty map values are the "latest intent": {@code Optional.of(home)} = write, {@code Optional.empty()} = delete.
+ * Draining uses {@code remove(key, value)}, so if an update arrives during the write, the new value stays in the map for the next round.
  */
 public final class HomeFlusher {
 
@@ -569,7 +569,7 @@ public final class HomeFlusher {
         dirty.put(new Key(owner, name), Optional.empty());
     }
 
-    /** 排程器週期呼叫（可在任何執行緒）：把排空工作交給單一寫入執行緒。 */
+    /** Called periodically by the scheduler (any thread): hands the drain work to the single writer thread. */
     public void requestFlush() {
         try {
             writer.execute(this::drain);
@@ -578,7 +578,7 @@ public final class HomeFlusher {
         }
     }
 
-    /** 排空 dirty map。只由寫入執行緒或 {@link #close} 呼叫。 */
+    /** Drains the dirty map. Called only by the writer thread or {@link #close}. */
     private void drain() {
         for (Map.Entry<Key, Optional<Home>> entry : Map.copyOf(dirty).entrySet()) {
             try {
@@ -590,7 +590,7 @@ public final class HomeFlusher {
                 }
                 dirty.remove(entry.getKey(), intent);
             } catch (RuntimeException e) {
-                // 留在 dirty map 裡，下一輪重試；不要吞掉
+                // Stays in the dirty map and is retried next round; do not swallow it
                 logger.error("Failed to persist home {} of {}; will retry", entry.getKey().name(),
                     entry.getKey().owner(), e);
             }
@@ -598,8 +598,8 @@ public final class HomeFlusher {
     }
 
     /**
-     * 給 onDisable：排程器已關閉，不能再排任務，所以先停掉寫入執行緒、等它做完，
-     * 再在呼叫端執行緒同步排空剩下的內容。呼叫之後才可以關資料庫。
+     * For onDisable: the scheduler is already shut down and cannot schedule tasks, so stop the writer thread first and wait for it to finish,
+     * then synchronously drain the remainder on the calling thread. Only close the database after this call.
      */
     public void close(long timeoutSeconds) {
         writer.shutdown();
@@ -636,8 +636,8 @@ import com.example.homes.domain.HomeRepository;
 import com.example.homes.persistence.HomeFlusher;
 
 /**
- * 讀：非同步查詢，結果再排回主執行緒交給 callback。
- * 寫：交給 {@link HomeFlusher}（write-behind），呼叫端不會被磁碟 IO 卡住。
+ * Reads: async query, then the result is scheduled back to the main thread for the callback.
+ * Writes: handed to {@link HomeFlusher} (write-behind), so callers are never blocked by disk IO.
  */
 public final class HomeService {
 
@@ -651,7 +651,7 @@ public final class HomeService {
         this.flusher = flusher;
     }
 
-    /** callback 一定在主執行緒執行；查詢失敗時以空 list 呼叫並記錄錯誤。 */
+    /** The callback always runs on the main thread; if the query fails it is called with an empty list and the error is logged. */
     public void loadHomes(UUID owner, Consumer<List<Home>> callback) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             List<Home> loaded;
@@ -713,14 +713,14 @@ public final class HomesPlugin extends JavaPlugin {
         flusher = new HomeFlusher(repository, getSLF4JLogger());
         homes = new HomeService(this, repository, flusher);
 
-        // 週期請求 flush：排程器只負責「叫醒」，實際寫入在單一寫入執行緒
+        // Request a flush periodically: the scheduler only "wakes up" the writer; the actual writes happen on the single writer thread
         getServer().getScheduler().runTaskTimerAsynchronously(this, flusher::requestFlush,
             FLUSH_INTERVAL_TICKS, FLUSH_INTERVAL_TICKS);
     }
 
     @Override
     public void onDisable() {
-        // 此時排程器已關閉：不能再 runTask／runTaskAsynchronously，必須同步落盤，之後才關資料庫
+        // The scheduler is already shut down: runTask/runTaskAsynchronously can no longer be used, so flush synchronously and only then close the database
         if (flusher != null) {
             flusher.close(CLOSE_TIMEOUT_SECONDS);
         }
@@ -735,13 +735,13 @@ public final class HomesPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/homes/
 ├── HomesPlugin.java
 ├── HomeService.java
-├── domain/                      ← 無 Bukkit、可直接單元測試
+├── domain/                      <- no Bukkit, directly unit-testable
 │   ├── Home.java
 │   └── HomeRepository.java
 └── persistence/
@@ -752,28 +752,28 @@ src/main/java/com/example/homes/
     ├── SqliteHomeRepository.java
     └── HomeFlusher.java
 src/test/java/com/example/homes/persistence/
-└── SqliteHomeRepositoryTest.java   ← jdbc:sqlite::memory:，見 examples.md
+└── SqliteHomeRepositoryTest.java   <- jdbc:sqlite::memory:, see examples.md
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- **主執行緒不碰 JDBC**：讀取用 `runTaskAsynchronously`，結果以 `runTask` 排回主執行緒再碰 Bukkit 物件
-- **單一寫入執行緒**：所有寫入經 `HomeFlusher` 的單執行緒 executor；Repository 方法 `synchronized` 保護共用的那一條連線
-- **dirty map 存最新意圖**：同一個 key 被連續修改只會寫最後一次；排空用 `remove(key, value)`，不會蓋掉寫入期間的新值
-- **`onDisable` 不能排任務**：排程器已關閉，`close()` 先停 executor、等待、再同步排空，最後才 `database.close()`
-- Repository 與 Flusher 不持有 Bukkit 物件（`Player`、`Location`、`World`），只傳 UUID／世界名稱等純資料
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- **The main thread never touches JDBC**: reads use `runTaskAsynchronously`, and results are scheduled back with `runTask` before touching Bukkit objects
+- **Single writer thread**: all writes go through `HomeFlusher`'s single-thread executor; Repository methods are `synchronized` to protect the one shared connection
+- **The dirty map stores the latest intent**: repeated changes to the same key write only the last one; draining uses `remove(key, value)`, so it never overwrites a newer value that arrived during the write
+- **`onDisable` cannot schedule tasks**: the scheduler is already shut down; `close()` stops the executor, waits, then drains synchronously, and only then calls `database.close()`
+- The Repository and Flusher hold no Bukkit objects (`Player`, `Location`, `World`); they pass only plain data such as UUIDs and world names
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `No suitable driver` / `ClassNotFoundException: org.sqlite.JDBC` | 未宣告 `libraries:`，或使用 `paper-plugin.yml` | `plugin.yml` 加 `libraries:`；`paper-plugin.yml` 改用 `PluginLoader` |
-| `UnsatisfiedLinkError`／找不到原生庫 | 把 sqlite-jdbc shade／relocate 進 jar | 不打包，`compileOnly` + `libraries:` |
-| `SQLITE_BUSY: database is locked` | 多個連線同時寫，或 busy_timeout 太短 | 只用一條連線與單一寫入執行緒；保留 `busy_timeout` |
-| 外鍵約束沒有生效 | `foreign_keys` 預設關閉，且每條連線各自設定 | `open()` 每次都執行 `PRAGMA foreign_keys=ON` |
-| 遷移到一半失敗，資料庫狀態不明 | 步驟沒包交易 | 每步一個交易，`user_version` 在同一交易內更新 |
-| 升級後舊玩家資料格式錯誤 | 修改了已發布的遷移步驟 | 永遠新增步驟，不改舊步驟 |
-| 關服後最後幾秒的資料遺失 | `onDisable` 才排任務，排程器已關閉 | `close()` 同步排空，再關資料庫 |
-| 關閉後出現 `Database is closed` | 延遲的非同步任務在 `close()` 後才執行 | 每次經 `database.connection()` 取連線；任務內捕捉 `DataAccessException` 並記錄 |
-| 單元測試需要伺服器 | Repository 依賴 Bukkit 型別 | 領域型別只用 JDK 型別，用 `jdbc:sqlite::memory:` 測試 |
+| `No suitable driver` / `ClassNotFoundException: org.sqlite.JDBC` | `libraries:` not declared, or `paper-plugin.yml` is used | Add `libraries:` to `plugin.yml`; with `paper-plugin.yml` use a `PluginLoader` |
+| `UnsatisfiedLinkError` / native library not found | sqlite-jdbc was shaded/relocated into the jar | Do not bundle it; use `compileOnly` + `libraries:` |
+| `SQLITE_BUSY: database is locked` | Multiple connections write at once, or busy_timeout is too short | Use only one connection and a single writer thread; keep `busy_timeout` |
+| Foreign key constraints are not enforced | `foreign_keys` is off by default and set per connection | `open()` runs `PRAGMA foreign_keys=ON` every time |
+| Migration fails halfway and the database state is unclear | Steps are not wrapped in a transaction | One transaction per step; update `user_version` inside the same transaction |
+| Old player data has the wrong format after an upgrade | A published migration step was modified | Always add new steps; never edit old ones |
+| Data from the last few seconds is lost after shutdown | Tasks were scheduled in `onDisable`, when the scheduler is already shut down | `close()` drains synchronously, then close the database |
+| `Database is closed` appears after shutdown | A delayed async task ran after `close()` | Always obtain the connection via `database.connection()`; catch and log `DataAccessException` inside tasks |
+| Unit tests need a server | The Repository depends on Bukkit types | Use only JDK types in domain types and test with `jdbc:sqlite::memory:` |

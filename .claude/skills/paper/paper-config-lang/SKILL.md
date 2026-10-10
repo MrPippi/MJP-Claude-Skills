@@ -3,62 +3,62 @@ name: paper-config-lang
 description: "Paper 插件的設定與訊息：config.yml 只解析一次成不可變 record（驗證、預設值、警告清單）、config-version、部署檔優先的分層預設、MiniMessage lang.yml、非同步 reload 後原子換快照 / Paper plugin config.yml parsed once into an immutable record, layered defaults, MiniMessage lang.yml with safe placeholders, async reload with atomic snapshot swap"
 ---
 
-# Paper Config & Lang / 設定與訊息
+# Paper Config & Lang
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-config-lang`
 
-## 目的 / Purpose
+## Purpose
 
-讓插件的 `config.yml` 與 `lang.yml` 載入方式一致、可 reload、不會因為管理員寫錯值而崩潰：
+Load a plugin's `config.yml` and `lang.yml` consistently, with reload support, so a bad value written by an admin never crashes the plugin:
 
-- `config.yml` **只解析一次**成不可變 `record`；壞值不丟例外，而是回退預設並加進**警告清單**
-- 載入分層：jar 內預設疊底，**部署檔優先**；`saveResource` 只在檔案不存在時才寫出
-- 處理器（指令、listener、任務）**不呼叫 `getConfig()`**，只讀目前的 `Settings` 快照
-- reload = 非同步讀檔 → 建新快照 → 主執行緒原子換入 → 把警告回報給下指令的人
-- `lang.yml` 全部是 MiniMessage 模板；玩家可控的值一律當純文字插入，不會被當成 MiniMessage 解析
-- 缺鍵時顯示可見的後備文字並只記一行 log；不使用 `ChatColor` 或 `§`
+- `config.yml` is **parsed once** into an immutable `record`; bad values do not throw, they fall back to defaults and are added to a **warning list**
+- Layered loading: jar defaults underneath, **the deployed file wins**; `saveResource` only writes when the file does not exist
+- Handlers (commands, listeners, tasks) **never call `getConfig()`**; they only read the current `Settings` snapshot
+- Reload = read files async -> build a new snapshot -> swap it in atomically on the main thread -> report warnings to whoever ran the command
+- `lang.yml` is entirely MiniMessage templates; player-controlled values are always inserted as plain text and never parsed as MiniMessage
+- A missing key shows visible fallback text and logs a single line; never use `ChatColor` or `§`
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（Bukkit `YamlConfiguration` 與 Adventure MiniMessage，兩版相同，無差異行）
-- 純 Paper API，不需要 Paperweight
+- Paper 1.21.11 / 26.2 (Bukkit `YamlConfiguration` and Adventure MiniMessage are identical on both versions; no version-specific lines)
+- Pure Paper API; Paperweight is not needed
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「設定檔」「config.yml」「reload」「重新載入設定」「config-version」
 - 「lang.yml」「訊息檔」「MiniMessage 訊息」「多語系」「placeholder」
 - 「設定檔沒更新」「新鍵沒出現」「on/off 變 true/false」「[missing」
 - 「死鍵」「dead key」「LangKeysTest」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.home` | 插件根 package（設定類放 `.config` 子 package） |
-| `config_keys` | `max-homes`, `teleport-cooldown-seconds` | 要開放給管理員的設定鍵、型別與合法範圍 |
-| `lang_keys` | `home.set`, `reload.ok` | 玩家會看到的訊息鍵 |
-| `plugin_class` | `HomePlugin` | 負責接線（建構子注入）的 `JavaPlugin` |
+| `base_package` | `com.example.home` | Plugin root package (config classes go in the `.config` subpackage) |
+| `config_keys` | `max-homes`, `teleport-cooldown-seconds` | Config keys to expose to admins, with their types and valid ranges |
+| `lang_keys` | `home.set`, `reload.ok` | Message keys players will see |
+| `plugin_class` | `HomePlugin` | The `JavaPlugin` that does the wiring (constructor injection) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `config.yml` — 含 `config-version` 與版本紀錄註解的出貨設定
-- `lang.yml` — MiniMessage 模板（英文玩家文字）
-- `HomeConfig.java` — 不可變設定 record；`from(Map)` 驗證、回退預設、產生警告
-- `YamlFiles.java` — 分層載入（部署檔 + jar 內預設）
-- `ConfigLoader.java` — 把 YAML 讀成原始值交給 `HomeConfig.from`
-- `Lang.java` — 不可變訊息表；安全 placeholder；缺鍵後備
-- `Settings.java` — 一份快照 = `HomeConfig` + `Lang`
-- `SettingsService.java` — 持有目前快照；非同步 reload、主執行緒原子換入
-- `ReloadCommand.java` — `/homeadmin reload`，回報警告
-- `HomePlugin.java` — 接線與啟動失敗處理
+- `config.yml` — shipped config with `config-version` and a version-history comment
+- `lang.yml` — MiniMessage templates (English player-facing text)
+- `HomeConfig.java` — immutable config record; `from(Map)` validates, falls back to defaults, and produces warnings
+- `YamlFiles.java` — layered loading (deployed file + bundled defaults)
+- `ConfigLoader.java` — reads YAML into raw values and hands them to `HomeConfig.from`
+- `Lang.java` — immutable message table; safe placeholders; missing-key fallback
+- `Settings.java` — one snapshot = `HomeConfig` + `Lang`
+- `SettingsService.java` — holds the current snapshot; async reload, atomic swap on the main thread
+- `ReloadCommand.java` — `/homeadmin reload`, reports warnings
+- `HomePlugin.java` — wiring and startup-failure handling
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（內含 SnakeYAML、Adventure、MiniMessage、JSpecify）。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` is needed (it bundles SnakeYAML, Adventure, MiniMessage, and JSpecify).
 
-`src/main/resources/` 必須有 `config.yml` 與 `lang.yml`，並在 `plugin.yml` 宣告指令：
+`src/main/resources/` must contain `config.yml` and `lang.yml`, and `plugin.yml` must declare the command:
 
 ```yaml
 name: Home
@@ -76,7 +76,7 @@ permissions:
     default: op
 ```
 
-## 設定檔範例 / Example Files
+## Example Files
 
 ### `config.yml`
 
@@ -122,9 +122,9 @@ reload:
   busy: "<red>A reload is already running."
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `HomeConfig.java`（不可變設定 + 驗證）
+### `HomeConfig.java` (immutable config + validation)
 
 ```java
 package com.example.home.config;
@@ -137,14 +137,14 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * config.yml 解析一次後的不可變快照。
+ * Immutable snapshot of config.yml, parsed once.
  *
- * <p>壞值（缺少、型別錯、超出範圍）不丟例外：回退預設並在 {@link Parsed#warnings()} 留一行說明。
- * 純 JDK、不碰 Bukkit，可以直接用 {@code Map.of(...)} 單元測試。
+ * <p>Bad values (missing, wrong type, out of range) do not throw: they fall back to defaults and leave a line in {@link Parsed#warnings()}.
+ * Pure JDK with no Bukkit dependency, so it can be unit-tested directly with {@code Map.of(...)}.
  */
 public record HomeConfig(int maxHomes, Duration teleportCooldown, boolean confirmTeleport, String defaultHomeName) {
 
-    /** 出貨 config.yml 的 config-version；改鍵（新增、改名、改型別）時一起加一。 */
+    /** config-version of the shipped config.yml; bump it together with any key change (add, rename, retype). */
     public static final int CURRENT_VERSION = 2;
 
     public static final String KEY_VERSION = "config-version";
@@ -153,7 +153,7 @@ public record HomeConfig(int maxHomes, Duration teleportCooldown, boolean confir
     public static final String KEY_CONFIRM = "confirm-teleport";
     public static final String KEY_DEFAULT_NAME = "default-home-name";
 
-    /** ConfigLoader 要讀的全部鍵；新增設定時兩邊一起改。 */
+    /** All keys ConfigLoader reads; update both places when adding a setting. */
     public static final List<String> KEYS =
             List.of(KEY_VERSION, KEY_MAX_HOMES, KEY_COOLDOWN, KEY_CONFIRM, KEY_DEFAULT_NAME);
 
@@ -168,14 +168,14 @@ public record HomeConfig(int maxHomes, Duration teleportCooldown, boolean confir
         Objects.requireNonNull(defaultHomeName, "defaultHomeName");
     }
 
-    /** 解析結果：設定本體 + 給管理員看的警告（reload 時回報、啟動時寫 log）。 */
+    /** Parse result: the config itself + warnings for admins (reported on reload, logged on startup). */
     public record Parsed(HomeConfig config, List<String> warnings) {
         public Parsed {
             warnings = List.copyOf(warnings);
         }
     }
 
-    /** @param raw 鍵 → 從 YAML 讀到的原始值；缺少的鍵不放進 map */
+    /** @param raw key -> raw value read from YAML; missing keys are not put in the map */
     public static Parsed from(Map<String, Object> raw) {
         List<String> warnings = new ArrayList<>();
         checkVersion(raw.get(KEY_VERSION), warnings);
@@ -241,7 +241,7 @@ public record HomeConfig(int maxHomes, Duration teleportCooldown, boolean confir
 }
 ```
 
-### `YamlFiles.java`（分層載入）
+### `YamlFiles.java` (layered loading)
 
 ```java
 package com.example.home.config;
@@ -255,29 +255,29 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * 載入 {@code plugins/<plugin>/<name>}，並把 jar 內同名檔當預設疊在底下。
+ * Loads {@code plugins/<plugin>/<name>} and layers the same-named file in the jar underneath as defaults.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li>檔案<b>不存在</b>時才 {@code saveResource}；存在就不碰（不覆寫、不補鍵），所以部署檔永遠優先</li>
- *   <li>解析失敗丟 {@link IllegalArgumentException}，讓 reload 能回報並保留舊快照，而不是靜靜變成空設定</li>
- *   <li>{@code YamlConfiguration.loadConfiguration(File)} 會吞掉解析錯誤，所以這裡用 {@code load}／{@code loadFromString}</li>
+ *   <li>{@code saveResource} only when the file does <b>not exist</b>; an existing file is never touched (no overwrite, no key backfill), so the deployed file always wins</li>
+ *   <li>A parse failure throws {@link IllegalArgumentException}, so reload can report it and keep the old snapshot instead of silently becoming an empty config</li>
+ *   <li>{@code YamlConfiguration.loadConfiguration(File)} swallows parse errors, so this uses {@code load} / {@code loadFromString}</li>
  * </ul>
- * 會做檔案 IO，可以在非同步執行緒呼叫。
+ * Performs file IO, so it may be called from an async thread.
  */
 public final class YamlFiles {
 
     private YamlFiles() {
     }
 
-    /** 部署檔，jar 內預設疊在底下：{@code get(path)} 在部署檔缺鍵時回 jar 內的值。 */
+    /** The deployed file with jar defaults layered underneath: {@code get(path)} returns the jar value when the deployed file lacks the key. */
     public static YamlConfiguration layered(JavaPlugin plugin, String name) {
         YamlConfiguration deployed = deployed(plugin, name);
         deployed.setDefaults(bundled(plugin, name));
         return deployed;
     }
 
-    /** 只有部署檔本身（不含預設）；檔案不存在時先寫出 jar 內的模板。 */
+    /** Only the deployed file itself (no defaults); writes the jar template first if the file does not exist. */
     public static YamlConfiguration deployed(JavaPlugin plugin, String name) {
         File file = new File(plugin.getDataFolder(), name);
         if (!file.exists()) {
@@ -292,7 +292,7 @@ public final class YamlFiles {
         return yaml;
     }
 
-    /** jar 內出貨的那份。 */
+    /** The copy shipped inside the jar. */
     public static YamlConfiguration bundled(JavaPlugin plugin, String name) {
         try (InputStream in = plugin.getResource(name)) {
             if (in == null) {
@@ -318,7 +318,7 @@ import java.util.Map;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-/** 把 config.yml 讀成原始值，驗證交給 {@link HomeConfig#from}。可在非同步執行緒呼叫。 */
+/** Reads config.yml into raw values; validation is left to {@link HomeConfig#from}. May be called from an async thread. */
 public final class ConfigLoader {
 
     private static final String FILE = "config.yml";
@@ -333,7 +333,7 @@ public final class ConfigLoader {
         YamlConfiguration yaml = YamlFiles.layered(plugin, FILE);
         Map<String, Object> raw = new HashMap<>();
         for (String key : HomeConfig.KEYS) {
-            Object value = yaml.get(key); // 部署檔缺鍵 → 落到 jar 內預設
+            Object value = yaml.get(key); // Key missing in the deployed file -> falls through to the jar default
             if (value != null) {
                 raw.put(key, value);
             }
@@ -343,7 +343,7 @@ public final class ConfigLoader {
 }
 ```
 
-### `Lang.java`（MiniMessage 訊息表）
+### `Lang.java` (MiniMessage message table)
 
 ```java
 package com.example.home.config;
@@ -365,14 +365,14 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
- * lang.yml 的不可變訊息表（部署檔優先、缺鍵用 jar 內預設）。
+ * Immutable message table for lang.yml (deployed file wins; missing keys use the jar defaults).
  *
- * <p>插入規則：
+ * <p>Insertion rules:
  * <ul>
- *   <li>{@code {name}} 風格：值經 {@link MiniMessage#escapeTags} 後以純文字插入，玩家打的 {@code <red>} 不會生效</li>
- *   <li>{@code <player>} 風格：用 {@code Placeholder.unparsed}（純文字）或 {@code Placeholder.component}（可信的 Component）</li>
+ *   <li>{@code {name}} style: the value goes through {@link MiniMessage#escapeTags} and is inserted as plain text, so a player-typed {@code <red>} has no effect</li>
+ *   <li>{@code <player>} style: use {@code Placeholder.unparsed} (plain text) or {@code Placeholder.component} (trusted Component)</li>
  * </ul>
- * 缺鍵時回傳紅色的 {@code [missing key]} 並只記一行 log。
+ * A missing key returns a red {@code [missing key]} and logs only one line.
  */
 public final class Lang {
 
@@ -388,12 +388,12 @@ public final class Lang {
         this.log = log;
     }
 
-    /** 測試用：直接給模板表。 */
+    /** For tests: supply the template table directly. */
     public static Lang of(Map<String, String> templates, Logger log) {
         return new Lang(templates, log);
     }
 
-    /** 讀 lang.yml（可在非同步執行緒呼叫）；問題用 {@code warn} 回報，解析失敗丟 {@link IllegalArgumentException}。 */
+    /** Reads lang.yml (may be called from an async thread); problems are reported via {@code warn}, and a parse failure throws {@link IllegalArgumentException}. */
     public static Lang load(JavaPlugin plugin, Consumer<String> warn) {
         YamlConfiguration deployed = YamlFiles.deployed(plugin, "lang.yml");
         YamlConfiguration bundled = YamlFiles.bundled(plugin, "lang.yml");
@@ -414,7 +414,7 @@ public final class Lang {
         return new Lang(merged, plugin.getLogger());
     }
 
-    /** 攤平成 {@code a.b.c → 文字}；非文字的值（on/off 被解析成布林等）警告並略過。 */
+    /** Flattens into {@code a.b.c -> text}; non-text values (on/off parsed as booleans, etc.) are warned about and skipped. */
     static Map<String, String> flatten(YamlConfiguration yaml, String label, Consumer<String> warn) {
         Map<String, String> out = new HashMap<>();
         for (String key : yaml.getKeys(true)) {
@@ -441,12 +441,12 @@ public final class Lang {
         return line(key, Map.of(), TagResolver.empty());
     }
 
-    /** {@code {name}} 風格：vars 的值以純文字插入。 */
+    /** {@code {name}} style: values in vars are inserted as plain text. */
     public Component line(String key, Map<String, String> vars) {
         return line(key, vars, TagResolver.empty());
     }
 
-    /** {@code <player>} 風格：用 {@code Placeholder.unparsed} 等 TagResolver。 */
+    /** {@code <player>} style: use a TagResolver such as {@code Placeholder.unparsed}. */
     public Component line(String key, TagResolver resolver) {
         return line(key, Map.of(), resolver);
     }
@@ -474,7 +474,7 @@ public final class Lang {
         to.sendMessage(line(key, resolver));
     }
 
-    /** 單趟取代 {@code {name}}：值裡面即使含 {@code {other}} 也不會再被取代；未知的 placeholder 原樣保留。 */
+    /** Single-pass replacement of {@code {name}}: even if a value contains {@code {other}}, it is not replaced again; unknown placeholders are kept as-is. */
     static String fill(String template, Map<String, String> vars) {
         return PLACEHOLDER.matcher(template).replaceAll(match -> {
             String value = vars.get(match.group(1));
@@ -484,14 +484,14 @@ public final class Lang {
 }
 ```
 
-### `Settings.java`（一份快照）
+### `Settings.java` (one snapshot)
 
 ```java
 package com.example.home.config;
 
 import java.util.Objects;
 
-/** 目前生效的設定與訊息。整份不可變；reload 時建新的一份整個換掉。 */
+/** The currently active config and messages. Fully immutable; reload builds a new one and swaps the whole thing. */
 public record Settings(HomeConfig config, Lang lang) {
 
     public Settings {
@@ -501,7 +501,7 @@ public record Settings(HomeConfig config, Lang lang) {
 }
 ```
 
-### `SettingsService.java`（持有快照、非同步 reload）
+### `SettingsService.java` (holds the snapshot, async reload)
 
 ```java
 package com.example.home.config;
@@ -516,14 +516,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.Nullable;
 
 /**
- * 持有目前的 {@link Settings}。處理器只呼叫 {@link #current()}，不碰 getConfig()。
+ * Holds the current {@link Settings}. Handlers only call {@link #current()} and never touch getConfig().
  *
- * <p>reload：非同步讀檔並建新快照 → 主執行緒換入 → 回報結果。失敗時保留舊快照。
- * 用 {@link AtomicReference} 是因為 PlaceholderAPI／封包 listener 可能在別的執行緒讀快照。
+ * <p>Reload: read files and build a new snapshot async -> swap it in on the main thread -> report the result. On failure the old snapshot is kept.
+ * {@link AtomicReference} is used because PlaceholderAPI / packet listeners may read the snapshot from other threads.
  */
 public final class SettingsService {
 
-    /** reload 的結果；settings 為 null 代表失敗（error 有原因）。 */
+    /** Result of a reload; a null settings means failure (error holds the reason). */
     public record ReloadResult(@Nullable Settings settings, List<String> warnings, @Nullable String error) {
         public ReloadResult {
             warnings = List.copyOf(warnings);
@@ -552,7 +552,7 @@ public final class SettingsService {
         return settings;
     }
 
-    /** onEnable 用：同步載入並換入，回傳警告。解析失敗會丟例外，由呼叫端停用插件。 */
+    /** For onEnable: loads synchronously, swaps it in, and returns the warnings. A parse failure throws, and the caller disables the plugin. */
     public List<String> loadNow() {
         List<String> warnings = new ArrayList<>();
         Settings settings = build(warnings);
@@ -561,8 +561,8 @@ public final class SettingsService {
     }
 
     /**
-     * 非同步 reload。{@code onMain} 一定在主執行緒呼叫（插件仍啟用時）。
-     * 已有 reload 在跑時立刻回報失敗，不排隊。
+     * Async reload. {@code onMain} is always called on the main thread (while the plugin is still enabled).
+     * If a reload is already running, failure is reported immediately; requests are not queued.
      */
     public void reload(Consumer<ReloadResult> onMain) {
         if (!reloading.compareAndSet(false, true)) {
@@ -575,7 +575,7 @@ public final class SettingsService {
                 reloading.set(false);
                 Settings fresh = result.settings();
                 if (fresh != null) {
-                    current.set(fresh); // 主執行緒原子換入；失敗時舊快照原封不動
+                    current.set(fresh); // Atomic swap on the main thread; on failure the old snapshot is left untouched
                 }
                 onMain.accept(result);
             });
@@ -614,7 +614,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-/** {@code /homeadmin reload}：非同步重讀設定，完成後把結果與警告回報給下指令的人。 */
+/** {@code /homeadmin reload}: re-reads the config async, then reports the result and warnings to whoever ran the command. */
 public final class ReloadCommand implements CommandExecutor {
 
     private final SettingsService settings;
@@ -632,7 +632,7 @@ public final class ReloadCommand implements CommandExecutor {
         return true;
     }
 
-    /** 在主執行緒執行；訊息用「目前」的快照（reload 成功就是新的，失敗就是舊的）。 */
+    /** Runs on the main thread; messages use the "current" snapshot (the new one if reload succeeded, the old one if it failed). */
     private void report(CommandSender sender, ReloadResult result) {
         Lang lang = settings.current().lang();
         if (!result.success()) {
@@ -646,13 +646,13 @@ public final class ReloadCommand implements CommandExecutor {
         }
         lang.send(sender, "reload.ok-warnings", Map.of("count", String.valueOf(result.warnings().size())));
         for (String warning : result.warnings()) {
-            lang.send(sender, "reload.warning", Map.of("warning", warning)); // 警告含檔案內容，一律當純文字
+            lang.send(sender, "reload.warning", Map.of("warning", warning)); // Warnings contain file content, so always treat them as plain text
         }
     }
 }
 ```
 
-### `HomePlugin.java`（接線）
+### `HomePlugin.java` (wiring)
 
 ```java
 package com.example.home;
@@ -680,20 +680,20 @@ public final class HomePlugin extends JavaPlugin {
         if (admin != null) {
             admin.setExecutor(new ReloadCommand(settings));
         }
-        // 其他元件以建構子拿到 settings（或 settings::current），不靜態持有
+        // Other components receive settings (or settings::current) via constructor; never hold it statically
     }
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/
 ├── java/com/example/home/
-│   ├── HomePlugin.java                  ← 接線
+│   ├── HomePlugin.java                  <- wiring
 │   ├── ReloadCommand.java
 │   └── config/
-│       ├── HomeConfig.java              ← 純 JDK 的 record + 驗證
+│       ├── HomeConfig.java              <- pure-JDK record + validation
 │       ├── YamlFiles.java
 │       ├── ConfigLoader.java
 │       ├── Lang.java
@@ -701,55 +701,55 @@ src/main/
 │       └── SettingsService.java
 └── resources/
     ├── plugin.yml
-    ├── config.yml                       ← 含 config-version 與版本紀錄
+    ├── config.yml                       <- includes config-version and version history
     └── lang.yml
 src/test/java/com/example/home/
 ├── config/HomeConfigTest.java
-└── LangKeysTest.java                    ← 死鍵／缺鍵測試（見 examples.md）
+└── LangKeysTest.java                    <- dead-key / missing-key test (see examples.md)
 ```
 
-## 部署檢查清單 / Deploy Checklist
+## Deploy Checklist
 
-已部署伺服器的檔案**不會**跟著新 jar 更新，每次改設定或訊息都要做以下檢查：
+Files on an already-deployed server are **not** updated with a new jar, so run these checks every time you change config or messages:
 
-1. **新鍵不會自動寫進部署檔**：`saveResource` 只在檔案不存在時執行。新鍵靠 `HomeConfig.DEFAULTS` 與 jar 內分層預設生效；若希望管理員看得到，要在更新說明列出，並請他們手動貼上。
-2. **已存在鍵的型別變更會被靜靜忽略**：部署檔裡的舊值仍然優先，型別不對時 `HomeConfig.from` 只會警告並回退預設。改型別或改語意＝換新鍵名，不要重用舊鍵。
-3. **列出「要手動刪除或修改的部署鍵」**：每個 PR 的測試計畫寫清楚哪些鍵在已部署伺服器上必須人工處理，部署後逐條驗證（例如看某則訊息不是 `[missing ...]`）。
-4. **改了 `config.yml` 就加 `config-version` 並在檔案上方寫一行紀錄**：啟動與 reload 時比對，落後會在 log 與指令回覆列出警告。
-5. **不要用 `copyDefaults(true)` + `save()` 補鍵**：Bukkit 寫檔會吃掉註解、重排鍵，管理員的調整會被洗掉。
-6. **解析失敗不能變空設定**：reload 失敗要保留舊快照並回報原因；啟動失敗要停用插件。
+1. **New keys are not written into the deployed file automatically**: `saveResource` only runs when the file does not exist. New keys take effect through `HomeConfig.DEFAULTS` and the layered jar defaults; if you want admins to see them, list them in the update notes and ask them to paste them in manually.
+2. **Type changes to existing keys are silently ignored**: the old value in the deployed file still wins, and when the type is wrong `HomeConfig.from` only warns and falls back to the default. Changing a type or meaning = use a new key name; do not reuse the old key.
+3. **List the "deployed keys that must be deleted or edited by hand"**: each PR's test plan should state which keys need manual handling on deployed servers, and verify them one by one after deployment (for example, check that a message is not `[missing ...]`).
+4. **When `config.yml` changes, bump `config-version` and add a history line at the top of the file**: it is compared on startup and reload, and a stale file produces warnings in the log and the command reply.
+5. **Do not backfill keys with `copyDefaults(true)` + `save()`**: Bukkit's file write drops comments and reorders keys, wiping out the admin's edits.
+6. **A parse failure must not turn into an empty config**: a failed reload keeps the old snapshot and reports the reason; a startup failure disables the plugin.
 
-## YAML 陷阱 / YAML Traps
+## YAML Traps
 
-| 寫法 | 實際解析 | 對策 |
+| Written as | Actually parsed as | Fix |
 |------|---------|------|
-| `on:` / `off:` / `yes:` / `no:` 當鍵 | 布林鍵 `true` / `false` | 加引號：`"on":` |
-| `toggle: on` | 值是布林，不是文字 | `toggle: "on"` |
-| `name: 1.10` | 浮點數 `1.1` | 當字串的值一律加引號 |
-| `max: 010` | 八進位 | 不要前導 0，或加引號 |
-| 訊息含 `: ` 或以 `#`、`<` 開頭 | 被當成對應或註解 | 整串加雙引號 |
-| 文字含 `"` | 提早結束字串 | 外層改單引號，或用 `\"` |
+| `on:` / `off:` / `yes:` / `no:` as a key | Boolean key `true` / `false` | Add quotes: `"on":` |
+| `toggle: on` | The value is a boolean, not text | `toggle: "on"` |
+| `name: 1.10` | Float `1.1` | Always quote values meant to be strings |
+| `max: 010` | Octal | No leading 0, or add quotes |
+| Message contains `: ` or starts with `#` or `<` | Treated as a mapping or a comment | Wrap the whole string in double quotes |
+| Text contains `"` | Ends the string early | Use single quotes outside, or `\"` |
 
-`Lang.load` 會對「非文字的值」與「看起來像布林的鍵」發出警告，把這類錯誤變成看得見的訊息。
+`Lang.load` warns about "non-text values" and "keys that look like booleans", turning these mistakes into visible messages.
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- 讀檔與解析（`YamlFiles`、`ConfigLoader`、`Lang.load`）可在非同步執行緒；**不要**在那裡碰 `Player`、`World`
-- 換入快照在主執行緒；`Settings` 整份不可變，所以任何執行緒讀 `current()` 都安全（PlaceholderAPI、封包 listener）
-- 非同步階段只收集警告到自己的 `ArrayList`，不與其他執行緒共用
-- 處理器若跨越非同步邊界，先在主執行緒取出需要的設定值再傳入，或每次呼叫都重新 `current()`；不要把某次的 `Settings` 存進長壽欄位（reload 後會過時）
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- File reading and parsing (`YamlFiles`, `ConfigLoader`, `Lang.load`) may run on an async thread; **do not** touch `Player` or `World` there
+- The snapshot swap happens on the main thread; `Settings` is fully immutable, so reading `current()` from any thread is safe (PlaceholderAPI, packet listeners)
+- The async phase only collects warnings into its own `ArrayList`, never shared with other threads
+- If a handler crosses an async boundary, read the needed config values on the main thread and pass them in, or call `current()` again each time; do not store a particular `Settings` in a long-lived field (it goes stale after reload)
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 新版加的鍵在伺服器上沒出現 | `saveResource` 只在檔案不存在時寫出 | 依「部署檢查清單」手動貼上；靠分層預設與 `DEFAULTS` 讓功能照常運作 |
-| 改了鍵的型別，伺服器行為沒變 | 部署檔舊值優先，型別不符被警告後回退預設 | 換新鍵名；部署檢查清單列出要刪的舊鍵 |
-| 訊息顯示 `[missing toggle.on]` | `on`/`off` 鍵被 YAML 解析成布林 | 鍵加引號；看 `Lang.load` 的警告 |
-| 玩家名字 `<red>` 讓訊息變色 | 玩家輸入被當成 MiniMessage 解析 | 用 `Map` 版（自動 escape）或 `Placeholder.unparsed` |
-| 訊息顯示字面 `{name}` | 模板的 placeholder 名稱與 vars 的鍵不一致 | 名稱統一小寫；測試比對模板與呼叫端 |
-| reload 後行為沒變 | 處理器快取了舊 `Settings` 或呼叫了 `getConfig()` | 處理器只呼叫 `settings.current()` |
-| reload 後設定變回預設 | YAML 解析失敗被吞 | 用 `YamlConfiguration.load`（會丟例外），保留舊快照並回報 |
-| 刪功能後 lang.yml 越來越肥 | 死鍵沒人清 | 加死鍵測試（`LangKeysTest`，見 examples.md） |
-| 訊息顯示 `§` 或亂碼色碼 | 使用了 `ChatColor`／舊式色碼 | 只用 MiniMessage；外部傳來的舊式色碼文字先 escape 再插入 |
+| A key added in a new version does not appear on the server | `saveResource` only writes when the file does not exist | Paste it in manually per the "Deploy Checklist"; layered defaults and `DEFAULTS` keep the feature working |
+| Changed a key's type but server behavior did not change | The old deployed value wins; the type mismatch is warned about and falls back to the default | Use a new key name; list the old key to delete in the deploy checklist |
+| Message shows `[missing toggle.on]` | The `on`/`off` keys were parsed as booleans by YAML | Quote the keys; check the `Lang.load` warnings |
+| A player name `<red>` colors the message | Player input was parsed as MiniMessage | Use the `Map` overload (auto-escapes) or `Placeholder.unparsed` |
+| Message shows a literal `{name}` | The template placeholder name does not match the vars key | Keep names lowercase; test that templates and call sites match |
+| Behavior unchanged after reload | A handler cached an old `Settings` or called `getConfig()` | Handlers must only call `settings.current()` |
+| Settings revert to defaults after reload | A YAML parse failure was swallowed | Use `YamlConfiguration.load` (throws), keep the old snapshot, and report |
+| lang.yml keeps growing after features are removed | Nobody cleans up dead keys | Add a dead-key test (`LangKeysTest`, see examples.md) |
+| Message shows `§` or garbled color codes | `ChatColor` / legacy color codes were used | Use MiniMessage only; escape legacy-colored text from external sources before inserting |

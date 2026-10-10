@@ -3,50 +3,50 @@ name: nms-player-profile
 description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與假玩家實體（Paper NMS + Mojang-mapped）/ Manipulate GameProfile for skin injection used in NPC appearance and fake player entities"
 ---
 
-# NMS Player Profile / NMS 玩家 Profile 操作
+# NMS Player Profile
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-player-profile`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `GameProfile` 操作玩家皮膚（texture）屬性，實現 NPC 外觀注入、假玩家實體皮膚設定，以及客製化頭顱 skull 顯示。
+Manipulate player skin (texture) properties through the NMS `GameProfile` to inject NPC appearances, set skins on fake player entities, and display custom skulls.
 
-### 相關技能 / Related
+### Related
 
-- 需要一個「會動、會打、有原版物理」的玩家分身 → [`nms-fake-player`](../nms-fake-player/SKILL.md)（真的 `ServerPlayer`，沿用本技能的 skin 取得方式）
-- 只需要玩家頭顱的 skin → Paper API `PlayerProfile` / `SkullMeta#setPlayerProfile` 即可，不必用 NMS
+- Need a player clone that moves, fights, and has vanilla physics -> [`nms-fake-player`](../nms-fake-player/SKILL.md) (a real `ServerPlayer`; reuses this skill's skin retrieval)
+- Only need a player head skin -> Paper API `PlayerProfile` / `SkullMeta#setPlayerProfile` is enough; no NMS required
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「GameProfile」「skin injection」「NPC 皮膚」「player profile」「skin NPC」
-- 「fake player」「假玩家」「NPC skin」「texture property」「玩家頭顱 skin」
-- 「profile skin」「gameprofile nms」
+- "GameProfile", "skin injection", "NPC 皮膚", "player profile", "skin NPC"
+- "fake player", "假玩家", "NPC skin", "texture property", "玩家頭顱 skin"
+- "profile skin", "gameprofile nms"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.npc` | 產出類別所在 package |
-| `class_name` | `ProfileBuilder` | Profile 建立器類名 |
-| `fetch_async` | `true` | 是否非同步從 Mojang API 抓取 skin |
+| `package_name` | `com.example.npc` | Package of the generated classes |
+| `class_name` | `ProfileBuilder` | Profile builder class name |
+| `fetch_async` | `true` | Whether to fetch the skin from the Mojang API asynchronously |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ProfileBuilder.java` — GameProfile 建立與 skin 注入工具
-- `SkinFetcher.java` — 非同步從 Mojang API 抓取 skin texture
-- `SkullBuilder.java`（選）— 設定頭顱 ItemStack skin
+- `ProfileBuilder.java` - GameProfile creation and skin injection utility
+- `SkinFetcher.java` - Fetches skin textures from the Mojang API asynchronously
+- `SkullBuilder.java` (optional) - Sets the skin on a skull ItemStack
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -54,7 +54,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ProfileBuilder.java`
 
@@ -80,8 +80,8 @@ public final class ProfileBuilder {
     private ProfileBuilder() {}
 
     /**
-     * 從現有玩家複製 GameProfile（含 skin texture）。
-     * 用於將真實玩家外觀複製到 NPC。
+     * Copies the GameProfile (including skin texture) from an existing player.
+     * Used to copy a real player's appearance onto an NPC.
      */
     public static GameProfile copyFrom(Player player) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
@@ -89,29 +89,29 @@ public final class ProfileBuilder {
     }
 
     /**
-     * 建立帶有自定義 skin 的 GameProfile。
+     * Creates a GameProfile with a custom skin.
      *
-     * @param name      顯示名稱（建議 ≤16 字元）
-     * @param textureValue   Base64 編碼的 texture JSON
-     * @param textureSignature Mojang 簽名（可為 null，但 online 模式需要）
+     * @param name      display name (recommended 16 characters or fewer)
+     * @param textureValue   Base64-encoded texture JSON
+     * @param textureSignature Mojang signature (may be null, but required in online mode)
      */
     public static GameProfile withSkin(String name, String textureValue, String textureSignature) {
-        // authlib 7+：GameProfile 是 record、PropertyMap 不可變，properties 需在建構時傳入
+        // authlib 7+: GameProfile is a record and PropertyMap is immutable, so properties must be passed at construction
         PropertyMap properties = new PropertyMap(ImmutableMultimap.of(
             "textures", new Property("textures", textureValue, textureSignature)));
         return new GameProfile(UUID.randomUUID(), name, properties);
     }
 
     /**
-     * 建立無 skin 的空白 GameProfile（外觀為預設 Steve）。
+     * Creates a blank GameProfile without a skin (default Steve appearance).
      */
     public static GameProfile blank(String name) {
         return new GameProfile(UUID.randomUUID(), name);
     }
 
     /**
-     * 從伺服器 user cache（usercache.json）查詢已知玩家的 UUID + 名稱，不發出網路請求。
-     * 只對曾加入過此伺服器的玩家有效；回傳的 Profile 不含 skin，需要 skin 時用 SkinFetcher。
+     * Looks up a known player's UUID + name from the server user cache (usercache.json) without any network request.
+     * Only works for players who have joined this server before; the returned Profile has no skin, so use SkinFetcher when a skin is needed.
      */
     public static GameProfile fromCache(String playerName) {
         var minecraftServer = ((CraftServer) Bukkit.getServer()).getServer();
@@ -121,7 +121,7 @@ public final class ProfileBuilder {
 }
 ```
 
-### `SkinFetcher.java`（非同步從 Mojang API 抓取）
+### `SkinFetcher.java` (async fetch from the Mojang API)
 
 ```java
 package com.example.npc;
@@ -140,16 +140,16 @@ public final class SkinFetcher {
     private SkinFetcher() {}
 
     /**
-     * 非同步透過 Mojang session server 抓取完整 GameProfile（含 skin）。
-     * 回傳 CompletableFuture，結果在非同步執行緒產生，
-     * 使用前請切換回主執行緒。
+     * Asynchronously fetches the full GameProfile (including skin) through the Mojang session server.
+     * Returns a CompletableFuture whose result is produced on an async thread;
+     * switch back to the main thread before using it.
      */
     public static CompletableFuture<GameProfile> fetchByName(Plugin plugin, String playerName) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 var minecraftServer = ((CraftServer) Bukkit.getServer()).getServer();
-                // ProfileResolver：名稱 → UUID（user cache / Mojang API）→ session server 取得含 texture 的 Profile
-                // 會發出阻塞的網路請求，因此只能在非同步執行緒呼叫
+                // ProfileResolver: name -> UUID (user cache / Mojang API) -> session server returns a Profile with textures
+                // Issues blocking network requests, so it may only be called on an async thread
                 return minecraftServer.services().profileResolver()
                     .fetchByName(playerName)
                     .orElse(null);
@@ -160,14 +160,14 @@ public final class SkinFetcher {
         });
     }
 
-    /** 取得 GameProfile 的 texture value（Base64 JSON）。 */
+    /** Returns the texture value (Base64 JSON) of a GameProfile. */
     public static String getTextureValue(GameProfile profile) {
         var textures = profile.properties().get("textures");
         if (textures.isEmpty()) return null;
         return textures.iterator().next().value();
     }
 
-    /** 取得 GameProfile 的 texture signature。 */
+    /** Returns the texture signature of a GameProfile. */
     public static String getTextureSignature(GameProfile profile) {
         var textures = profile.properties().get("textures");
         if (textures.isEmpty()) return null;
@@ -176,7 +176,7 @@ public final class SkinFetcher {
 }
 ```
 
-### `SkullBuilder.java`（頭顱 ItemStack skin 設定）
+### `SkullBuilder.java` (skull ItemStack skin)
 
 ```java
 package com.example.npc;
@@ -194,8 +194,8 @@ public final class SkullBuilder {
     private SkullBuilder() {}
 
     /**
-     * 建立帶有指定 GameProfile skin 的玩家頭顱 ItemStack。
-     * 1.20.5+ 以 {@code minecraft:profile} 組件取代舊的 SkullOwner NBT。
+     * Creates a player head ItemStack with the skin of the given GameProfile.
+     * Since 1.20.5 the {@code minecraft:profile} component replaces the old SkullOwner NBT.
      */
     public static org.bukkit.inventory.ItemStack withProfile(GameProfile profile) {
         ItemStack nms = new ItemStack(Items.PLAYER_HEAD);
@@ -205,7 +205,7 @@ public final class SkullBuilder {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -216,18 +216,18 @@ src/main/java/com/example/
     └── SkullBuilder.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `ProfileBuilder` 方法為純資料操作，可在任意執行緒呼叫
-- ✅ `SkinFetcher.fetchByName()` 在 async 執行緒抓取，**不可**在回呼中直接操作 Bukkit/NMS 世界
-- ⚠️ 抓取完 skin 後需切回主執行緒再套用到 NPC 實體
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ✅ `ProfileBuilder` methods are pure data operations and can be called from any thread
+- ✅ `SkinFetcher.fetchByName()` fetches on an async thread; **do not** touch the Bukkit/NMS world directly in the callback
+- ⚠️ After the skin is fetched, switch back to the main thread before applying it to the NPC entity
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| skin 不顯示 | texture signature 為 null（offline 模式伺服器） | offline mode 下 signature 可省略，但部分客戶端會拒絕 |
-| `fetchByName` 回傳 null | 玩家從未加入此伺服器 | 改用直接傳入 texture Base64 字串 |
-| NPC 皮膚顯示預設 Steve | Profile UUID 未正確設定 | 確保 UUID 非全零，建議使用 `UUID.randomUUID()` |
-| 頭顱 skin 不更新 | 使用 Bukkit ItemMeta 設定（會被 NMS 覆蓋） | 改用 `SkullBuilder.withProfile()` 的 NMS 方式 |
+| Skin not shown | texture signature is null (offline-mode server) | The signature can be omitted in offline mode, but some clients reject it |
+| `fetchByName` returns null | The player has never joined this server | Pass the texture Base64 string directly instead |
+| NPC shows default Steve skin | Profile UUID not set correctly | Make sure the UUID is not all zeros; `UUID.randomUUID()` is recommended |
+| Skull skin does not update | Set via Bukkit ItemMeta (overwritten by NMS) | Use the NMS approach in `SkullBuilder.withProfile()` |

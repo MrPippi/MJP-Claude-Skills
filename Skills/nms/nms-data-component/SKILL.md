@@ -3,43 +3,43 @@ name: nms-data-component
 description: "操作 Minecraft DataComponentType（1.20.5+） 物品組件系統，讀寫 CustomData、MaxStackSize、Enchantments 等組件（Paper NMS + Mojang-mapped）/ Read and write 1.21 DataComponentType item components including CustomData, MaxStackSize, Enchantments"
 ---
 
-# NMS Data Component / NMS 物品組件系統
+# NMS Data Component
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-data-component`
 
-## 目的 / Purpose
+## Purpose
 
-操作 Minecraft 1.20.5 引入的 `DataComponentType` 物品組件系統，直接讀寫 `CustomData`、`MaxStackSize`、`Enchantments`、`AttributeModifiers` 等組件，取代舊版 NBT `getTag()`/`setTag()` 模式。
+Work with the `DataComponentType` item component system introduced in Minecraft 1.20.5. Read and write components such as `CustomData`, `MaxStackSize`, `Enchantments` and `AttributeModifiers` directly, replacing the legacy NBT `getTag()`/`setTag()` pattern.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（DataComponent 為 1.20.5+ 新增）
+- Paper 1.21.11 / 26.2(DataComponent was added in 1.20.5+)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「DataComponent」「data component」「物品組件」「1.21 item data」「ItemStack component」
-- 「DataComponentType」「CustomData component」「component map」「item component」
-- 「DataComponents」「組件讀寫」「component api」
+- "DataComponent", "data component", "物品組件", "1.21 item data", "ItemStack component"
+- "DataComponentType", "CustomData component", "component map", "item component"
+- "DataComponents", "組件讀寫", "component api"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.item` | 產出類別所在 package |
-| `class_name` | `ItemComponentUtil` | 工具類名稱 |
+| `package_name` | `com.example.item` | Package of the generated classes |
+| `class_name` | `ItemComponentUtil` | Utility class name |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ItemComponentUtil.java` — DataComponent 讀寫工具
-- `CustomDataHelper.java` — CustomData（自定義 NBT 組件）操作
+- `ItemComponentUtil.java` — DataComponent read/write utility
+- `CustomDataHelper.java` — CustomData (custom NBT component) operations
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -47,7 +47,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ItemComponentUtil.java`
 
@@ -71,14 +71,14 @@ public final class ItemComponentUtil {
 
     private ItemComponentUtil() {}
 
-    /** 讀取指定 DataComponentType 的值。 */
+    /** Reads the value of the given DataComponentType. */
     public static <T> Optional<T> get(
             org.bukkit.inventory.ItemStack item, DataComponentType<T> type) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         return Optional.ofNullable(nms.get(type));
     }
 
-    /** 設定指定 DataComponentType 並回傳修改後的 Bukkit ItemStack（不可變）。 */
+    /** Sets the given DataComponentType and returns the modified Bukkit ItemStack (immutable). */
     public static <T> org.bukkit.inventory.ItemStack set(
             org.bukkit.inventory.ItemStack item, DataComponentType<T> type, T value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -86,7 +86,7 @@ public final class ItemComponentUtil {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 移除指定 DataComponentType。 */
+    /** Removes the given DataComponentType. */
     public static org.bukkit.inventory.ItemStack remove(
             org.bukkit.inventory.ItemStack item, DataComponentType<?> type) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -94,24 +94,24 @@ public final class ItemComponentUtil {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 檢查是否含有指定組件。 */
+    /** Checks whether the item has the given component. */
     public static boolean has(
             org.bukkit.inventory.ItemStack item, DataComponentType<?> type) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         return nms.has(type);
     }
 
-    // ─── 常用組件快捷 ─────────────────────────────────────────────────
+    // ─── Common component shortcuts ───────────────────────────────────
 
-    /** 設定物品最大堆疊數。 */
+    /** Sets the item's max stack size. */
     public static org.bukkit.inventory.ItemStack setMaxStackSize(
             org.bukkit.inventory.ItemStack item, int size) {
         return set(item, DataComponents.MAX_STACK_SIZE, size);
     }
 
     /**
-     * 設定物品為不可破壞。
-     * 1.21.5+ UNBREAKABLE 是 Unit 標記組件；是否顯示提示改由 TOOLTIP_DISPLAY 的 hiddenComponents 控制。
+     * Makes the item unbreakable.
+     * Since 1.21.5, UNBREAKABLE is a Unit marker component; whether the tooltip is shown is controlled by hiddenComponents in TOOLTIP_DISPLAY.
      */
     public static org.bukkit.inventory.ItemStack setUnbreakable(
             org.bukkit.inventory.ItemStack item, boolean showTooltip) {
@@ -122,15 +122,15 @@ public final class ItemComponentUtil {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 讀取附魔列表。 */
+    /** Reads the enchantment list. */
     public static Optional<ItemEnchantments> getEnchantments(
             org.bukkit.inventory.ItemStack item) {
         return get(item, DataComponents.ENCHANTMENTS);
     }
 
     /**
-     * 讀取自定義模型資料的第一個 float 值。
-     * 1.21.4+ CustomModelData 不再是單一 int，而是 floats / flags / strings / colors 四個清單。
+     * Reads the first float value of the custom model data.
+     * Since 1.21.4, CustomModelData is no longer a single int but four lists: floats / flags / strings / colors.
      */
     public static Optional<Float> getCustomModelData(
             org.bukkit.inventory.ItemStack item) {
@@ -141,7 +141,7 @@ public final class ItemComponentUtil {
 }
 ```
 
-### `CustomDataHelper.java`（自定義 NBT 組件）
+### `CustomDataHelper.java` (custom NBT component)
 
 ```java
 package com.example.item;
@@ -155,27 +155,27 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import java.util.Optional;
 
 /**
- * CustomData 組件操作（對應舊版 getTag().getCompound("custom_key") 模式）。
+ * CustomData component operations (replaces the legacy getTag().getCompound("custom_key") pattern).
  *
- * 1.20.5+ 的 CustomData 是獨立組件，儲存在 DataComponents.CUSTOM_DATA 下，
- * 不再直接在 root tag 層級存放自定義鍵。
+ * Since 1.20.5, CustomData is a standalone component stored under DataComponents.CUSTOM_DATA;
+ * custom keys are no longer stored directly at the root tag level.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class CustomDataHelper {
 
     private CustomDataHelper() {}
 
-    /** 讀取 CustomData 組件中的指定字串欄位。 */
+    /** Reads the given string field from the CustomData component. */
     public static Optional<String> getString(
             org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         CustomData customData = nms.get(DataComponents.CUSTOM_DATA);
         if (customData == null) return Optional.empty();
-        // 1.21.5+ CompoundTag getter 回傳 Optional（另有 getStringOr(key, default)）
+        // Since 1.21.5, CompoundTag getters return Optional (there is also getStringOr(key, default))
         return customData.copyTag().getString(key);
     }
 
-    /** 寫入字串到 CustomData 組件，回傳修改後的 Bukkit ItemStack。 */
+    /** Writes a string into the CustomData component and returns the modified Bukkit ItemStack. */
     public static org.bukkit.inventory.ItemStack setString(
             org.bukkit.inventory.ItemStack item, String key, String value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -186,7 +186,7 @@ public final class CustomDataHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 寫入整數到 CustomData 組件。 */
+    /** Writes an integer into the CustomData component. */
     public static org.bukkit.inventory.ItemStack setInt(
             org.bukkit.inventory.ItemStack item, String key, int value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -197,7 +197,7 @@ public final class CustomDataHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 移除 CustomData 中的指定欄位。 */
+    /** Removes the given field from CustomData. */
     public static org.bukkit.inventory.ItemStack removeKey(
             org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -209,7 +209,7 @@ public final class CustomDataHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 取得完整的 CustomData CompoundTag 副本。 */
+    /** Returns a copy of the full CustomData CompoundTag. */
     public static CompoundTag getTag(org.bukkit.inventory.ItemStack item) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         CustomData customData = nms.get(DataComponents.CUSTOM_DATA);
@@ -218,7 +218,7 @@ public final class CustomDataHelper {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -228,17 +228,17 @@ src/main/java/com/example/
     └── CustomDataHelper.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `ItemComponentUtil` / `CustomDataHelper` 操作 NMS Copy，**不直接修改世界狀態**，可在任意執行緒呼叫
-- ⚠️ 若需要在 Bukkit 物品欄中更新 ItemStack（如 `player.getInventory().setItem()`），**必須在主執行緒**
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ✅ `ItemComponentUtil` / `CustomDataHelper` operate on NMS copies and **do not modify world state directly**, so they can be called from any thread
+- ⚠️ Updating an ItemStack in a Bukkit inventory (e.g. `player.getInventory().setItem()`) **must happen on the main thread**
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `get()` 回傳 empty | 組件未設定 | 使用 `getOrDefault()` 提供預設值 |
-| `CustomData` 資料丟失 | 使用舊版 `getTag()` 寫入（1.20.5+ 已移除） | 改用 `CustomDataHelper.setString()` |
-| `CustomModelData.value()` 不存在 | 1.21.4+ 改為 floats / flags / strings / colors 四個清單 | 改用 `floats()` 等清單存取（見 `getCustomModelData()`） |
-| 組件設定後不生效 | 操作的是 NMS Copy 而非原物件 | 確保用 `CraftItemStack.asBukkitCopy()` 回傳並更新 inventory |
+| `get()` returns empty | Component is not set | Use `getOrDefault()` to provide a default value |
+| `CustomData` data is lost | Written with the legacy `getTag()` (removed in 1.20.5+) | Use `CustomDataHelper.setString()` instead |
+| `CustomModelData.value()` does not exist | Since 1.21.4 it is four lists: floats / flags / strings / colors | Access the lists via `floats()` etc. (see `getCustomModelData()`) |
+| Component change has no effect | You modified an NMS copy, not the original object | Return the result via `CraftItemStack.asBukkitCopy()` and update the inventory |

@@ -3,51 +3,51 @@ name: nms-custom-menu
 description: "繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 slot 事件攔截與資料同步（Paper NMS + Mojang-mapped）/ Build custom container GUIs by extending AbstractContainerMenu with slot event handling"
 ---
 
-# NMS Custom Menu / NMS 自定義容器 GUI
+# NMS Custom Menu
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-custom-menu`
 
-## 目的 / Purpose
+## Purpose
 
-透過繼承 NMS `AbstractContainerMenu` 實作自定義容器 GUI，支援 slot 操作攔截、資料同步（`ContainerData`）、與 Bukkit `InventoryView` 整合，比純 Bukkit API 更靈活。
+Implement custom container GUIs by extending NMS `AbstractContainerMenu`. Supports slot interaction interception, data synchronization (`ContainerData`), and integration with Bukkit `InventoryView`, and is more flexible than the plain Bukkit API.
 
-### 替代方案 / Alternatives
+### Alternatives
 
-- 表單、確認視窗、設定頁 → Paper Dialog API，見 [`paper-dialog-ui`](../../paper/paper-dialog-ui/SKILL.md)
-- 一般箱子 GUI（商店、清單、分頁） → Bukkit `InventoryHolder`，見 [`paper-chest-gui`](../../paper/paper-chest-gui/SKILL.md)
-- 只有需要自訂 `MenuType`、slot 行為或伺服器端容器邏輯時才用本技能
+- Forms, confirmation windows, settings pages -> Paper Dialog API, see [`paper-dialog-ui`](../../paper/paper-dialog-ui/SKILL.md)
+- Regular chest GUIs (shops, lists, pagination) -> Bukkit `InventoryHolder`, see [`paper-chest-gui`](../../paper/paper-chest-gui/SKILL.md)
+- Use this skill only when you need a custom `MenuType`, custom slot behavior, or server-side container logic
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「自定義 GUI」「custom menu」「AbstractContainerMenu」「自定義容器」「custom inventory」
-- 「NMS GUI」「container menu」「slot intercept」「inventory nms」「自定義箱子 GUI」
+- "自定義 GUI", "custom menu", "AbstractContainerMenu", "自定義容器", "custom inventory"
+- "NMS GUI", "container menu", "slot intercept", "inventory nms", "自定義箱子 GUI"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.gui` | 產出類別所在 package |
-| `menu_class_name` | `ShopMenu` | Menu 類名稱 |
-| `menu_type` | `GENERIC_9x3` | MenuType（如 GENERIC_9x3、ANVIL） |
-| `rows` | `3` | 列數（GENERIC_9xN 時使用） |
+| `package_name` | `com.example.gui` | Package of the generated classes |
+| `menu_class_name` | `ShopMenu` | Menu class name |
+| `menu_type` | `GENERIC_9x3` | MenuType (e.g. GENERIC_9x3, ANVIL) |
+| `rows` | `3` | Row count (used with GENERIC_9xN) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `CustomMenu.java` — AbstractContainerMenu 實作
-- `CustomMenuProvider.java` — MenuProvider（供 ServerPlayer.openMenu 使用）
-- `CustomMenuListener.java` — Bukkit 事件橋接（InventoryClickEvent 等）
+- `CustomMenu.java` — AbstractContainerMenu implementation
+- `CustomMenuProvider.java` — MenuProvider (used by ServerPlayer.openMenu)
+- `CustomMenuListener.java` — Bukkit event bridge (InventoryClickEvent, etc.)
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -55,7 +55,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `CustomMenu.java`
 
@@ -92,11 +92,11 @@ public class CustomMenu extends AbstractContainerMenu {
         super(MenuType.GENERIC_9x3, syncId);
         this.playerInventory = playerInventory;
         this.holder = holder;
-        // 以 holder 作為 Container owner，Bukkit 端 getTopInventory().getHolder() 才會是 CustomMenuHolder
+        // Use the holder as the Container owner so Bukkit's getTopInventory().getHolder() is the CustomMenuHolder
         this.menuInventory = new SimpleContainer(SIZE, holder);
         holder.setInventory(new CraftInventory(menuInventory));
 
-        // 注册 GUI slot（上方容器區）
+        // Register GUI slots (top container area)
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < 9; col++) {
                 int index = col + row * 9;
@@ -104,32 +104,32 @@ public class CustomMenu extends AbstractContainerMenu {
             }
         }
 
-        // 注册玩家物品欄 slot（下方區）
+        // Register player inventory slots (bottom area)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 addSlot(new Slot(playerInventory, col + row * 9 + 9,
                     8 + col * 18, 103 + row * 18));
             }
         }
-        // 快捷欄
+        // Hotbar
         for (int col = 0; col < 9; col++) {
             addSlot(new Slot(playerInventory, col, 8 + col * 18, 161));
         }
     }
 
-    /** 控制哪些 slot 可以被取出（回傳 false = 禁止取出）。 */
+    /** Controls whether the menu stays valid for the player (returning false closes it). */
     @Override
     public boolean stillValid(Player player) {
         return true;
     }
 
-    /** 攔截 shift-click 邏輯。 */
+    /** Intercepts shift-click logic. */
     @Override
     public ItemStack quickMoveStack(Player player, int slotIndex) {
-        return ItemStack.EMPTY; // 禁止 shift-click
+        return ItemStack.EMPTY; // Disallow shift-click
     }
 
-    /** 取得 Bukkit InventoryView（供 Bukkit 事件使用）。 */
+    /** Gets the Bukkit InventoryView (used by Bukkit events). */
     @Override
     public InventoryView getBukkitView() {
         if (bukkitView == null) {
@@ -182,7 +182,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
-/** 自訂 GUI 的 Bukkit InventoryHolder；Listener 以 instanceof 辨識並分派點擊。覆寫回呼以實作行為。 */
+/** Bukkit InventoryHolder for the custom GUI; the listener identifies it with instanceof and dispatches clicks. Override the callbacks to implement behavior. */
 public class CustomMenuHolder implements InventoryHolder {
 
     private Inventory inventory;
@@ -196,17 +196,17 @@ public class CustomMenuHolder implements InventoryHolder {
         return inventory;
     }
 
-    /** 上方 GUI slot（0–26）被點擊時呼叫。 */
+    /** Called when a top GUI slot (0-26) is clicked. */
     public void handleSlotClick(int slot, HumanEntity who) {
     }
 
-    /** GUI 關閉時呼叫。 */
+    /** Called when the GUI is closed. */
     public void onClose(HumanEntity who) {
     }
 }
 ```
 
-### `CustomMenuListener.java`（Bukkit 事件橋接）
+### `CustomMenuListener.java` (Bukkit event bridge)
 
 ```java
 package com.example.gui;
@@ -224,7 +224,7 @@ public class CustomMenuListener implements Listener {
         InventoryView view = event.getView();
         if (!(view.getTopInventory().getHolder() instanceof CustomMenuHolder holder)) return;
 
-        event.setCancelled(true); // 預設取消所有點擊
+        event.setCancelled(true); // Cancel all clicks by default
         int slot = event.getRawSlot();
         if (slot >= 0 && slot < 27) {
             holder.handleSlotClick(slot, event.getWhoClicked());
@@ -241,7 +241,7 @@ public class CustomMenuListener implements Listener {
 }
 ```
 
-### 開啟 GUI 的呼叫方式
+### Opening the GUI
 
 ```java
 import net.minecraft.server.level.ServerPlayer;
@@ -255,7 +255,7 @@ public static void openMenu(Player player, String title) {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -267,17 +267,17 @@ src/main/java/com/example/
     └── CustomMenuListener.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ `nms.openMenu()` 及所有 GUI 操作**必須在主執行緒呼叫**
-- ✅ Bukkit 事件回呼（InventoryClickEvent）已在主執行緒觸發，可安全操作 NMS
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ `nms.openMenu()` and all GUI operations **must be called on the main thread**
+- ✅ Bukkit event callbacks (InventoryClickEvent) already fire on the main thread, so NMS can be used safely
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| GUI 打開後立即關閉 | `stillValid()` 回傳 false | 確認玩家距離或條件正確 |
-| slot index 超出範圍 | container size 不匹配 | 確認 slot 注册數量與 MenuType 相符 |
-| `getBukkitView()` NPE | playerInventory.player 未初始化 | 確認在 PlayerJoinEvent 後開啟 |
-| shift-click 穿越 GUI | `quickMoveStack` 未正確實作 | 回傳 `ItemStack.EMPTY` 禁止操作 |
+| GUI closes immediately after opening | `stillValid()` returns false | Verify the player distance or conditions are correct |
+| Slot index out of range | Container size mismatch | Make sure the number of registered slots matches the MenuType |
+| `getBukkitView()` NPE | playerInventory.player is not initialized | Make sure the menu is opened after PlayerJoinEvent |
+| Shift-click passes through the GUI | `quickMoveStack` is not implemented correctly | Return `ItemStack.EMPTY` to block the action |

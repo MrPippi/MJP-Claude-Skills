@@ -1,25 +1,25 @@
 # examples — paper-chest-gui
 
-以下範例沿用 `SKILL.md` 的 `com.example.shop.gui` 類別（`ShopMenu`、`PagedListMenu`、`Menus`、`Icons`、`LatestOnly`、`PlayerItems`）。
-玩家看到的字串在實務上放進 `lang.yml`／`gui.yml`；範例為了精簡直接寫 `Component.text`。
+The examples below reuse the `com.example.shop.gui` classes from `SKILL.md` (`ShopMenu`, `PagedListMenu`, `Menus`, `Icons`, `LatestOnly`, `PlayerItems`).
+In practice, player-visible strings go in `lang.yml`/`gui.yml`; the examples write `Component.text` directly for brevity.
 
-## 範例 1：分頁商品清單（非同步載入、最後一次開啟為準）
+## Example 1: Paged listing menu (async load, last open wins)
 
 **Input:**
 ```
 menu_kinds: PagedListMenu
 rows: 6
-來源: 商品存在資料庫，載入必須在非同步
-行為: /shop 開啟清單；連續輸入兩次指令只採用最後一次的結果
+source: listings are stored in a database; loading must be async
+behavior: /shop opens the list; if the command is entered twice in a row, only the last result is used
 ```
 
-**Output — 資料模型與埠（主執行緒呼叫）:**
+**Output — data model and ports (called on the main thread):**
 ```java
 package com.example.shop;
 
 import org.bukkit.Material;
 
-/** 一筆上架商品（不可變）。 */
+/** One listed item (immutable). */
 public record Listing(long id, Material material, String name, long price) {
 }
 ```
@@ -29,14 +29,14 @@ package com.example.shop;
 
 import java.util.List;
 
-/** 商品資料來源。{@code findActive} 可能做 IO，只能在非同步呼叫。 */
+/** Listing data source. {@code findActive} may do IO, so call it async only. */
 public interface ListingRepository {
 
     List<Listing> findActive();
 }
 ```
 
-**Output — 開啟流程（非同步查詢 → 回主執行緒 → 開啟）:**
+**Output — open flow (async query -> back to main thread -> open):**
 ```java
 package com.example.shop;
 
@@ -69,18 +69,18 @@ public final class ShopOpener {
         this.gate = gate;
     }
 
-    /** 主執行緒呼叫（指令）。 */
+    /** Called on the main thread (command). */
     public void open(Player player) {
         UUID id = player.getUniqueId();
         LatestOnly latest = latestByPlayer.computeIfAbsent(id, key -> new LatestOnly());
         long ticket = latest.next();
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<Listing> listings = repository.findActive();   // 非同步：只帶 UUID 與不可變資料
+            List<Listing> listings = repository.findActive();   // async: carries only the UUID and immutable data
             if (!latest.isCurrent(ticket)) {
-                return;                                          // 玩家又輸入了一次指令，這個結果過期
+                return;                                          // the player ran the command again; this result is stale
             }
-            menus.openOnMain(id, () -> build(listings));         // 主執行緒：建立 Inventory 並開啟
+            menus.openOnMain(id, () -> build(listings));         // main thread: create the Inventory and open it
         });
     }
 
@@ -93,14 +93,14 @@ public final class ShopOpener {
                 (player, listing) -> gate.askToBuy(player, listing));
     }
 
-    /** 玩家離線時清掉版本號，避免 map 無限增長。 */
+    /** Clear the ticket when the player goes offline so the map does not grow forever. */
     public void forget(UUID id) {
         latestByPlayer.remove(id);
     }
 }
 ```
 
-**Output — 點擊項目後進入確認頁（在點擊事件內，所以下一 tick 才開）:**
+**Output — clicking an entry leads to the confirmation page (inside a click event, so it opens on the next tick):**
 ```java
 package com.example.shop;
 
@@ -128,34 +128,34 @@ public final class PurchaseGate {
 }
 ```
 
-重點：
-- 非同步階段只做查詢；`PagedListMenu`／Inventory 都在主執行緒建立
-- `LatestOnly` 讓舊的結果不會蓋掉較新的開啟請求
-- 翻頁不重開視窗：`PagedListMenu.render()` 在同一個 inventory 內重畫
+Key points:
+- The async phase only runs the query; `PagedListMenu` and the Inventory are created on the main thread
+- `LatestOnly` keeps an old result from overwriting a newer open request
+- Paging does not reopen the window: `PagedListMenu.render()` redraws within the same inventory
 
 ---
 
-## 範例 2：確認購買（每次點擊重新驗證 + 背包滿時掉落）
+## Example 2: Confirm purchase (revalidate on every click + drop when inventory is full)
 
 **Input:**
 ```
 menu_kinds: ConfirmPurchaseMenu
 permission: shop.buy
-行為: 權限、商品是否仍上架、餘額在「按下確認」那一刻重新檢查；完成後關閉；背包滿則掉在腳邊
+behavior: permission, whether the listing is still for sale, and balance are rechecked at the moment "Confirm" is pressed; close when done; drop at the feet if the inventory is full
 ```
 
-**Output — 經濟與庫存埠（主執行緒）:**
+**Output — economy and stock ports (main thread):**
 ```java
 package com.example.shop;
 
 import java.util.UUID;
 
-/** 玩家餘額。所有方法只在主執行緒呼叫。 */
+/** Player balance. All methods are called on the main thread only. */
 public interface Wallet {
 
     long balance(UUID player);
 
-    /** 餘額足夠才扣，回傳是否成功。 */
+    /** Withdraws only if the balance is sufficient; returns whether it succeeded. */
     boolean withdraw(UUID player, long amount);
 
     void deposit(UUID player, long amount);
@@ -165,17 +165,17 @@ public interface Wallet {
 ```java
 package com.example.shop;
 
-/** 上架商品庫存。所有方法只在主執行緒呼叫。 */
+/** Stock of listed items. All methods are called on the main thread only. */
 public interface Stock {
 
     boolean isListed(long listingId);
 
-    /** 原子地下架；若同一瞬間被別人買走則回 false。 */
+    /** Atomically delists; returns false if someone else bought it at the same instant. */
     boolean take(long listingId);
 }
 ```
 
-**Output — 確認頁 holder:**
+**Output — confirmation page holder:**
 ```java
 package com.example.shop.gui;
 
@@ -197,7 +197,7 @@ public final class ConfirmPurchaseMenu implements ShopMenu {
     private static final String PERMISSION = "shop.buy";
     private static final int CANCEL_SLOT = 11;
     private static final int PREVIEW_SLOT = 13;
-    private static final int CONFIRM_SLOT = 15;   // 確認鍵固定在右側
+    private static final int CONFIRM_SLOT = 15;   // the confirm button is fixed on the right
 
     private final Inventory inventory;
     private final Menus menus;
@@ -235,10 +235,10 @@ public final class ConfirmPurchaseMenu implements ShopMenu {
         }
     }
 
-    /** 每一步都用「現在」的狀態判斷，不信任開啟選單那一刻看到的畫面。 */
+    /** Every step checks the "current" state, never trusting the screen seen when the menu opened. */
     private void confirm(Player player) {
         if (completed) {
-            return;   // 已經結帳過：連點不會扣兩次
+            return;   // already checked out: rapid clicking cannot charge twice
         }
         if (!player.hasPermission(PERMISSION)) {
             fail(player, "You do not have permission to buy.");
@@ -258,7 +258,7 @@ public final class ConfirmPurchaseMenu implements ShopMenu {
             return;
         }
         if (!stock.take(listing.id())) {
-            wallet.deposit(id, listing.price());   // 同一瞬間被別人買走：退款
+            wallet.deposit(id, listing.price());   // someone else bought it at the same instant: refund
             fail(player, "Someone else just bought it. You were not charged.");
             return;
         }
@@ -279,22 +279,22 @@ public final class ConfirmPurchaseMenu implements ShopMenu {
 }
 ```
 
-重點：
-- 權限、庫存、餘額都在 `confirm` 內重新檢查；`completed` 與 `GuiListener` 的去彈跳一起防止連點重複扣款
-- 扣款成功但下架失敗時**退款**，不給物品；順序是「先扣款、再下架、最後給物品」
-- 完成後用 `closeNextTick`，不在點擊事件內直接關閉或換視窗
-- 實務上確認頁如果只是「是／否」，優先改用 `paper-dialog-ui`；箱子確認頁適合需要預覽物品的情境
+Key points:
+- Permission, stock, and balance are all rechecked inside `confirm`; `completed` together with `GuiListener`'s debounce prevents double charging on rapid clicks
+- If payment succeeds but delisting fails, **refund** and do not give the item; the order is "charge first, delist next, give the item last"
+- After completing, use `closeNextTick`; never close or swap windows directly inside the click event
+- In practice, if the confirmation page is only "yes/no", prefer `paper-dialog-ui`; a chest confirmation page suits cases that need an item preview
 
 ---
 
-## 範例 3：註冊與停用（避免幽靈物品）
+## Example 3: Registration and disable (avoiding ghost items)
 
 **Input:**
 ```
-行為: 監聽器只註冊一次；伺服器停止或 reload 時，所有開著的選單先被關閉
+behavior: the listener is registered only once; when the server stops or reloads, all open menus are closed first
 ```
 
-**Output — 自訂的暫存型選單在 onClose 退還物品（搭配 `closeAll`）:**
+**Output — a custom escrow-style menu returns items in onClose (works with `closeAll`):**
 ```java
 package com.example.shop.gui;
 
@@ -306,8 +306,8 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 /**
- * 暫存型選單：開啟時從玩家背包「借」出物品放進選單，關閉時一定要還回去。
- * 因為 onDisable 的 closeAll() 會觸發 onClose，伺服器停止時玩家也不會丟失物品。
+ * Escrow-style menu: when opened, items are "borrowed" from the player's inventory into the menu, and must always be returned on close.
+ * Since `closeAll()` in onDisable triggers onClose, players do not lose items when the server stops.
  */
 public final class EscrowMenu implements ShopMenu {
 
@@ -330,7 +330,7 @@ public final class EscrowMenu implements ShopMenu {
 
     @Override
     public void onClick(MenuClick click) {
-        // 只展示；所有點擊已被 GuiListener 取消
+        // display only; every click has already been cancelled by GuiListener
     }
 
     @Override
@@ -346,7 +346,7 @@ public final class EscrowMenu implements ShopMenu {
 }
 ```
 
-**驗證（手動，沒有 mock 時最可靠）:**
-1. 開任一選單後 `/stop`：選單必須先被關閉，暫存物品已退還
-2. 暫時把 `onDisable` 內的 `closeAll()` 註解掉再試一次：選單應該留著直到伺服器斷線（確認這個呼叫真的有作用）
-3. 在某個選單的 `onClose` 內加一個 `runTask` 且不檢查 `plugin.isEnabled()`，再 `/stop`：會看到 `IllegalPluginAccessException`（被 `GuiListener` 記錄，不影響其他玩家的選單關閉）；加上檢查後消失
+**Verification (manual; most reliable when there is no mock):**
+1. Open any menu and run `/stop`: the menu must be closed first and the held items already returned
+2. Temporarily comment out `closeAll()` in `onDisable` and try again: the menu should stay until the server disconnects (confirms the call really has an effect)
+3. Add a `runTask` to some menu's `onClose` without checking `plugin.isEnabled()`, then `/stop`: you will see `IllegalPluginAccessException` (logged by `GuiListener`, without affecting other players' menu closing); it disappears once the check is added

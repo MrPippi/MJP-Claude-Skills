@@ -3,83 +3,83 @@ name: paper-embedded-http
 description: "在 Paper 插件內以 JDK HttpServer 提供唯讀 JSON／靜態頁面：預設只綁 127.0.0.1、有界 daemon 執行緒池、handler 零 Bukkit 呼叫（主執行緒定時發布不可變快照）、每 IP token bucket 限流 / Read-only JSON and static page endpoint inside a Paper plugin using the JDK HttpServer with loopback bind, bounded daemon pool, main-thread snapshots and per-IP rate limiting"
 ---
 
-# Paper Embedded HTTP / 內嵌唯讀 HTTP 服務
+# Paper Embedded HTTP
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-embedded-http`
 
-## 目的 / Purpose
+## Purpose
 
-讓插件對外提供一個小型**唯讀**網頁或 JSON API（排行榜、市場價格、線上人數），不加任何依賴：使用 JDK 內建的 `com.sun.net.httpserver.HttpServer` 與 paper-api 附帶的 Gson。
+Let a plugin expose a small **read-only** web page or JSON API (leaderboards, market prices, online player count) with no extra dependencies: it uses the JDK's built-in `com.sun.net.httpserver.HttpServer` and the Gson bundled with paper-api.
 
-核心設計：
+Core design:
 
-- **handler 永遠不呼叫 Bukkit API。** Bukkit 不是執行緒安全的；HTTP 執行緒只讀「主執行緒定時建好、整份替換」的不可變快照（`AtomicReference`）。
-- 第一份快照出現前一律回 **503**。
-- 預設只綁 `127.0.0.1`；要公開請在前面放反向代理（nginx／Caddy，見 `examples.md`），由代理負責 TLS 與對外限流。
-- 專屬、有界的 daemon 執行緒池，絕不使用 `ForkJoinPool.commonPool()`。
-- 每個 IP 的 token bucket 限流；只有請求來自設定的**受信任代理**時才採用 `X-Forwarded-For`。
-- 埠被占用時記錄警告並**只停用這個功能**，插件其餘照常。
+- **Handlers never call the Bukkit API.** Bukkit is not thread-safe; HTTP threads only read an immutable snapshot that the main thread rebuilds periodically and replaces as a whole (`AtomicReference`).
+- Always respond **503** until the first snapshot exists.
+- Binds only to `127.0.0.1` by default; to expose it publicly, put a reverse proxy (nginx/Caddy, see `examples.md`) in front, and let the proxy handle TLS and external rate limiting.
+- A dedicated, bounded daemon thread pool; never use `ForkJoinPool.commonPool()`.
+- Per-IP token bucket rate limiting; `X-Forwarded-For` is honored only when the request comes from a configured **trusted proxy**.
+- If the port is already in use, log a warning and **disable only this feature**; the rest of the plugin keeps working.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（只用 JDK `jdk.httpserver` 模組、Gson 與 Bukkit scheduler，兩版相同）
-- 純 Paper API，不需要 Paperweight
-- `com.sun.net.httpserver` 屬於 `jdk.httpserver` 模組，Paper 伺服器的 JRE 內含；Gradle 編譯無需額外設定
+- Paper 1.21.11 / 26.2 (uses only the JDK `jdk.httpserver` module, Gson, and the Bukkit scheduler; identical on both versions)
+- Pure Paper API; Paperweight is not required
+- `com.sun.net.httpserver` belongs to the `jdk.httpserver` module, which ships with the Paper server's JRE; no extra Gradle configuration is needed to compile
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「內嵌 HTTP」「embedded HTTP server」「HttpServer」「web API」「JSON API」
-- 「排行榜網頁」「網頁面板」「status page」「REST endpoint」
-- 「限流」「rate limit」「token bucket」「X-Forwarded-For」「反向代理」「CORS」
+- "內嵌 HTTP", "embedded HTTP server", "HttpServer", "web API", "JSON API"
+- "排行榜網頁", "網頁面板", "status page", "REST endpoint"
+- "限流", "rate limit", "token bucket", "X-Forwarded-For", "反向代理", "CORS"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.web` | 放置 HTTP 類別的 package |
-| `bind` | `127.0.0.1` | 綁定位址；公開存取請維持 loopback 並加反向代理 |
-| `port` | `8080` | 監聽埠 |
-| `routes` | `/api/players` | 要開放的唯讀路徑（每條路徑對應一個 `SnapshotStore`） |
-| `refresh_ticks` | `100` | 主執行緒重建快照的間隔 |
-| `static_resource` | `web/index.html` | 選用：打包在 jar 內的靜態頁面 |
+| `base_package` | `com.example.web` | Package that holds the HTTP classes |
+| `bind` | `127.0.0.1` | Bind address; for public access keep loopback and add a reverse proxy |
+| `port` | `8080` | Listening port |
+| `routes` | `/api/players` | Read-only paths to expose (one `SnapshotStore` per path) |
+| `refresh_ticks` | `100` | Interval at which the main thread rebuilds the snapshot |
+| `static_resource` | `web/index.html` | Optional: static page bundled in the jar |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `WebConfig.java` — 不可變設定 record（啟動時解析一次）
-- `SnapshotStore.java` — 以 `AtomicReference` 發布 JSON 快照
-- `RateLimiter.java` — 每 IP token bucket（時間為參數，可無 sleep 測試）
-- `ClientAddress.java` — 取得客戶端 IP（受信任代理才看 `X-Forwarded-For`）
-- `Responses.java` — 固定標頭、CORS（選用）、HEAD 處理、錯誤 JSON
-- `RequestGuard.java` — 方法守門（405）與限流（429）
-- `JsonHandler.java` — 回傳快照（503／304／200）
-- `StaticPageHandler.java` — 選用：回傳 jar 內的靜態頁面（去 BOM）
-- `EmbeddedHttpServer.java` — 生命週期：綁定、執行緒池、停止
-- `PlayersSnapshotTask.java` — 主執行緒建快照的範例任務
-- `WebPlugin.java` — 接線：`onEnable` 啟動、`onDisable` 乾淨關閉
-- `config.yml` 片段
+- `WebConfig.java` - Immutable config record (parsed once at startup)
+- `SnapshotStore.java` - Publishes JSON snapshots through an `AtomicReference`
+- `RateLimiter.java` - Per-IP token bucket (time is a parameter, so it can be tested without sleeping)
+- `ClientAddress.java` - Resolves the client IP (`X-Forwarded-For` is only read for trusted proxies)
+- `Responses.java` - Fixed headers, optional CORS, HEAD handling, error JSON
+- `RequestGuard.java` - Method gate (405) and rate limiting (429)
+- `JsonHandler.java` - Serves the snapshot (503/304/200)
+- `StaticPageHandler.java` - Optional: serves a static page from the jar (BOM stripped)
+- `EmbeddedHttpServer.java` - Lifecycle: bind, thread pool, stop
+- `PlayersSnapshotTask.java` - Example main-thread task that builds a snapshot
+- `WebPlugin.java` - Wiring: start in `onEnable`, shut down cleanly in `onDisable`
+- `config.yml` snippet
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。不需要新增任何依賴；Gson 由 `paper-api` 傳遞提供（伺服器端也已內建，不要 shade）。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). No new dependencies are needed; Gson is provided transitively by `paper-api` (the server also bundles it; do not shade it).
 
-`config.yml`：
+`config.yml`:
 
 ```yaml
 web:
-  enabled: false              # 預設關閉；確認 bind／port 後再開
-  bind: 127.0.0.1             # 公開存取請放反向代理，不要直接改成 0.0.0.0
+  enabled: false              # Disabled by default; enable after confirming bind/port
+  bind: 127.0.0.1             # For public access use a reverse proxy; do not just change this to 0.0.0.0
   port: 8080
-  threads: 2                  # handler 執行緒數（固定上限）
-  rate-limit-per-minute: 120  # 每個 IP；0 = 不限流
-  trusted-proxies: []         # 例：["127.0.0.1"]，只有來自這些位址的請求才採用 X-Forwarded-For
-  cors-origin: ""             # 空字串 = 不送 CORS 標頭；"*" 或單一來源 = 啟用
+  threads: 2                  # Number of handler threads (fixed upper bound)
+  rate-limit-per-minute: 120  # Per IP; 0 = no rate limiting
+  trusted-proxies: []         # e.g. ["127.0.0.1"]; X-Forwarded-For is honored only for requests from these addresses
+  cors-origin: ""             # Empty string = send no CORS headers; "*" or a single origin = enabled
   cache-seconds: 5            # Cache-Control: public, max-age
-  refresh-ticks: 100          # 主執行緒重建快照的間隔（20 ticks = 1 秒）
+  refresh-ticks: 100          # Interval at which the main thread rebuilds the snapshot (20 ticks = 1 second)
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `WebConfig.java`
 
@@ -92,7 +92,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** 不可變的網頁設定。啟動時解析一次；bind／port／enabled 變更需要重啟，不支援 reload 重新綁定。 */
+/** Immutable web config. Parsed once at startup; changing bind/port/enabled requires a restart, and reload does not rebind. */
 public record WebConfig(
     boolean enabled,
     String bind,
@@ -113,7 +113,7 @@ public record WebConfig(
         trustedProxies = Set.copyOf(trustedProxies);
     }
 
-    /** 缺少的鍵一律退回安全預設（停用、loopback）。 */
+    /** Missing keys always fall back to safe defaults (disabled, loopback). */
     public static WebConfig from(ConfigurationSection section) {
         if (section == null) {
             return new WebConfig(false, DEFAULT_BIND, DEFAULT_PORT, 2, 120, Set.of(), "", 5, 100);
@@ -149,22 +149,22 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.CRC32;
 
 /**
- * 主執行緒建好 JSON、轉成 UTF-8 位元組後整份替換；HTTP 執行緒只讀 {@link #current()}。
- * 每個路由一個實例（不是靜態單例）。快照內的位元組陣列發布後不得修改。
+ * The main thread builds the JSON, converts it to UTF-8 bytes, and replaces the whole snapshot; HTTP threads only read {@link #current()}.
+ * One instance per route (not a static singleton). The byte array inside a snapshot must not be modified after publishing.
  */
 public final class SnapshotStore {
 
-    /** 已序列化的 JSON（UTF-8，無 BOM）、ETag 與建立時間。 */
+    /** Serialized JSON (UTF-8, no BOM), ETag, and build time. */
     public record Snapshot(byte[] body, String etag, long builtAtMillis) {
     }
 
-    // Gson 實例是執行緒安全且不可變的；預設會跳脫 < > & '，嵌進 HTML 也安全。
+    // A Gson instance is thread-safe and immutable; by default it escapes < > & ', so embedding in HTML is safe too.
     private static final Gson GSON = new Gson();
 
-    // 第一份快照出現前為 null（handler 回 503）。
+    // null until the first snapshot is published (handlers respond 503).
     private final AtomicReference<Snapshot> ref = new AtomicReference<>();
 
-    /** 主執行緒呼叫：序列化並發布。Gson 負責字串跳脫，不要自己拼 JSON。 */
+    /** Called on the main thread: serialize and publish. Gson handles string escaping; do not concatenate JSON yourself. */
     public void publish(JsonElement json, long nowMillis) {
         byte[] body = GSON.toJson(json).getBytes(StandardCharsets.UTF_8);
         CRC32 crc = new CRC32();
@@ -173,7 +173,7 @@ public final class SnapshotStore {
         ref.set(new Snapshot(body, etag, nowMillis));
     }
 
-    /** 任何執行緒；尚未發布過回傳 null。 */
+    /** Any thread; returns null if nothing has been published yet. */
     public Snapshot current() {
         return ref.get();
     }
@@ -189,10 +189,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 每個客戶端一個 token bucket，持續補充。時間是參數，單元測試不必 sleep。
+ * One token bucket per client, refilled continuously. Time is a parameter, so unit tests do not need to sleep.
  *
- * <p>token bucket 而不是固定視窗：固定視窗讓客戶端能在視窗邊界連花兩倍額度。
- * 追蹤的 key 數有上限，避免偽造大量來源把記憶體撐爆；超過上限且清不出空間時拒絕（fail closed）。
+ * <p>A token bucket rather than a fixed window: a fixed window lets a client spend double the quota across the window boundary.
+ * The number of tracked keys is capped so that forged sources cannot exhaust memory; when the cap is reached and no space can be freed, requests are rejected (fail closed).
  */
 public final class RateLimiter {
 
@@ -213,7 +213,7 @@ public final class RateLimiter {
         }
     }
 
-    /** @param perMinute 每個客戶端每分鐘的請求數；0 = 不限流 */
+    /** @param perMinute requests per client per minute; 0 = no rate limiting */
     public RateLimiter(int perMinute) {
         this.capacity = Math.max(0, perMinute);
         this.refillPerMilli = capacity / 60_000.0;
@@ -223,7 +223,7 @@ public final class RateLimiter {
         return capacity == 0;
     }
 
-    /** 花掉一個 token；沒有就回 false。key 必須是 {@link ClientAddress} 的結果。 */
+    /** Spends one token; returns false if none is left. The key must be a result of {@link ClientAddress}. */
     public boolean allow(String client, long nowMillis) {
         if (isDisabled()) return true;
         if (buckets.size() >= MAX_TRACKED && !buckets.containsKey(client)) {
@@ -241,7 +241,7 @@ public final class RateLimiter {
         }
     }
 
-    /** 丟掉閒置的 bucket。可由主執行緒的定時任務順便呼叫。 */
+    /** Drops idle buckets. Can be called incidentally from a periodic main-thread task. */
     public void evictIdle(long nowMillis) {
         buckets.entrySet().removeIf(e -> {
             Bucket b = e.getValue();
@@ -268,11 +268,11 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 
 /**
- * 決定限流用的客戶端 key。
+ * Determines the client key used for rate limiting.
  *
- * <p>預設是 socket 的遠端位址。只有 socket 位址本身在 {@code trustedProxies} 內（反向代理）時，才採用
- * {@code X-Forwarded-For}，且從右往左取第一個「不是受信任代理」的位址。
- * 不受信任的來源送的 header 一律忽略，否則一行 header 就能偽裝成上千個來源。
+ * <p>By default it is the socket's remote address. {@code X-Forwarded-For} is honored only when the socket address itself
+ * is in {@code trustedProxies} (a reverse proxy), and the first address, scanning from right to left, that is not a trusted proxy is used.
+ * Headers sent by untrusted sources are always ignored; otherwise a single header could impersonate thousands of sources.
  */
 public final class ClientAddress {
 
@@ -316,7 +316,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-/** 寫回應的共用邏輯：固定標頭、HEAD 只送標頭、CORS 選用。HTTP 執行緒，零 Bukkit。 */
+/** Shared response-writing logic: fixed headers, HEAD sends headers only, optional CORS. HTTP thread, zero Bukkit. */
 public final class Responses {
 
     public static final String JSON = "application/json; charset=utf-8";
@@ -325,7 +325,7 @@ public final class Responses {
     private final String corsOrigin;
     private final int cacheSeconds;
 
-    /** @param corsOrigin 空字串 = 不送 CORS；否則是 "*" 或單一來源 */
+    /** @param corsOrigin empty string = send no CORS; otherwise "*" or a single origin */
     public Responses(String corsOrigin, int cacheSeconds) {
         this.corsOrigin = corsOrigin;
         this.cacheSeconds = cacheSeconds;
@@ -335,7 +335,7 @@ public final class Responses {
         return "public, max-age=" + cacheSeconds;
     }
 
-    /** 送出 body（HEAD 只送標頭）。etag 可為 null。caller 負責 close exchange。 */
+    /** Sends the body (HEAD sends headers only). etag may be null. The caller is responsible for closing the exchange. */
     public void send(HttpExchange x, int status, String contentType, byte[] body, String cacheControl,
                      String etag) throws IOException {
         x.getRequestBody().close();
@@ -355,7 +355,7 @@ public final class Responses {
         }
     }
 
-    /** 304：沒有 body。 */
+    /** 304: no body. */
     public void notModified(HttpExchange x, String etag, String cacheControl) throws IOException {
         x.getRequestBody().close();
         Headers h = x.getResponseHeaders();
@@ -365,7 +365,7 @@ public final class Responses {
         x.sendResponseHeaders(304, -1);
     }
 
-    /** 錯誤一律是 {"error": "..."}；訊息由 Gson 跳脫。錯誤回應不快取。 */
+    /** Errors are always {"error": "..."}; the message is escaped by Gson. Error responses are not cached. */
     public void error(HttpExchange x, int status, String message) throws IOException {
         JsonObject json = new JsonObject();
         json.addProperty("error", message);
@@ -391,7 +391,7 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.util.function.LongSupplier;
 
-/** 所有 handler 共用的守門：只允許 GET／HEAD（405），再套用限流（429）。 */
+/** Gate shared by all handlers: allow only GET/HEAD (405), then apply rate limiting (429). */
 public final class RequestGuard {
 
     private final RateLimiter limiter;
@@ -406,7 +406,7 @@ public final class RequestGuard {
         this.clock = clock;
     }
 
-    /** @return true = 放行；false = 已經回應完畢，呼叫端直接 return */
+    /** @return true = admitted; false = the response has already been sent, the caller should just return */
     public boolean admit(HttpExchange x) throws IOException {
         String method = x.getRequestMethod();
         if (!"GET".equalsIgnoreCase(method) && !"HEAD".equalsIgnoreCase(method)) {
@@ -436,7 +436,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** 回傳某個 {@link SnapshotStore} 的內容。HTTP 執行緒：只讀快照，絕不呼叫 Bukkit。 */
+/** Serves the contents of a {@link SnapshotStore}. HTTP thread: reads the snapshot only, never calls Bukkit. */
 final class JsonHandler implements HttpHandler {
 
     private final String path;
@@ -463,7 +463,7 @@ final class JsonHandler implements HttpHandler {
             }
             SnapshotStore.Snapshot snapshot = store.current();
             if (snapshot == null) {
-                // 剛啟動、第一份快照還沒建好
+                // Just started; the first snapshot has not been built yet
                 x.getResponseHeaders().set("Retry-After", "5");
                 responses.error(x, 503, "not ready");
                 return;
@@ -483,7 +483,7 @@ final class JsonHandler implements HttpHandler {
         try {
             responses.error(x, 500, "internal error");
         } catch (IOException | RuntimeException e) {
-            // 連線已斷或標頭已送出：沒有別的能做
+            // Connection already closed or headers already sent: nothing else can be done
             log.log(Level.FINE, "could not send error response", e);
         }
     }
@@ -505,7 +505,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/** 選用：回傳啟動時讀進記憶體的 jar 內靜態頁面（只服務 "/"）。HTTP 執行緒，零 Bukkit。 */
+/** Optional: serves a static page from the jar that was read into memory at startup (serves only "/"). HTTP thread, zero Bukkit. */
 final class StaticPageHandler implements HttpHandler {
 
     private static final byte[] BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
@@ -522,7 +522,7 @@ final class StaticPageHandler implements HttpHandler {
         this.log = log;
     }
 
-    /** 主執行緒（onEnable）：讀 jar 內資源並去掉 UTF-8 BOM；找不到回傳 null。 */
+    /** Main thread (onEnable): reads the resource inside the jar and strips the UTF-8 BOM; returns null if not found. */
     static byte[] load(Plugin plugin, String resource) {
         try (InputStream in = plugin.getResource(resource)) {
             if (in == null) return null;
@@ -571,23 +571,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * HttpServer 的生命週期。{@link #start()}／{@link #stop()} 只在主執行緒呼叫（onEnable／onDisable）。
- * 綁不到位址或埠只代表「網頁功能停用」，不會讓插件失敗。
+ * Lifecycle of the HttpServer. {@link #start()}/{@link #stop()} are called only on the main thread (onEnable/onDisable).
+ * Failing to bind the address or port only means "the web feature is disabled"; it does not make the plugin fail.
  */
 public final class EmbeddedHttpServer {
 
-    private static final int BACKLOG = 0;                // 0 = 系統預設
+    private static final int BACKLOG = 0;                // 0 = system default
     private static final String THREAD_PREFIX = "web-http-";
 
     private final WebConfig config;
     private final Map<String, SnapshotStore> routes;
-    private final byte[] page;                           // 可為 null：不提供靜態頁面
+    private final byte[] page;                           // May be null: no static page is served
     private final Logger log;
     private final RateLimiter limiter;
     private HttpServer server;
     private ExecutorService executor;
 
-    /** @param routes 路徑 → 該路徑的快照（例如 "/api/players"）；會被複製 */
+    /** @param routes path -> snapshot for that path (e.g. "/api/players"); copied defensively */
     public EmbeddedHttpServer(WebConfig config, Map<String, SnapshotStore> routes, byte[] page, Logger log) {
         this.config = config;
         this.routes = new LinkedHashMap<>(routes);
@@ -600,7 +600,7 @@ public final class EmbeddedHttpServer {
         return limiter;
     }
 
-    /** @return true = 正在監聽 */
+    /** @return true = listening */
     public boolean start() {
         if (!config.enabled()) return false;
         if (server != null) return true;
@@ -614,7 +614,7 @@ public final class EmbeddedHttpServer {
                     + ". Put a reverse proxy with TLS in front of it.");
             }
         } catch (IOException | IllegalArgumentException | SecurityException e) {
-            // 埠被占用、位址無效：記錄後停用功能，插件其餘照常
+            // Port in use or invalid address: log it and disable the feature; the rest of the plugin keeps working
             log.log(Level.WARNING, "Web server could not bind " + config.bind() + ":" + config.port()
                 + "; the web feature is disabled.", e);
             return false;
@@ -626,7 +626,7 @@ public final class EmbeddedHttpServer {
             t.setDaemon(true);
             return t;
         });
-        created.setExecutor(executor);   // 專屬、有界；絕不用 common pool
+        created.setExecutor(executor);   // Dedicated and bounded; never use the common pool
 
         Responses responses = new Responses(config.corsOrigin(), config.cacheSeconds());
         RequestGuard guard = new RequestGuard(
@@ -644,7 +644,7 @@ public final class EmbeddedHttpServer {
         return true;
     }
 
-    /** 主執行緒；沒啟動過、重複呼叫都安全。 */
+    /** Main thread; safe if never started and safe to call repeatedly. */
     public void stop() {
         HttpServer s = server;
         ExecutorService pool = executor;
@@ -654,7 +654,7 @@ public final class EmbeddedHttpServer {
         if (pool != null) pool.shutdownNow();
     }
 
-    /** 實際綁上的埠；沒在監聽回 -1（設定 port 0 的測試可用）。 */
+    /** The port actually bound; -1 when not listening (useful for tests that set port 0). */
     public int boundPort() {
         return server == null ? -1 : server.getAddress().getPort();
     }
@@ -672,8 +672,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * 主執行緒定時任務：讀 Bukkit 狀態 → 建 JSON → 發布。
- * 這是唯一碰 Bukkit 的地方；HTTP 執行緒只讀 {@link SnapshotStore}。
+ * Periodic main-thread task: read Bukkit state -> build JSON -> publish.
+ * This is the only place that touches Bukkit; HTTP threads only read the {@link SnapshotStore}.
  */
 public final class PlayersSnapshotTask implements Runnable {
 
@@ -713,7 +713,7 @@ import java.util.Map;
 
 public final class WebPlugin extends JavaPlugin {
 
-    private static final String PAGE_RESOURCE = "web/index.html";   // 選用：放在 src/main/resources/web/
+    private static final String PAGE_RESOURCE = "web/index.html";   // Optional: place it in src/main/resources/web/
 
     private EmbeddedHttpServer web;
 
@@ -723,16 +723,16 @@ public final class WebPlugin extends JavaPlugin {
         WebConfig config = WebConfig.from(getConfig().getConfigurationSection("web"));
 
         SnapshotStore players = new SnapshotStore();
-        byte[] page = StaticPageHandler.load(this, PAGE_RESOURCE);   // 找不到就回 null，不提供首頁
+        byte[] page = StaticPageHandler.load(this, PAGE_RESOURCE);   // Returns null if not found, in which case no index page is served
 
         web = new EmbeddedHttpServer(config, Map.of("/api/players", players), page, getLogger());
         if (!web.start()) {
-            return;   // 未啟用或綁定失敗：功能停用，插件其餘照常
+            return;   // Not enabled or bind failed: feature disabled, the rest of the plugin keeps working
         }
 
-        // 主執行緒定時重建快照；第一次在下一個 tick 執行，之前 handler 回 503
+        // Rebuild the snapshot periodically on the main thread; the first run is on the next tick, and handlers respond 503 before that
         getServer().getScheduler().runTaskTimer(this, new PlayersSnapshotTask(players), 1L, config.refreshTicks());
-        // 順便定期清掉閒置的限流 bucket
+        // Also periodically evict idle rate-limit buckets
         getServer().getScheduler().runTaskTimer(this,
             () -> web.limiter().evictIdle(System.currentTimeMillis()), 20L * 60, 20L * 60);
     }
@@ -747,51 +747,51 @@ public final class WebPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/
 ├── java/com/example/web/
-│   ├── WebPlugin.java              ← 接線（onEnable 啟動、onDisable 關閉）
+│   ├── WebPlugin.java              ← Wiring (start in onEnable, stop in onDisable)
 │   ├── WebConfig.java
-│   ├── EmbeddedHttpServer.java     ← 全專案唯一出現 HttpServer 的地方
+│   ├── EmbeddedHttpServer.java     ← The only place in the project that uses HttpServer
 │   ├── RequestGuard.java / RateLimiter.java / ClientAddress.java
 │   ├── Responses.java / JsonHandler.java / StaticPageHandler.java
 │   ├── SnapshotStore.java
-│   └── PlayersSnapshotTask.java    ← 唯一碰 Bukkit 的類別（主執行緒）
+│   └── PlayersSnapshotTask.java    ← The only class that touches Bukkit (main thread)
 └── resources/
     ├── config.yml
-    └── web/index.html              ← 選用，存成 UTF-8 無 BOM
+    └── web/index.html              ← Optional, saved as UTF-8 without BOM
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- **HTTP 執行緒禁止呼叫任何 Bukkit API**（含 `Bukkit.getOnlinePlayers()`、`Player#getName()`、`getConfig()`）。需要的資料在主執行緒的 `PlayersSnapshotTask` 先轉成 JSON 位元組再發布。
-- 快照是**整份替換**：`AtomicReference.set` 發布不可變物件，handler 永遠看到完整的一份，不需要鎖。不要原地修改已發布的集合或陣列。
-- 設定在啟動時解析成不可變 record；`bind`／`port`／`enabled` 變更需重啟，reload 不重新綁定。
-- `onDisable` 先 `cancelTasks(this)` 再 `web.stop()`；`server.stop(0)` 立即關閉、`shutdownNow()` 中斷執行緒，daemon 執行緒不會拖住 JVM 結束。
-- 快照任務若丟例外，該次不發布、舊快照繼續服務；在任務內接住並記錄比讓 scheduler 印堆疊更好。
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)。
+- **HTTP threads must not call any Bukkit API** (including `Bukkit.getOnlinePlayers()`, `Player#getName()`, `getConfig()`). Data they need is first converted to JSON bytes in the main-thread `PlayersSnapshotTask` and then published.
+- Snapshots are **replaced as a whole**: `AtomicReference.set` publishes an immutable object, so handlers always see a complete one and no lock is needed. Never modify a published collection or array in place.
+- Config is parsed into an immutable record at startup; changes to `bind`/`port`/`enabled` require a restart, and reload does not rebind.
+- In `onDisable`, call `cancelTasks(this)` first, then `web.stop()`; `server.stop(0)` closes immediately, `shutdownNow()` interrupts the threads, and daemon threads will not hold up JVM exit.
+- If the snapshot task throws, nothing is published that round and the old snapshot keeps being served; catching and logging inside the task is better than letting the scheduler print a stack trace.
+- See [`references/paper-threading.md`](references/paper-threading.md).
 
-## 安全性 / Security
+## Security
 
-- 預設 `127.0.0.1`；公開存取走反向代理（TLS、對外限流、存取日誌），代理的位址放進 `trusted-proxies` 才會採用 `X-Forwarded-For`。
-- 只回傳**可公開**的資料；不要把 UUID 與 IP、座標、權限或任何寫入操作放進去。唯讀、無 session、無 cookie。
-- 只允許 GET／HEAD；其他方法回 405 並帶 `Allow` 標頭。
-- CORS 預設關閉。需要瀏覽器跨來源讀取時才設 `cors-origin`，優先使用單一來源而非 `*`。
-- 若還需要驗證，token 比較放在限流之後，並使用 `MessageDigest.isEqual`（定時比較）。
-- 靜態頁面一律存成 **UTF-8 無 BOM**（`StaticPageHandler.load` 會再去一次 BOM 作為保險），回應帶 `charset=utf-8` 與 `X-Content-Type-Options: nosniff`。
+- Defaults to `127.0.0.1`; public access goes through a reverse proxy (TLS, external rate limiting, access logs), and `X-Forwarded-For` is honored only after the proxy's address is added to `trusted-proxies`.
+- Return only **publicly shareable** data; never include UUIDs paired with IPs, coordinates, permissions, or any write operation. Read-only, no sessions, no cookies.
+- Only GET/HEAD are allowed; other methods get 405 with an `Allow` header.
+- CORS is off by default. Set `cors-origin` only when browsers need cross-origin reads, and prefer a single origin over `*`.
+- If authentication is also needed, do the token comparison after rate limiting and use `MessageDigest.isEqual` (constant-time comparison).
+- Always save static pages as **UTF-8 without BOM** (`StaticPageHandler.load` strips a BOM again as a safeguard), and send responses with `charset=utf-8` and `X-Content-Type-Options: nosniff`.
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `java.net.BindException: Address already in use` | 埠被占用（另一個插件／程序） | `EmbeddedHttpServer.start()` 已接住：記錄警告、回 false、功能停用；改 `web.port` 後重啟 |
-| 一直回 503 | 快照任務沒排程，或每次建置都丟例外 | 確認 `runTaskTimer` 已排程；檢查主控台例外；任務內 catch 並記錄 |
-| 伺服器卡頓、`ConcurrentModificationException`、奇怪的 Bukkit 非同步例外 | handler 內碰了 Bukkit 或共享的可變集合 | 只在 `PlayersSnapshotTask` 讀 Bukkit；發布前先轉成 JSON |
-| 所有人都被限流（429） | 在反向代理後面，所有請求來自 `127.0.0.1` | 把代理 IP 加進 `trusted-proxies`，並讓代理設定 `X-Forwarded-For` |
-| 限流可被輕易繞過 | 信任了任意來源的 `X-Forwarded-For` | 只有 `trusted-proxies` 內的 socket 位址才採用該標頭（`ClientAddress`） |
-| 瀏覽器亂碼 | 頁面存成 UTF-16／帶 BOM，或缺 `charset` | 存成 UTF-8 無 BOM；回應 `Content-Type` 帶 `charset=utf-8` |
-| 瀏覽器 CORS 錯誤 | 前端網域與 API 不同源 | 設定 `cors-origin` 為前端來源；或讓反向代理把頁面與 API 放在同一網域 |
-| 關服後執行緒殘留／埠仍被占用 | `onDisable` 沒呼叫 `stop()` | `server.stop(0)` + `executor.shutdownNow()`；使用 daemon 執行緒 |
-| `/reload` 後沒有重新綁定 | 刻意設計：bind／port 變更需重啟 | 重啟伺服器 |
+| `java.net.BindException: Address already in use` | Port already in use (another plugin/process) | `EmbeddedHttpServer.start()` already catches it: logs a warning, returns false, and disables the feature; change `web.port` and restart |
+| Always returns 503 | The snapshot task is not scheduled, or throws on every build | Confirm `runTaskTimer` is scheduled; check console exceptions; catch and log inside the task |
+| Server lag, `ConcurrentModificationException`, odd Bukkit async exceptions | A handler touched Bukkit or a shared mutable collection | Read Bukkit only in `PlayersSnapshotTask`; convert to JSON before publishing |
+| Everyone is rate limited (429) | Behind a reverse proxy, all requests come from `127.0.0.1` | Add the proxy IP to `trusted-proxies` and have the proxy set `X-Forwarded-For` |
+| Rate limiting is easily bypassed | `X-Forwarded-For` from arbitrary sources is trusted | Honor the header only for socket addresses in `trusted-proxies` (`ClientAddress`) |
+| Garbled text in the browser | Page saved as UTF-16 / with BOM, or `charset` missing | Save as UTF-8 without BOM; include `charset=utf-8` in the response `Content-Type` |
+| Browser CORS error | Frontend domain differs from the API origin | Set `cors-origin` to the frontend origin, or have the reverse proxy serve the page and API on the same domain |
+| Threads linger / port still occupied after shutdown | `onDisable` did not call `stop()` | `server.stop(0)` + `executor.shutdownNow()`; use daemon threads |
+| No rebind after `/reload` | By design: bind/port changes require a restart | Restart the server |

@@ -1,6 +1,6 @@
 # examples — paper-softdepend-hook
 
-## 範例 1：購買流程使用 Vault 扣款（沒裝 Vault 時優雅降級）
+## Example 1: Purchase flow withdraws via Vault (graceful degradation when Vault is not installed)
 
 **Input:**
 ```
@@ -10,7 +10,7 @@ port_name: MoneyPort
 integration_package: com.example.market.integration
 ```
 
-**Output — 業務程式碼只依賴 `MoneyPort`，不 import 任何 Vault 類別:**
+**Output — business code depends only on `MoneyPort` and imports no Vault classes:**
 ```java
 import com.example.market.integration.MoneyPort;
 import net.kyori.adventure.text.Component;
@@ -28,7 +28,7 @@ public final class PurchaseService {
         this.money = money;
     }
 
-    /** 在主執行緒呼叫（例如 GUI 點擊事件中）。 */
+    /** Call on the main thread (for example inside a GUI click event). */
     public boolean buy(Player player, double price) {
         if (!money.available()) {
             player.sendMessage(Component.text("The shop is temporarily unavailable."));
@@ -48,24 +48,24 @@ public final class PurchaseService {
 }
 ```
 
-重點：
+Key points:
 
-- `money.format(price)` 回傳 `Component`（已把 `Economy.format()` 的 § 色碼解析掉），以 `Placeholder.component` 傳給 MiniMessage；不要寫成 `"<red>You need " + economy.format(price)`。
-- 先 `has` 再 `withdraw` 之間仍可能被別的插件搶先扣款，所以 `withdraw` 的結果一定要檢查。
-- Vault 沒有交易機制：一次「轉帳」是兩個獨立呼叫，先扣款、後入帳，扣款失敗就不要入帳。
+- `money.format(price)` returns a `Component` (the § color codes from `Economy.format()` are already parsed) and is passed to MiniMessage with `Placeholder.component`; do not write `"<red>You need " + economy.format(price)`.
+- Another plugin can still withdraw between `has` and `withdraw`, so always check the result of `withdraw`.
+- Vault has no transaction mechanism: a "transfer" is two independent calls, withdraw first and deposit second; if the withdrawal fails, do not deposit.
 
 ---
 
-## 範例 2：packetevents 軟依賴（Hook + Bridge + 封包監聽器）
+## Example 2: packetevents soft dependency (Hook + Bridge + packet listener)
 
 **Input:**
 ```
 dependency: packetevents
 role: packet
-purpose: 計算每個玩家收到的 SET_SLOT 封包數（示範用）
+purpose: Count the SET_SLOT packets each player receives (demo)
 ```
 
-**Output — Hook（沒有 packetevents 型別）:**
+**Output — Hook (no packetevents types):**
 ```java
 package com.example.market.packet;
 
@@ -74,8 +74,8 @@ import org.bukkit.plugin.Plugin;
 import java.util.logging.Level;
 
 /**
- * packetevents 的接點。沒有 packetevents 型別：監聽器以 Object 持有，真正碰型別的程式碼全在 {@link PacketEventsBridge}，
- * 只在 isPluginEnabled 為真之後才被觸碰，並接 LinkageError。
+ * Hook for packetevents. It has no packetevents types: the listener is held as an Object, and all code that touches the types lives in {@link PacketEventsBridge},
+ * which is only touched after isPluginEnabled is true, and LinkageError is caught.
  */
 public final class PacketEventsHook {
 
@@ -90,7 +90,7 @@ public final class PacketEventsHook {
         this.stats = stats;
     }
 
-    /** softdepend 保證 packetevents 在本插件之前啟用。 */
+    /** softdepend guarantees packetevents is enabled before this plugin. */
     public boolean install() {
         if (!plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME)) {
             plugin.getLogger().warning("packetevents not found; packet statistics are disabled.");
@@ -105,7 +105,7 @@ public final class PacketEventsHook {
         }
     }
 
-    /** 沒掛上就是 no-op。packetevents 若先被停用，它的監聽器已跟著消失，失敗只記 FINE。 */
+    /** A no-op if nothing was hooked. If packetevents was disabled first, its listeners have already gone with it, so a failure is logged at FINE only. */
     public void uninstall() {
         Object registered = listener;
         listener = null;
@@ -119,7 +119,7 @@ public final class PacketEventsHook {
 }
 ```
 
-**Output — Bridge 與封包監聽器（唯一碰 packetevents 型別）:**
+**Output — Bridge and packet listener (the only code touching packetevents types):**
 ```java
 package com.example.market.packet;
 
@@ -130,15 +130,15 @@ import com.github.retrooper.packetevents.event.PacketSendEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 
 /**
- * 沒裝 packetevents 時這個類別永遠不能被載入。只註冊與撤銷監聽器，不呼叫 load()／init()／terminate()：
- * API 的生命週期屬於 packetevents 插件，其他插件掛在同一個實例上。
+ * This class must never be loaded when packetevents is not installed. It only registers and unregisters the listener and never calls load()/init()/terminate():
+ * the API lifecycle belongs to the packetevents plugin, and other plugins are attached to the same instance.
  */
 final class PacketEventsBridge {
 
     private PacketEventsBridge() {
     }
 
-    /** @return 已註冊的監聽器，撤銷時原樣交回 {@link #unregister} */
+    /** @return the registered listener, handed back unchanged to {@link #unregister} when unregistering */
     static Object register(PacketStats stats) {
         return PacketEvents.getAPI().getEventManager().registerListener(new SlotCounter(stats));
     }
@@ -147,7 +147,7 @@ final class PacketEventsBridge {
         PacketEvents.getAPI().getEventManager().unregisterListener((PacketListenerCommon) listener);
     }
 
-    /** 跑在 Netty IO 執行緒：不呼叫 Bukkit API，只更新執行緒安全的計數器。 */
+    /** Runs on the Netty IO thread: calls no Bukkit API and only updates a thread-safe counter. */
     private static final class SlotCounter extends PacketListenerAbstract {
 
         private final PacketStats stats;
@@ -166,13 +166,13 @@ final class PacketEventsBridge {
 }
 ```
 
-**Output — 與 packetevents 無關的計數器（可被任何執行緒安全讀寫）:**
+**Output — a counter unrelated to packetevents (safe to read and write from any thread):**
 ```java
 package com.example.market.packet;
 
 import java.util.concurrent.atomic.LongAdder;
 
-/** 封包計數：Netty 執行緒寫、主執行緒或 PlaceholderAPI 讀，LongAdder 本身執行緒安全。 */
+/** Packet counter: written by the Netty thread and read by the main thread or PlaceholderAPI; LongAdder is itself thread-safe. */
 public final class PacketStats {
 
     private final LongAdder setSlot = new LongAdder();
@@ -189,16 +189,16 @@ public final class PacketStats {
 
 ---
 
-## 範例 3：邊界測試——在沒有第三方 jar 的 classpath 載入 Hook
+## Example 3: Boundary test — load the Hook on a classpath without third-party jars
 
 **Input:**
 ```
-test: Hook / Listener / Plugin 類別在沒有 Vault、PlaceholderAPI、packetevents 時仍可反射
+test: Hook / Listener / Plugin classes can still be reflected without Vault, PlaceholderAPI, or packetevents
 ```
 
-**Output — JUnit 5 邊界測試:**
+**Output — JUnit 5 boundary test:**
 
-原理：軟依賴在 Gradle 是 `compileOnly`，**測試 classpath 本來就沒有它們**，所以測試裡的反射行為與「伺服器沒裝該插件」完全一樣。`getDeclaredFields()` / `getDeclaredMethods()` 會解析每個成員的型別（Bukkit 的 `registerEvents` 做的就是這件事），只要簽名碰到缺席的第三方型別就丟 `NoClassDefFoundError`，測試因此失敗。
+Rationale: in Gradle the soft dependencies are `compileOnly`, so the **test classpath already lacks them**, and reflection in a test behaves exactly like "the server does not have that plugin installed". `getDeclaredFields()` / `getDeclaredMethods()` resolve the type of every member (which is what Bukkit's `registerEvents` does), and any signature that touches the absent third-party type throws `NoClassDefFoundError`, which fails the test.
 
 ```java
 package com.example.market;
@@ -218,21 +218,21 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * 軟依賴的 class-load 邊界：沒有 Vault／PlaceholderAPI／packetevents 時，
- * 「一定會被建構」的類別必須能完整反射。
+ * Class-load boundary for soft dependencies: without Vault/PlaceholderAPI/packetevents,
+ * every class that is "always constructed" must be fully reflectable.
  *
- * <p>前提：build.gradle 只用 {@code compileOnly} 宣告這三個依賴，不要加 {@code testImplementation}／{@code testCompileOnly}。
+ * <p>Precondition: build.gradle declares these three dependencies with {@code compileOnly} only; do not add {@code testImplementation}/{@code testCompileOnly}.
  */
 class SoftDependBoundaryTest {
 
-    /** 即使沒有任何軟依賴也會被載入／建構／註冊的類別（含 Listener 與外掛主類別）。 */
+    /** Classes that are loaded/constructed/registered even with no soft dependency at all (including the Listener and the plugin main class). */
     private static final List<Class<?>> ALWAYS_LOADED = List.of(
         MarketPlugin.class, VaultHook.class, PapiHook.class, PacketEventsHook.class,
         JoinListener.class, MoneyPort.class, NoMoney.class, SnapshotPublisher.class);
 
     @Test
     void testClasspathReallyLacksTheDependencies() {
-        // 否則下面的測試永遠會過，沒有意義
+        // Otherwise the tests below would always pass and be meaningless
         for (String name : List.of(
             "net.milkbowl.vault.economy.Economy",
             "me.clip.placeholderapi.expansion.PlaceholderExpansion",
@@ -248,21 +248,21 @@ class SoftDependBoundaryTest {
             assertDoesNotThrow(() -> {
                 type.getDeclaredConstructors();
                 type.getDeclaredFields();
-                type.getDeclaredMethods(); // Bukkit registerEvents 做的就是這個
+                type.getDeclaredMethods(); // This is exactly what Bukkit registerEvents does
             }, type.getSimpleName() + " exposes a third-party type in a member signature");
         }
     }
 
     @Test
     void bridgesDoFailWithoutTheDependencies() throws ClassNotFoundException {
-        // 反向確認：Bridge 本來就不能在缺依賴時反射；失敗代表它被 Hook 以外的程式碼保護著
+        // Reverse check: a Bridge is supposed to be non-reflectable when the dependency is missing; failing here means it is protected by code other than the Hook
         Class<?> bridge = Class.forName("com.example.market.integration.VaultBridge");
         assertThrows(NoClassDefFoundError.class, bridge::getDeclaredMethods);
     }
 }
 ```
 
-`build.gradle` 測試依賴（注意沒有任何軟依賴）：
+`build.gradle` test dependencies (note there are no soft dependencies):
 
 ```groovy
 dependencies {
@@ -271,7 +271,7 @@ dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.6'
     compileOnly 'com.github.retrooper:packetevents-spigot:2.13.0'
 
-    // paper-api 在測試也要有，否則 JavaPlugin、Listener 載入不了；軟依賴不要加
+    // paper-api is also needed in tests, otherwise JavaPlugin and Listener cannot be loaded; do not add the soft dependencies
     testImplementation 'io.papermc.paper:paper-api:26.2.build.132-stable'
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -283,23 +283,23 @@ test {
 }
 ```
 
-要點：
+Key points:
 
-- `bridgesDoFailWithoutTheDependencies` 是反向對照：確認 Bridge 在缺依賴時確實無法反射，證明第二個測試真的有偵測能力；Bridge 與 Expansion **不要**放進 `ALWAYS_LOADED`。
-- 把新增的 Listener、指令類別都加進 `ALWAYS_LOADED`；它們是最容易在簽名上引入第三方型別的地方。
-- 這個測試不需要 MockBukkit，也不需要啟動伺服器。
+- `bridgesDoFailWithoutTheDependencies` is a reverse control: it confirms the Bridge really cannot be reflected without the dependency, proving the second test can actually detect leaks; do **not** put the Bridge or Expansion in `ALWAYS_LOADED`.
+- Add every new Listener and command class to `ALWAYS_LOADED`; they are the places most likely to introduce a third-party type in a signature.
+- This test needs neither MockBukkit nor a running server.
 
 ---
 
-## 範例 4：選用的 Vault 提供端註冊與 PlaceholderAPI 發佈
+## Example 4: Optional Vault provider registration and PlaceholderAPI publishing
 
 **Input:**
 ```
 role: provider + expansion
-ledger: 自家帳本（LedgerPort）
+ledger: own ledger (LedgerPort)
 ```
 
-**Output — onEnable 加上提供端註冊（帳本就緒後才註冊）:**
+**Output — add provider registration to onEnable (register only once the ledger is ready):**
 ```java
 import com.example.market.integration.LedgerPort;
 import com.example.market.integration.VaultHook;
@@ -311,7 +311,7 @@ public final class LedgerPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        LedgerPort ledger = createLedger();   // 設定、資料庫都載入完成後才註冊，避免 Vault 消費者拿到半成品
+        LedgerPort ledger = createLedger();   // Register only after config and database are fully loaded, so Vault consumers never get a half-built provider
         vault = new VaultHook(this);
         if (!vault.registerProvider(ledger)) {
             getLogger().info("Vault not available; the ledger is only reachable through its own API.");
@@ -320,7 +320,7 @@ public final class LedgerPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 取消本插件註冊的所有服務（包含 Economy）
+        // Unregister every service registered by this plugin (including Economy)
         getServer().getServicesManager().unregisterAll(this);
     }
 
@@ -330,15 +330,15 @@ public final class LedgerPlugin extends JavaPlugin {
 }
 ```
 
-**Output — 驗證 expansion（遊戲內）:**
+**Output — verify the expansion (in game):**
 ```
 /papi parse me %market_balance%
 /papi parse me %market_balance_raw%
 /papi info market
 ```
 
-提醒：
+Reminders:
 
-- 提供端的方法都在**主執行緒**被 Vault 消費者呼叫；`LedgerPort` 的實作要有主執行緒檢查，或確保是執行緒安全的。
-- `Economy.format()` 回傳含 § 色碼的字串是常態（EssentialsX、CMI 皆然），消費端一律以 `LegacyComponentSerializer.legacySection()` 轉 Component。
-- PlaceholderAPI 的 `onRequest` 讀 `SnapshotPublisher.current()`；主執行緒的 `runTaskTimer` 每 5 秒（100 tick）整份重建快照，數值最多落後 5 秒，這是用延遲換執行緒安全的取捨。
+- Provider methods are called by Vault consumers on the **main thread**; the `LedgerPort` implementation needs a main-thread check, or must be thread-safe.
+- It is normal for `Economy.format()` to return a string containing § color codes (EssentialsX and CMI both do); consumers always convert it to a Component with `LegacyComponentSerializer.legacySection()`.
+- PlaceholderAPI's `onRequest` reads `SnapshotPublisher.current()`; the main thread's `runTaskTimer` rebuilds the whole snapshot every 5 seconds (100 ticks), so values lag by at most 5 seconds. This is the trade-off of paying latency for thread safety.

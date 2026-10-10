@@ -3,45 +3,45 @@ name: nms-reflection-bridge
 description: "反射式 NMS 存取橋接：避開 CraftBukkit 編譯期依賴（相容 Spigot 的 v1_xx_Rx 套件），透過 reflection 快取取得跨版本相容性 / Reflection-based NMS bridge for cross-version compatibility without Paperweight compile dependency"
 ---
 
-# NMS Reflection Bridge / NMS 反射橋接器
+# NMS Reflection Bridge
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-reflection-bridge`
 
-## 目的 / Purpose
+## Purpose
 
-提供**不依賴 Paperweight userdev** 的 NMS 存取方式，透過 Java reflection + 快取 Method/Field handle，使同一 JAR 可在多個 NMS 版本執行（例如 26.1、26.2、26.3）。
+Provides NMS access that does **not depend on Paperweight userdev**. It uses Java reflection plus cached Method/Field handles so one JAR can run on multiple NMS versions (for example 26.1, 26.2, 26.3).
 
-> 若專案只需單一版本，請使用 Paperweight 的原生 API（`nms-packet-sender` 等）更簡潔。本技能適用於跨版本分發場景。
+> If the project targets a single version, the native Paperweight API (`nms-packet-sender` etc.) is simpler. This skill is for cross-version distribution.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.20.5+（原生使用 Mojang mappings）
-- 不需 Paperweight 編譯依賴
-- 僅需 `org.spigotmc:spigot-api` 或 `io.papermc.paper:paper-api`
+- Paper 1.20.5+ (natively uses Mojang mappings)
+- No Paperweight compile dependency
+- Only `org.spigotmc:spigot-api` or `io.papermc.paper:paper-api` is required
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「reflection bridge」「反射橋接」「NMS reflection」
 - 「跨版本 NMS」「cross-version」「版本無關」
 - 「避開 Paperweight」「no paperweight」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.nms` | 產出類別所在 package |
-| `bridge_class_name` | `NmsBridge` | 核心反射類 |
-| `cache_enabled` | `true` | 是否快取 Method handle |
+| `package_name` | `com.example.nms` | Package that holds the generated classes |
+| `bridge_class_name` | `NmsBridge` | Core reflection class |
+| `cache_enabled` | `true` | Whether to cache Method handles |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `NmsBridge.java` — 反射工具核心（含 Method 快取）
-- `NmsClasses.java` — NMS 類別名稱常數
-- `MethodHandleCache.java` — `java.lang.invoke.MethodHandle` 快取機制
+- `NmsBridge.java` — core reflection utility (with Method cache)
+- `NmsClasses.java` — NMS class name constants
+- `MethodHandleCache.java` — `java.lang.invoke.MethodHandle` cache
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `NmsClasses.java`
 
@@ -49,8 +49,8 @@ description: "反射式 NMS 存取橋接：避開 CraftBukkit 編譯期依賴（
 package com.example.nms;
 
 /**
- * Mojang-mapped NMS 類別全名常數。
- * Paper 1.20.5+ runtime 原生使用這些名稱，無需 remap。
+ * Fully qualified Mojang-mapped NMS class name constants.
+ * The Paper 1.20.5+ runtime uses these names natively, so no remap is needed.
  */
 public final class NmsClasses {
     private NmsClasses() {}
@@ -64,12 +64,12 @@ public final class NmsClasses {
     public static final String MINECRAFT_SERVER = "net.minecraft.server.MinecraftServer";
 
     /**
-     * 動態取得 CraftBukkit 套件名。
-     * Paper 1.20.5+ 為不帶版本號的 "org.bukkit.craftbukkit"；Spigot 與舊版 Paper 為 "org.bukkit.craftbukkit.v1_xx_Rx"。
+     * Resolves the CraftBukkit package name dynamically.
+     * Paper 1.20.5+ uses the unversioned "org.bukkit.craftbukkit"; Spigot and older Paper use "org.bukkit.craftbukkit.v1_xx_Rx".
      */
     public static String craftBukkitPackage() {
         String serverClassName = org.bukkit.Bukkit.getServer().getClass().getName();
-        // Paper 1.20.5+: "org.bukkit.craftbukkit.CraftServer"；Spigot: "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
+        // Paper 1.20.5+: "org.bukkit.craftbukkit.CraftServer"; Spigot: "org.bukkit.craftbukkit.v1_21_R1.CraftServer"
         int lastDot = serverClassName.lastIndexOf('.');
         return serverClassName.substring(0, lastDot);
     }
@@ -100,14 +100,14 @@ public final class MethodHandleCache {
     public static MethodHandle method(Class<?> owner, String name, Class<?>... params) {
         String key = owner.getName() + "#" + name + "#" + paramKey(params);
         return METHOD_CACHE.computeIfAbsent(key, k -> {
-            // 逐層往父類查找：例如 send(Packet) 宣告在 ServerCommonPacketListenerImpl，而非 ServerGamePacketListenerImpl
+            // Walk up the superclasses: e.g. send(Packet) is declared in ServerCommonPacketListenerImpl, not ServerGamePacketListenerImpl
             for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
                 try {
                     Method m = c.getDeclaredMethod(name, params);
                     m.setAccessible(true);
                     return LOOKUP.unreflect(m);
                 } catch (NoSuchMethodException ignored) {
-                    // 繼續查父類
+                    // Keep searching the superclass
                 } catch (IllegalAccessException e) {
                     throw new IllegalStateException("Method not accessible: " + key, e);
                 }
@@ -140,7 +140,7 @@ public final class MethodHandleCache {
         });
     }
 
-    /** 逐層往父類查找欄位（getDeclaredField 不會搜尋父類）。 */
+    /** Walks up the superclasses to find the field (getDeclaredField does not search superclasses). */
     private static Field findField(Class<?> owner, String name) throws NoSuchFieldException {
         for (Class<?> c = owner; c != null; c = c.getSuperclass()) {
             try {
@@ -148,7 +148,7 @@ public final class MethodHandleCache {
                 f.setAccessible(true);
                 return f;
             } catch (NoSuchFieldException ignored) {
-                // 繼續查父類
+                // Keep searching the superclass
             }
         }
         throw new NoSuchFieldException(owner.getName() + "#" + name);
@@ -188,7 +188,7 @@ public final class NmsBridge {
         }
     }
 
-    /** 取得 Bukkit Player 對應的 NMS ServerPlayer 物件。 */
+    /** Gets the NMS ServerPlayer object for a Bukkit Player. */
     public static Object getHandle(Player player) {
         try {
             MethodHandle handle = MethodHandleCache.method(CRAFT_PLAYER_CLASS, "getHandle");
@@ -198,13 +198,13 @@ public final class NmsBridge {
         }
     }
 
-    /** 透過 ServerPlayer 發送 NMS 封包。 */
+    /** Sends an NMS packet through the ServerPlayer. */
     public static void sendPacket(Player player, Object packet) {
         try {
             Object serverPlayer = getHandle(player);
             MethodHandle connectionGetter = MethodHandleCache.fieldGetter(SERVER_PLAYER_CLASS, "connection");
             Object connection = connectionGetter.invoke(serverPlayer);
-            if (connection == null) return; // 已離線
+            if (connection == null) return; // Already offline
 
             MethodHandle sendMethod = MethodHandleCache.method(GAME_LISTENER_CLASS, "send", PACKET_CLASS);
             sendMethod.invoke(connection, packet);
@@ -213,7 +213,7 @@ public final class NmsBridge {
         }
     }
 
-    /** 建立指定類名的 NMS 物件（使用 default constructor）。 */
+    /** Creates an NMS object of the given class name (using the default constructor). */
     public static Object newInstance(String className) {
         try {
             return loadClass(className).getDeclaredConstructor().newInstance();
@@ -224,7 +224,7 @@ public final class NmsBridge {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -235,19 +235,19 @@ src/main/java/com/example/
     └── MethodHandleCache.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `MethodHandleCache` 使用 `ConcurrentHashMap`，多執行緒安全
-- ✅ `MethodHandle` 本身執行緒安全，可跨執行緒重用
-- ⚠️ 反射呼叫的方法若非執行緒安全（如 NMS 世界存取），仍需遵守主執行緒規則
-- ⚠️ `getHandle()` 應在玩家存活時呼叫，否則可能取到 stale reference
+- ✅ `MethodHandleCache` uses `ConcurrentHashMap`, so it is thread-safe
+- ✅ `MethodHandle` itself is thread-safe and can be reused across threads
+- ⚠️ If the reflected method is not thread-safe (such as NMS world access), the main thread rules still apply
+- ⚠️ Call `getHandle()` while the player is online, otherwise you may get a stale reference
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| `ClassNotFoundException: net.minecraft.server.level.ServerPlayer` | Paper < 1.20.5（runtime 仍用 Spigot mappings） | 升級至 Paper 1.20.5+ 或改用 Paperweight |
-| `NoSuchMethodException: send` | 方法簽名變更（如新增 optional 參數） | 改用 `getDeclaredMethods()` 迴圈比對 |
-| `IllegalAccessException` | JVM module system 阻擋反射 | 在 `build.gradle` 加 `--add-opens java.base/java.lang=ALL-UNNAMED` |
-| 效能問題（反射呼叫慢） | 未使用 `MethodHandle` 快取 | 確認所有呼叫走 `MethodHandleCache` |
-| CraftBukkit package 錯誤 | hardcode `v1_21_R1`（Paper 1.20.5+ 不存在） | 永遠用 `NmsClasses.craftBukkitPackage()` 動態取得 |
+| `ClassNotFoundException: net.minecraft.server.level.ServerPlayer` | Paper < 1.20.5 (runtime still uses Spigot mappings) | Upgrade to Paper 1.20.5+ or use Paperweight |
+| `NoSuchMethodException: send` | Method signature changed (e.g. new optional parameter) | Loop over `getDeclaredMethods()` and match manually |
+| `IllegalAccessException` | JVM module system blocks reflection | Add `--add-opens java.base/java.lang=ALL-UNNAMED` in `build.gradle` |
+| Performance problems (slow reflective calls) | `MethodHandle` cache not used | Make sure every call goes through `MethodHandleCache` |
+| Wrong CraftBukkit package | Hardcoded `v1_21_R1` (does not exist on Paper 1.20.5+) | Always resolve it with `NmsClasses.craftBukkitPackage()` |

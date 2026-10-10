@@ -3,73 +3,73 @@ name: paper-dialog-ui
 description: "Paper Dialog API 介面模式：薄 Dialogs 包裝、通知／確認／多按鈕／輸入表單、customClick 回呼切回主執行緒、確認鍵在右、暫停選單（pause_screen_additions）註冊 / Paper Dialog API UI patterns: thin helper, notice/confirm/multi-action/input dialogs, main-thread hop in callbacks, confirm-on-right, pause-screen registration from a bootstrapper"
 ---
 
-# Paper Dialog UI / Paper 對話框介面
+# Paper Dialog UI
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-dialog-ui`
 
-## 目的 / Purpose
+## Purpose
 
-用 Paper 的 Dialog API（Paper 1.21.7+）做玩家介面：通知、確認、多按鈕選單、含輸入欄位的表單，以及把自訂頁面掛到 ESC 暫停選單。
-這個 API 很容易踩的地方集中在四件事，本技能把它們收進一個薄的 `Dialogs` 包裝：
+Build player UIs with Paper's Dialog API (Paper 1.21.7+): notices, confirmations, multi-button menus, forms with input fields, and custom pages attached to the ESC pause menu.
+The API has four common pitfalls, and this skill folds them into one thin `Dialogs` helper:
 
-1. **按鍵回呼不保證在主執行緒**：`DialogAction.customClick` 的回呼要先切回主執行緒，並重新確認玩家在線、插件仍啟用。
-2. **確認鍵一律在右側**：不依賴 `DialogType.confirmation` 的排序，改用兩欄 `multiAction([取消, 確認])`。
-3. **`afterAction` 決定畫面是否閃動**：關閉、原地重繪、等待伺服器回應是三種不同選擇。
-4. **`ClickCallback.Options` 的 `uses` / `lifetime`**：回呼是有次數與時效的，所以每次開頁都要建立新的 `Dialog`。
+1. **Button callbacks are not guaranteed to run on the main thread**: hop back to the main thread inside the `DialogAction.customClick` callback, and re-check that the player is online and the plugin is still enabled.
+2. **The confirm button is always on the right**: do not rely on the ordering of `DialogType.confirmation`; use a two-column `multiAction([cancel, confirm])` instead.
+3. **`afterAction` decides whether the screen flickers**: closing, redrawing in place, and waiting for a server response are three different choices.
+4. **`uses` / `lifetime` in `ClickCallback.Options`**: callbacks have a use count and an expiry, so build a new `Dialog` every time a page opens.
 
-第二個範本示範在 `PluginBootstrap`（`paper-plugin.yml`）裡用 registry／lifecycle 事件註冊靜態 Dialog，並加入 `pause_screen_additions` tag，且絕不從 bootstrap 拋例外。
+The second template shows how to register a static Dialog from a `PluginBootstrap` (`paper-plugin.yml`) using registry/lifecycle events, add it to the `pause_screen_additions` tag, and never throw from bootstrap.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（Dialog API 自 Paper 1.21.7 起提供；兩版皆經編譯驗證，範本程式碼兩版相同）
-- 純 Paper API，不需要 Paperweight
-- 使用 Dialog 的插件 `api-version` 至少要 `1.21.7`
+- Paper 1.21.11 / 26.2 (the Dialog API is available since Paper 1.21.7; both versions are compile-verified and the template code is identical on both)
+- Pure Paper API, no Paperweight needed
+- A plugin using Dialogs needs `api-version` of at least `1.21.7`
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「Dialog」「對話框」「Paper Dialog API」「showDialog」「DialogAction」
 - 「確認視窗」「輸入表單」「文字輸入框」「按鈕選單」「confirm dialog」
 - 「ESC 選單」「暫停選單」「pause_screen_additions」「PluginBootstrap」
 - 「customClick」「ClickCallback」「DialogResponseView」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package` | `com.example.menu.gui` | Dialog 類別所在 package |
-| `dialog_kind` | `notice` / `confirm` / `multi` / `input` / `pause-screen` | 要做哪一種頁面 |
-| `inputs` | `text`, `boolean`, `number`, `option` | 表單欄位（僅 `input`） |
-| `after_action` | `CLOSE` / `NONE` / `WAIT_FOR_RESPONSE` | 按鍵後畫面行為 |
-| `pause_screen` | `true` | 是否由 bootstrapper 註冊並掛到暫停選單 |
+| `package` | `com.example.menu.gui` | Package of the Dialog classes |
+| `dialog_kind` | `notice` / `confirm` / `multi` / `input` / `pause-screen` | Which kind of page to build |
+| `inputs` | `text`, `boolean`, `number`, `option` | Form fields (`input` only) |
+| `after_action` | `CLOSE` / `NONE` / `WAIT_FOR_RESPONSE` | Screen behavior after a button press |
+| `pause_screen` | `true` | Whether the bootstrapper registers it and attaches it to the pause menu |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `Dialogs.java` — 薄包裝：`Button`、`Page`、回呼切主執行緒、輸入值讀取
-- `ConfirmDialog.java` — 確認頁（取消在左、確認在右）與通知頁
-- `PreferencesDialog.java` — 含文字／開關／數值滑桿／單選的輸入表單
-- `PauseMenuBootstrap.java` — 在 bootstrap 階段註冊 Dialog 並掛到 `pause_screen_additions`
-- `PauseMenuPlugin.java` — `createPlugin` 回傳的插件主類
-- `paper-plugin.yml` — 宣告 `bootstrapper`
+- `Dialogs.java` - thin helper: `Button`, `Page`, main-thread hop in callbacks, input value reading
+- `ConfirmDialog.java` - confirmation page (cancel on the left, confirm on the right) and notice page
+- `PreferencesDialog.java` - input form with text / toggle / number slider / single-option fields
+- `PauseMenuBootstrap.java` - registers the Dialog during bootstrap and attaches it to `pause_screen_additions`
+- `PauseMenuPlugin.java` - the main plugin class returned by `createPlugin`
+- `paper-plugin.yml` - declares the `bootstrapper`
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` (`compileOnly`) is required.
 
-`plugin.yml` 或 `paper-plugin.yml` 的 `api-version` 至少 `'1.21.7'`；只有用到 bootstrapper 的插件需要 `paper-plugin.yml`：
+`api-version` in `plugin.yml` or `paper-plugin.yml` must be at least `'1.21.7'`; only plugins that use a bootstrapper need `paper-plugin.yml`:
 
 ```yaml
 name: PauseMenu
 version: '${version}'
 main: com.example.menu.PauseMenuPlugin
 bootstrapper: com.example.menu.PauseMenuBootstrap
-api-version: '26.2'   # 1.21.11 伺服器：'1.21.11'
+api-version: '26.2'   # 1.21.11 server: '1.21.11'
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `Dialogs.java`（薄包裝）
+### `Dialogs.java` (thin helper)
 
 ```java
 package com.example.menu.gui;
@@ -100,30 +100,30 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 
 /**
- * Paper Dialog 的薄包裝。
+ * Thin helper around Paper Dialogs.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li>按鍵回呼一律先切回主執行緒，再重新取得玩家並確認在線（回呼只攜帶 UUID，不攜帶 Player）</li>
- *   <li>{@code customClick} 的回呼有 {@code uses} 與 {@code lifetime} 限制，所以<b>每次開頁都建立新的 Dialog</b>，不快取</li>
- *   <li>沒有回呼的按鍵只會關閉畫面（{@code afterAction = CLOSE} 時）</li>
+ *   <li>Button callbacks always hop back to the main thread first, then re-fetch the player and check they are online (callbacks carry only a UUID, never a Player)</li>
+ *   <li>{@code customClick} callbacks are limited by {@code uses} and {@code lifetime}, so <b>build a new Dialog every time a page opens</b>; never cache it</li>
+ *   <li>A button without a callback only closes the screen (when {@code afterAction = CLOSE})</li>
  * </ul>
  */
 public final class Dialogs {
 
     public static final int BUTTON_WIDTH = 150;
 
-    /** 每個按鍵只能點一次、十分鐘後失效；重繪頁面時會建立新的 callback。 */
+    /** Each button can be clicked once and expires after ten minutes; redrawing a page creates a new callback. */
     private static final ClickCallback.Options OPTIONS = ClickCallback.Options.builder()
         .uses(1)
         .lifetime(Duration.ofMinutes(10))
         .build();
 
-    /** 一顆按鍵；{@code onClick} 為 null 代表「只關閉／什麼都不做」。 */
+    /** A button; a null {@code onClick} means "just close / do nothing". */
     public record Button(Component label, int width, @Nullable BiConsumer<Player, DialogResponseView> onClick) {
     }
 
-    /** 一個頁面的不可變描述；用 withXxx 衍生新頁面。 */
+    /** Immutable description of a page; derive new pages with withXxx. */
     public record Page(Component title, List<DialogBody> body, List<DialogInput> inputs, List<Button> buttons,
                        int columns, DialogAfterAction afterAction, @Nullable Button exit) {
 
@@ -154,7 +154,7 @@ public final class Dialogs {
             return new Page(title, body, inputs, buttons, columns, value, exit);
         }
 
-        /** 設定 exit 按鍵後，玩家按 Esc 會觸發它；一般確認頁不要設，讓 Esc 是純關閉。 */
+        /** With an exit button set, pressing Esc triggers it; leave it unset on normal confirm pages so Esc just closes. */
         public Page withExit(@Nullable Button value) {
             return new Page(title, body, inputs, buttons, columns, afterAction, value);
         }
@@ -166,26 +166,26 @@ public final class Dialogs {
         this.plugin = plugin;
     }
 
-    // ---- 按鍵工廠 ----
+    // ---- Button factories ----
 
-    /** 一般按鍵：回呼在主執行緒、玩家仍在線時才執行。 */
+    /** Regular button: the callback runs only on the main thread while the player is still online. */
     public Button button(Component label, Consumer<Player> onClick) {
         return new Button(label, BUTTON_WIDTH, (player, view) -> onClick.accept(player));
     }
 
-    /** 送出按鍵：回呼可讀取輸入欄位的值。 */
+    /** Submit button: the callback can read the input field values. */
     public Button submit(Component label, BiConsumer<Player, DialogResponseView> onClick) {
         return new Button(label, BUTTON_WIDTH, onClick);
     }
 
-    /** 只關閉的按鍵（無回呼）。 */
+    /** Close-only button (no callback). */
     public Button close(Component label) {
         return new Button(label, BUTTON_WIDTH, null);
     }
 
-    // ---- 顯示 ----
+    // ---- Display ----
 
-    /** 多按鍵頁面（含確認頁、輸入表單）。 */
+    /** Multi-button page (including confirm pages and input forms). */
     public void show(Player player, Page page) {
         UUID id = player.getUniqueId();
         List<ActionButton> actions = new ArrayList<>();
@@ -208,7 +208,7 @@ public final class Dialogs {
         player.showDialog(Dialog.create(factory -> factory.empty().base(base).type(built)));
     }
 
-    /** 通知頁：只有一顆「確定」鍵。 */
+    /** Notice page: a single "OK" button. */
     public void showNotice(Player player, Component title, List<DialogBody> body, Button ok) {
         DialogBase base = DialogBase.builder(title)
             .canCloseWithEscape(true)
@@ -220,7 +220,7 @@ public final class Dialogs {
         player.showDialog(Dialog.create(factory -> factory.empty().base(base).type(DialogType.notice(action))));
     }
 
-    // ---- 讀取輸入值（欄位 key 與建立 DialogInput 時相同）----
+    // ---- Reading input values (field keys are the same as when building the DialogInput) ----
 
     public static String readText(DialogResponseView view, String key) {
         String value = view.getText(key);
@@ -231,19 +231,19 @@ public final class Dialogs {
         return Boolean.TRUE.equals(view.getBoolean(key));
     }
 
-    /** 數值滑桿回傳 Float；整數用 round。 */
+    /** A number slider returns a Float; round it for integers. */
     public static int readInt(DialogResponseView view, String key, int fallback) {
         Float value = view.getFloat(key);
         return value == null ? fallback : Math.round(value);
     }
 
-    /** 單選欄位回傳選項的 id（OptionEntry 的第一個參數），與文字欄位同樣用 getText 讀取。 */
+    /** A single-option field returns the option id (first parameter of OptionEntry), read with getText like a text field. */
     public static String readOption(DialogResponseView view, String key, String fallback) {
         String value = view.getText(key);
         return value == null || value.isEmpty() ? fallback : value;
     }
 
-    // ---- 內部 ----
+    // ---- Internals ----
 
     private ActionButton toAction(UUID playerId, Button button) {
         ActionButton.Builder builder = ActionButton.builder(button.label()).width(button.width());
@@ -256,8 +256,8 @@ public final class Dialogs {
     }
 
     /**
-     * 回呼可能在非主執行緒進來。isEnabled() 與 runTask 之間仍有窄窗口（主執行緒剛好跑完 onDisable），
-     * 此時排程器會拒絕任務；這不是錯誤，捨棄這次點擊即可。
+     * The callback may arrive on a non-main thread. There is still a narrow window between isEnabled() and runTask
+     * (the main thread just finished onDisable); the scheduler then rejects the task. That is not an error: just drop the click.
      */
     private void onMain(UUID playerId, Consumer<Player> action) {
         if (!plugin.isEnabled()) {
@@ -277,7 +277,7 @@ public final class Dialogs {
 }
 ```
 
-### `ConfirmDialog.java`（確認頁：取消在左、確認在右）
+### `ConfirmDialog.java` (confirm page: cancel on the left, confirm on the right)
 
 ```java
 package com.example.menu.gui;
@@ -291,8 +291,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 確認頁。確認鍵固定在右側：兩欄 multiAction([取消, 確認])，不使用 DialogType.confirmation
- * （它把 yes 固定在左，且按鍵在 footer）。不設 exit 按鍵，Esc 是純關閉、不會按到任何一顆鍵。
+ * Confirm page. The confirm button is fixed on the right: a two-column multiAction([cancel, confirm]); DialogType.confirmation
+ * is not used (it pins yes on the left, with the buttons in the footer). No exit button is set, so Esc just closes and never presses any button.
  */
 public final class ConfirmDialog {
 
@@ -305,8 +305,8 @@ public final class ConfirmDialog {
     }
 
     /**
-     * @param message   MiniMessage 字串，例如 {@code "Delete home <yellow>base</yellow>?"}
-     * @param onConfirm 在主執行緒、玩家仍在線時呼叫；按「取消」或 Esc 不會呼叫任何東西
+     * @param message   MiniMessage string, e.g. {@code "Delete home <yellow>base</yellow>?"}
+     * @param onConfirm called on the main thread while the player is still online; pressing Cancel or Esc calls nothing
      */
     public void open(Player player, String title, String message, Consumer<Player> onConfirm) {
         Dialogs.Button cancel = dialogs.close(Component.text("Cancel"));
@@ -317,7 +317,7 @@ public final class ConfirmDialog {
         dialogs.show(player, page);
     }
 
-    /** 單純通知：一顆「OK」鍵。 */
+    /** Plain notice: a single "OK" button. */
     public void notice(Player player, String title, String message) {
         dialogs.showNotice(player, MINI.deserialize(title),
             List.of(DialogBody.plainMessage(MINI.deserialize(message))),
@@ -326,7 +326,7 @@ public final class ConfirmDialog {
 }
 ```
 
-### `PreferencesDialog.java`（輸入表單：文字、開關、數值、單選）
+### `PreferencesDialog.java` (input form: text, toggle, number, single option)
 
 ```java
 package com.example.menu.gui;
@@ -343,14 +343,14 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 /**
- * 含四種輸入欄位的表單。
+ * Form with four kinds of input fields.
  *
- * <p>afterAction 用 NONE：驗證失敗時用同樣的值「原地」重開表單，畫面不會先關再開而閃動。
- * 因為 NONE 不會自動關閉，所以「取消」與成功送出都要明確呼叫 {@code closeDialog()}。
+ * <p>afterAction is NONE: on validation failure the form is reopened "in place" with the same values, so the screen does not close and reopen (flicker).
+ * Because NONE never closes automatically, both "Cancel" and a successful submit must call {@code closeDialog()} explicitly.
  */
 public final class PreferencesDialog {
 
-    /** 不可變的表單結果。 */
+    /** Immutable form result. */
     public record Preferences(String nickname, boolean notifications, int radius, String mode) {
     }
 
@@ -384,7 +384,7 @@ public final class PreferencesDialog {
             Preferences parsed = parse(view, current);
             if (parsed.nickname().isEmpty()) {
                 p.sendMessage(Component.text("Nickname cannot be empty."));
-                open(p, parsed, onSave);   // 原地重繪，保留玩家已填的值
+                open(p, parsed, onSave);   // Redraw in place, keeping the values the player already entered
                 return;
             }
             onSave.accept(p, parsed);
@@ -409,7 +409,7 @@ public final class PreferencesDialog {
 }
 ```
 
-### `PauseMenuBootstrap.java`（暫停選單：bootstrap 階段註冊）
+### `PauseMenuBootstrap.java` (pause menu: registered during bootstrap)
 
 ```java
 package com.example.menu;
@@ -441,15 +441,15 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * 在 bootstrap 階段把一個靜態 Dialog 註冊進 dialog registry，並加入 pause_screen_additions tag，
- * 玩家按 ESC 的暫停選單就會多出這個頁面的入口。
+ * Registers a static Dialog into the dialog registry during bootstrap and adds it to the pause_screen_additions tag,
+ * so the pause menu opened with ESC gets an entry for this page.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li><b>絕不拋例外</b>：bootstrap 拋例外會讓 Paper 整個不載入插件；錯誤收進 {@code problems}，等插件啟動後再印</li>
- *   <li>bootstrap() 本體不碰 Dialog API，全部放在事件 handler 裡</li>
- *   <li>此階段沒有 Plugin 實例，所以靜態 Dialog 的按鍵只能用 {@code staticAction}（執行指令）或
- *       {@code customClick(Key, payload)}（由插件啟動後的 PlayerCustomClickEvent 處理），不能用帶 lambda 的 customClick</li>
+ *   <li><b>Never throw</b>: an exception in bootstrap stops Paper from loading the plugin at all; collect errors into {@code problems} and print them after the plugin starts</li>
+ *   <li>The bootstrap() body itself does not touch the Dialog API; everything lives in event handlers</li>
+ *   <li>There is no Plugin instance at this stage, so buttons on a static Dialog can only use {@code staticAction} (run a command) or
+ *       {@code customClick(Key, payload)} (handled by PlayerCustomClickEvent after the plugin starts), not a customClick with a lambda</li>
  * </ul>
  */
 public final class PauseMenuBootstrap implements PluginBootstrap {
@@ -516,7 +516,7 @@ public final class PauseMenuBootstrap implements PluginBootstrap {
 }
 ```
 
-### `PauseMenuPlugin.java`（`createPlugin` 回傳的主類）
+### `PauseMenuPlugin.java` (main class returned by `createPlugin`)
 
 ```java
 package com.example.menu;
@@ -529,14 +529,14 @@ public final class PauseMenuPlugin extends JavaPlugin {
 
     private final List<String> bootstrapProblems;
 
-    /** 由 PauseMenuBootstrap#createPlugin 傳入 bootstrap 階段收集到的錯誤。 */
+    /** Receives the errors collected during bootstrap from PauseMenuBootstrap#createPlugin. */
     PauseMenuPlugin(List<String> bootstrapProblems) {
         this.bootstrapProblems = List.copyOf(bootstrapProblems);
     }
 
     @Override
     public void onEnable() {
-        // bootstrap 不能拋例外，所以錯誤延到這裡才印（此時 logger 可用）
+        // Bootstrap must not throw, so errors are printed here (the logger is available now)
         for (String problem : bootstrapProblems) {
             getLogger().warning("Pause menu not fully registered: " + problem);
         }
@@ -544,52 +544,52 @@ public final class PauseMenuPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/menu/
-├── PauseMenuBootstrap.java        ← 只在需要 pause_screen_additions 時才有
+├── PauseMenuBootstrap.java        <- only needed for pause_screen_additions
 ├── PauseMenuPlugin.java
 └── gui/
-    ├── Dialogs.java               ← 薄包裝，所有 Dialog 共用
+    ├── Dialogs.java               <- thin helper shared by all Dialogs
     ├── ConfirmDialog.java
     └── PreferencesDialog.java
 src/main/resources/
-└── paper-plugin.yml               ← bootstrapper 欄位
+└── paper-plugin.yml               <- bootstrapper field
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- `DialogAction.customClick` 的回呼**不保證在主執行緒**：先檢查 `plugin.isEnabled()`，用 `runTask` 切回主執行緒，在裡面重新 `getPlayer(uuid)` 並確認 `isOnline()`
-- `isEnabled()` 與 `runTask` 之間仍有窄窗口，所以 `runTask` 要接 `IllegalPluginAccessException` / `IllegalStateException`，記 `FINE` 後捨棄
-- 回呼 lambda 只攜帶 `UUID`、字串、數字與不可變值，不攜帶 `Player`
-- 需要資料庫或 HTTP 時：點擊 → 切主執行緒讀輸入值 → 非同步工作 → 再切回主執行緒重新驗證後 `showDialog`；等待期間用 `afterAction = WAIT_FOR_RESPONSE`
-- bootstrap 階段沒有 Bukkit 伺服器可用，只做 registry／tag 註冊
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- `DialogAction.customClick` callbacks are **not guaranteed to run on the main thread**: check `plugin.isEnabled()` first, hop back with `runTask`, then call `getPlayer(uuid)` again inside and confirm `isOnline()`
+- A narrow window remains between `isEnabled()` and `runTask`, so catch `IllegalPluginAccessException` / `IllegalStateException` around `runTask`, log at `FINE`, and drop the click
+- Callback lambdas carry only a `UUID`, strings, numbers, and immutable values, never a `Player`
+- When a database or HTTP is needed: click -> hop to the main thread and read the input values -> async work -> hop back to the main thread, re-validate, then `showDialog`; use `afterAction = WAIT_FOR_RESPONSE` while waiting
+- The Bukkit server is not available during bootstrap; only do registry/tag registration
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-### 設計重點
+### Key Techniques
 
-| 主題 | 做法 |
+| Topic | Approach |
 |------|------|
-| 確認鍵位置 | `multiAction([取消, 確認]).columns(2)`，確認在右；不用 `DialogType.confirmation`（yes 固定在左） |
-| Esc 行為 | 不設 `exitAction` → Esc 純關閉、不觸發任何按鍵；設了 `exitAction` → Esc 等同按該鍵 |
-| `afterAction = CLOSE` | 按鍵後關閉；一次性動作（確認、通知）用 |
-| `afterAction = NONE` | 按鍵後留在原畫面；原地重繪（切換開關、驗證失敗重開）不會閃。**所有按鍵都要自己決定是否 `closeDialog()`** |
-| `afterAction = WAIT_FOR_RESPONSE` | 顯示等待畫面，直到伺服器送出新畫面或關閉；非同步工作用 |
-| `uses` / `lifetime` | 回呼用完次數或過期後點擊無效；重繪就建新 Dialog、不快取 |
-| 輸入值 | 文字／單選 `getText`（單選回傳選項 id）、開關 `getBoolean`、數值 `getFloat`；缺值回 null，全部要處理 |
-| 玩家可見文字 | Adventure／MiniMessage，不用 `ChatColor` 與 `§` |
+| Confirm button position | `multiAction([cancel, confirm]).columns(2)` puts confirm on the right; do not use `DialogType.confirmation` (yes is pinned on the left) |
+| Esc behavior | No `exitAction`: Esc just closes and triggers no button; with `exitAction`: Esc acts like pressing that button |
+| `afterAction = CLOSE` | Closes after a button press; use for one-shot actions (confirm, notice) |
+| `afterAction = NONE` | Stays on the same screen after a button press; in-place redraws (toggling a switch, reopening after failed validation) do not flicker. **Every button must decide for itself whether to `closeDialog()`** |
+| `afterAction = WAIT_FOR_RESPONSE` | Shows a waiting screen until the server sends a new screen or closes it; use for async work |
+| `uses` / `lifetime` | Clicks do nothing once the callback runs out of uses or expires; build a new Dialog on every redraw and never cache |
+| Input values | text / single option via `getText` (single option returns the option id), toggle via `getBoolean`, number via `getFloat`; missing values return null, so handle them all |
+| Player-visible text | Adventure / MiniMessage; no `ChatColor` or `§` |
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 回呼裡 `IllegalStateException`（非主執行緒呼叫 Bukkit API） | 直接在 customClick 回呼裡操作世界／玩家 | 先 `runTask` 切回主執行緒 |
-| 插件停用時 `IllegalPluginAccessException` | 玩家在關服瞬間點擊，排程器不收任務 | `isEnabled()` 先擋，`runTask` 再接例外 |
-| 點了按鍵沒反應（第二次） | `uses(1)` 的回呼已用完，或超過 `lifetime` | 每次開頁都建新 Dialog；重繪時重新產生按鍵 |
-| 確認鍵跑到左邊 | 使用了 `DialogType.confirmation` | 改用兩欄 `multiAction([取消, 確認])` |
-| `afterAction = NONE` 的頁面按了沒關 | NONE 不自動關閉，且按鍵沒有 `closeDialog()` | 取消與成功路徑明確呼叫 `player.closeDialog()` |
-| 按鍵後畫面閃一下 | `CLOSE` 後又立刻 `showDialog` | 該頁改用 `NONE`（原地重繪）或 `WAIT_FOR_RESPONSE`（非同步） |
-| `getText` / `getFloat` 回 null | key 拼錯，或該欄位未出現在這頁 | key 用常數，建立與讀取共用；讀取時處理 null |
-| 插件整個沒載入（bootstrap 階段） | bootstrap 拋了例外，或 bootstrap() 本體碰了 Dialog 類別 | 全部包在 handler 內並 `catch (RuntimeException)`，錯誤收集後在 `onEnable` 印出 |
-| 暫停選單沒出現新入口 | 沒加入 tag，或 `api-version` 低於 1.21.7 | 確認 `postFlatten(RegistryKey.DIALOG)` handler 有執行；檢查 `paper-plugin.yml` 的 `bootstrapper` |
+| `IllegalStateException` in a callback (Bukkit API called off the main thread) | World/player operated on directly inside the customClick callback | Hop back with `runTask` first |
+| `IllegalPluginAccessException` while the plugin is disabling | Player clicked at the moment of shutdown and the scheduler rejects tasks | Guard with `isEnabled()` first, then catch the exception around `runTask` |
+| Button does nothing (second click) | The `uses(1)` callback is spent, or `lifetime` has passed | Build a new Dialog on every open; regenerate the buttons on redraw |
+| Confirm button ends up on the left | `DialogType.confirmation` was used | Switch to a two-column `multiAction([cancel, confirm])` |
+| Page with `afterAction = NONE` does not close | NONE never closes automatically and the button has no `closeDialog()` | Call `player.closeDialog()` explicitly on the cancel and success paths |
+| Screen flickers after a button press | `showDialog` right after `CLOSE` | Use `NONE` (redraw in place) or `WAIT_FOR_RESPONSE` (async) for that page |
+| `getText` / `getFloat` returns null | Misspelled key, or the field is not on this page | Use constants for keys shared by creation and reading; handle null when reading |
+| Plugin does not load at all (bootstrap stage) | Bootstrap threw, or the bootstrap() body touched Dialog classes | Wrap everything inside handlers with `catch (RuntimeException)`, collect errors, and print them in `onEnable` |
+| No new entry in the pause menu | Not added to the tag, or `api-version` is below 1.21.7 | Confirm the `postFlatten(RegistryKey.DIALOG)` handler ran; check `bootstrapper` in `paper-plugin.yml` |

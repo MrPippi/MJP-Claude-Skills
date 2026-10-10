@@ -1,6 +1,6 @@
 # examples — paper-brigadier-command
 
-## 範例 1：`/pay <player> <amount>`（k/m/b 金額）
+## Example 1: `/pay <player> <amount>` (k/m/b amounts)
 
 **Input:**
 ```
@@ -10,19 +10,19 @@ permission: example.pay
 aliases: transfer
 ```
 
-**Output — 金額解析結果（`Amounts.parse`）:**
+**Output — amount parsing results (`Amounts.parse`):**
 
-| 輸入 | 結果 |
+| Input | Result |
 |------|------|
 | `100` | 100 |
 | `1.5k` | 1500 |
 | `2m` | 2000000 |
 | `1b` | 1000000000 |
-| `1.0001k` | 錯誤（不是整數） |
-| `0`、`-5`、`k`、`1e5` | 錯誤 |
-| `99999999999b` | 錯誤（超出 long） |
+| `1.0001k` | Error (not a whole number) |
+| `0`, `-5`, `k`, `1e5` | Error |
+| `99999999999b` | Error (exceeds long) |
 
-**Output — 以記憶體帳本實作 `PayService`（主執行緒呼叫）:**
+**Output — `PayService` implemented with an in-memory ledger (called on the main thread):**
 ```java
 import com.example.command.PayService;
 
@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** 示範用；實務上換成 Repository。只在主執行緒使用，所以不需要鎖。 */
+/** For demonstration; use a Repository in practice. Used only on the main thread, so no locking is needed. */
 public final class InMemoryPayService implements PayService {
 
     private final Map<UUID, Long> balances = new HashMap<>();
@@ -55,11 +55,11 @@ public final class InMemoryPayService implements PayService {
 }
 ```
 
-玩家在聊天欄輸入 `/pay Steve 1.5kk` 時看到：`Invalid amount 1.5kk. Use a positive whole number, optionally with k, m or b (for example 1.5k).`
+When a player types `/pay Steve 1.5kk` in chat, they see:`Invalid amount 1.5kk. Use a positive whole number, optionally with k, m or b (for example 1.5k).`
 
 ---
 
-## 範例 2：管理員 `/eco give|take|set <players> <amount>`
+## Example 2: Admin `/eco give|take|set <players> <amount>`
 
 **Input:**
 ```
@@ -68,7 +68,7 @@ arguments: players:players, amount:k/m/b
 permission: example.admin
 ```
 
-**Output — 三個子指令共用同一個建構方法，`players()` 可一次選多位（`@a`、`Steve`）:**
+**Output — the three subcommands share one builder method, and `players()` can select several players at once (`@a`, `Steve`):**
 ```java
 import com.example.command.AmountArgumentType;
 import com.example.command.CommandSupport;
@@ -88,7 +88,7 @@ import java.util.UUID;
 
 public final class EcoCommand {
 
-    /** 帳本介面；回傳 false 代表該玩家沒有變動（例如 take 餘額不足）。 */
+    /** Ledger interface; returning false means that player was not changed (for example take with an insufficient balance). */
     public interface Ledger {
         boolean give(UUID player, long amount);
         boolean take(UUID player, long amount);
@@ -137,13 +137,13 @@ public final class EcoCommand {
             Placeholder.unparsed("action", name),
             Placeholder.unparsed("count", String.valueOf(changed)),
             Placeholder.unparsed("total", String.valueOf(targets.size())));
-        // 管理指令回傳「實際變動人數」，/execute store 可以直接使用；一般指令回 Command.SINGLE_SUCCESS
+        // Admin commands return the number of players actually changed, which /execute store can use directly; regular commands return Command.SINGLE_SUCCESS
         return changed;
     }
 }
 ```
 
-**Output — 在 `onEnable` 註冊（`EcoCommand` 的註冊方式與 `PayCommand` 相同，`registrar.register(eco.build(), "Economy admin")`）:**
+**Output — register in `onEnable` (`EcoCommand` registers the same way as `PayCommand`: `registrar.register(eco.build(), "Economy admin")`):**
 ```java
 import com.example.command.ExampleCommand;
 import com.example.command.PayCommand;
@@ -169,7 +169,7 @@ public final class EcoPlugin extends JavaPlugin {
 
 ---
 
-## 範例 3：離線玩家名補全與主控台可用的 `/balance [name]`
+## Example 3: Offline-Player Name Completion and a Console-Friendly `/balance [name]`
 
 **Input:**
 ```
@@ -177,7 +177,7 @@ root_literal: balance
 arguments: name:string (optional, offline players allowed)
 ```
 
-**Output — 名稱快照由 join／帳本載入時更新，補全只讀快照；沒有參數時才要求玩家身分:**
+**Output — the name snapshot is refreshed on join / ledger load, completion only reads the snapshot, and a player identity is required only when no argument is given:**
 ```java
 import com.example.command.CommandSupport;
 import com.mojang.brigadier.Command;
@@ -195,7 +195,7 @@ import java.util.Set;
 
 public final class BalanceCommand {
 
-    /** 帳本查詢；{@code names()} 必須回傳不可變快照，可在任何執行緒讀取。 */
+    /** Ledger lookup; {@code names()} must return an immutable snapshot that can be read from any thread. */
     public interface Accounts {
         Collection<String> names();
         Optional<Long> balanceOf(String name);
@@ -211,14 +211,14 @@ public final class BalanceCommand {
     public LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("balance")
             .requires(CommandSupport.permission("example.use"))
-            // 自己的餘額：必須是玩家（/execute as <玩家> 時 executor 是該玩家）
+            // Own balance: must be a player (with /execute as <player> the executor is that player)
             .executes(context -> {
                 Player self = CommandSupport.requirePlayer(context.getSource());
                 String text = accounts.balanceOf(self.getUniqueId()).map(String::valueOf).orElse("0");
                 CommandSupport.send(self, "<gray>Balance: <white><amount></white>", Placeholder.unparsed("amount", text));
                 return Command.SINGLE_SUCCESS;
             })
-            // 查別人：主控台與玩家都可以，所以回覆給 getSender()
+            // Looking up someone else: both the console and players may do it, so reply to getSender()
             .then(Commands.argument("name", StringArgumentType.word())
                 .suggests((context, builder) -> CommandSupport.suggest(accounts.names(), builder))
                 .executes(context -> {
@@ -237,7 +237,7 @@ public final class BalanceCommand {
             .build();
     }
 
-    /** 快照建立範例：寫入端複製成不可變集合後整個換掉，讀取端（補全）永遠看到完整的一份。 */
+    /** Snapshot-building example: the writer copies into an immutable collection and swaps the whole thing, so readers (completion) always see a complete copy. */
     public static Set<String> snapshotOf(Collection<String> names) {
         return Set.copyOf(names);
     }
