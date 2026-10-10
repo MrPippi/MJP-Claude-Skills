@@ -3,63 +3,63 @@ name: paper-packetevents-filter
 description: "不碰 NMS 的封包過濾：以 PacketEvents（主）或 ProtocolLib 軟依賴監聽封包，Hook + Bridge 隔離、Netty 執行緒只讀不可變快照、fail-open / Packet filtering without NMS via soft-dependent PacketEvents (primary) or ProtocolLib with Hook + Bridge, snapshot-only Netty-thread reads and fail-open"
 ---
 
-# Paper PacketEvents Filter / PacketEvents 封包過濾
+# Paper PacketEvents Filter
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-packetevents-filter`
 
-## 目的 / Purpose
+## Purpose
 
-在**不使用 NMS、不注入 Netty pipeline** 的前提下，過濾或改寫送給特定玩家的封包：隱藏／改寫系統聊天、對每位觀看者注入物品 lore、對單一玩家消音或隱藏粒子。
-封包函式庫由伺服器上的 **PacketEvents**（主要路線）或 **ProtocolLib**（次要路線）插件提供，本插件只 `compileOnly`、**絕不 shade**，並以 `softdepend` 宣告，沒裝時其餘功能照常運作。
+Filter or rewrite packets sent to specific players **without NMS and without injecting into the Netty pipeline**: hide/rewrite system chat, inject per-viewer item lore, and mute sounds or hide particles for a single player.
+The packet library is provided by the **PacketEvents** plugin (primary route) or the **ProtocolLib** plugin (secondary route) on the server. This plugin only uses `compileOnly`, **never shades** it, and declares it with `softdepend`, so the rest of the plugin keeps working when it is not installed.
 
-核心規則（違反任何一條都會在正式服出事）：
+Core rules (breaking any one of them causes trouble on a production server):
 
-1. **Hook + Bridge**：碰到封包函式庫型別的類別一律放進 Bridge／Listener，只有在「函式庫已啟用」之後才會被載入。
-2. **Netty 執行緒**：監聽器不在主執行緒。只讀「主執行緒發布的不可變 volatile 快照」，**禁止呼叫任何 Bukkit API**，只改 clone 出來的資料。
-3. **Fail-open**：任何例外 → 放行原封包、停用該過濾器、只記錄一次。會擋封包的程式不能因為自己壞掉而吞掉封包。
-4. **對稱生命週期**：`onEnable` 註冊、`onDisable` 取消註冊；不呼叫 PacketEvents 的 `load()` / `init()` / `terminate()`（那是 packetevents 插件自己的生命週期）。
+1. **Hook + Bridge**: any class that touches packet library types goes into the Bridge/Listener, and is only loaded after the library is enabled.
+2. **Netty thread**: listeners do not run on the main thread. Read only an immutable volatile snapshot published by the main thread, **never call any Bukkit API**, and only modify cloned data.
+3. **Fail-open**: on any exception, let the original packet through, disable that filter, and log only once. Code that blocks packets must not swallow packets because it is broken itself.
+4. **Symmetric lifecycle**: register in `onEnable`, unregister in `onDisable`; do not call PacketEvents' `load()` / `init()` / `terminate()` (that is the packetevents plugin's own lifecycle).
 
-> 需要自己改寫 Netty pipeline、或需要 NMS 封包類別時（NMS／Netty 路線），請改用 [`nms-packet-interceptor`](../../nms/nms-packet-interceptor/SKILL.md)。
-> 軟依賴的一般做法（`getPlugin` 判斷、PlaceholderAPI 等）見 [`paper-softdepend-hook`](../paper-softdepend-hook/SKILL.md)。
+> If you need to rewrite the Netty pipeline yourself or need NMS packet classes (the NMS/Netty route), use [`nms-packet-interceptor`](../../nms/nms-packet-interceptor/SKILL.md) instead.
+> For the general soft-dependency approach (`getPlugin` checks, PlaceholderAPI, etc.) see [`paper-softdepend-hook`](../paper-softdepend-hook/SKILL.md).
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；本技能的程式碼兩版相同，沒有 `// @1.21.11:` 差異行）
-- 純 Paper API，不需要 Paperweight
-- 伺服器需安裝 **packetevents**（編譯對象 `packetevents-spigot:2.13.0`）或 **ProtocolLib**（編譯對象 `5.3.0`）；實際支援的 MC 版本由伺服器上那個插件的版本決定，升 MC 前先升它
+- Paper 1.21.11 / 26.2 (both compile-verified; the code in this skill is identical for both, with no `// @1.21.11:` difference lines)
+- Pure Paper API, no Paperweight required
+- The server needs **packetevents** (compiled against `packetevents-spigot:2.13.0`) or **ProtocolLib** (compiled against `5.3.0`); the MC versions actually supported depend on the version of that plugin on the server, so upgrade it before upgrading MC
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「PacketEvents」「packetevents」「封包過濾」「packet filter」「packet listener」
 - 「ProtocolLib」「PacketAdapter」「不用 NMS 攔封包」
 - 「隱藏聊天」「SYSTEM_CHAT_MESSAGE」「per-viewer lore」「SET_SLOT」「WINDOW_ITEMS」
 - 「取消粒子」「取消音效」「只對某玩家」「Netty thread」「fail-open」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.filter` | 產出類別所在 package（下分 `state` / `packet` / `integration`） |
-| `backend` | `packetevents` / `protocollib` | 封包函式庫；預設 `packetevents` |
-| `recipes` | `chat`, `lore`, `quiet` | 要啟用的過濾配方 |
-| `snapshot_fields` | `chatHidden`, `creative`, `quiet` | 主執行緒要發布給 Netty 執行緒的資料 |
+| `base_package` | `com.example.filter` | Package that holds the generated classes (split into `state` / `packet` / `integration`) |
+| `backend` | `packetevents` / `protocollib` | Packet library; defaults to `packetevents` |
+| `recipes` | `chat`, `lore`, `quiet` | Filter recipes to enable |
+| `snapshot_fields` | `chatHidden`, `creative`, `quiet` | Data the main thread publishes to the Netty thread |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `FilterSnapshot.java` / `FilterState.java` — 不可變快照與 volatile 發布點
-- `FailOpenGuard.java` — 例外時停用過濾器並只記一次
-- `ChatPacketFilter.java` — 隱藏／改寫 `SYSTEM_CHAT_MESSAGE`（`PacketListenerAbstract`）
-- `LoreInjector.java` + `LorePainter.java` — 每位觀看者的 lore 注入（`PacketListener`，跳過創造模式）
-- `QuietPacketFilter.java` — 對單一玩家隱藏粒子／音效
-- `PacketEventsHook.java` + `PacketEventsBridge.java` — 軟依賴接點
-- `ProtocolLibLoreAdapter.java` + `ProtocolLibHook.java` + `ProtocolLibBridge.java` — ProtocolLib 版本
-- `GameModeTracker.java` + `FilterPlugin.java` — 主執行緒發布快照與生命週期
+- `FilterSnapshot.java` / `FilterState.java` - immutable snapshot and volatile publication point
+- `FailOpenGuard.java` - disables the filter on exception and logs only once
+- `ChatPacketFilter.java` - hides/rewrites `SYSTEM_CHAT_MESSAGE` (`PacketListenerAbstract`)
+- `LoreInjector.java` + `LorePainter.java` - per-viewer lore injection (`PacketListener`, skips creative mode)
+- `QuietPacketFilter.java` - hides particles/sounds for a single player
+- `PacketEventsHook.java` + `PacketEventsBridge.java` - soft-dependency entry points
+- `ProtocolLibLoreAdapter.java` + `ProtocolLibHook.java` + `ProtocolLibBridge.java` - ProtocolLib variant
+- `GameModeTracker.java` + `FilterPlugin.java` - main-thread snapshot publishing and lifecycle
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。兩個封包函式庫都只是 `compileOnly`：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Both packet libraries are `compileOnly` only:
 
 ```groovy
 repositories {
@@ -68,13 +68,13 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11：'1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11: '1.21.11-R0.1-SNAPSHOT'
     compileOnly 'com.github.retrooper:packetevents-spigot:2.13.0'
     compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0'
 }
 ```
 
-`plugin.yml`（兩個都列，執行期哪個有裝就用哪個；PacketEvents 的插件名稱是**小寫** `packetevents`）：
+`plugin.yml` (list both; at runtime use whichever is installed; the PacketEvents plugin name is **lowercase** `packetevents`):
 
 ```yaml
 name: Example
@@ -83,11 +83,11 @@ api-version: '26.2'
 softdepend: [packetevents, ProtocolLib]
 ```
 
-shadow 設定不得打包 `com.github.retrooper`、`io.github.retrooper`、`com.comphenix` 套件；用 `unzip -l` 確認 jar 內沒有它們。
+The shadow config must not bundle the `com.github.retrooper`, `io.github.retrooper` or `com.comphenix` packages; confirm with `unzip -l` that the jar does not contain them.
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `FilterSnapshot.java`（不可變快照，不碰封包型別）
+### `FilterSnapshot.java`(immutable snapshot, no packet types)
 
 ```java
 package com.example.filter.state;
@@ -177,7 +177,7 @@ public record FilterSnapshot(
 }
 ```
 
-### `FilterState.java`（volatile 發布點）
+### `FilterState.java`(volatile publication point)
 
 ```java
 package com.example.filter.state;
@@ -205,7 +205,7 @@ public final class FilterState {
 }
 ```
 
-### `FailOpenGuard.java`（fail-open：停用並只記一次）
+### `FailOpenGuard.java`(fail-open: disable and log only once)
 
 ```java
 package com.example.filter.state;
@@ -243,7 +243,7 @@ public final class FailOpenGuard {
 }
 ```
 
-### `ChatPacketFilter.java`（配方 1：過濾系統聊天，PacketEvents）
+### `ChatPacketFilter.java`(recipe 1: filter system chat, PacketEvents)
 
 ```java
 package com.example.filter.packet;
@@ -309,7 +309,7 @@ public final class ChatPacketFilter extends PacketListenerAbstract {
 }
 ```
 
-### `LorePainter.java`（只處理 clone，不碰封包型別）
+### `LorePainter.java`(handles clones only, no packet types)
 
 ```java
 package com.example.filter.packet;
@@ -380,7 +380,7 @@ public final class LorePainter {
 }
 ```
 
-### `LoreInjector.java`（配方 2：每位觀看者的 lore，PacketEvents）
+### `LoreInjector.java`(recipe 2: per-viewer lore, PacketEvents)
 
 ```java
 package com.example.filter.packet;
@@ -509,7 +509,7 @@ public final class LoreInjector implements PacketListener {
 }
 ```
 
-### `QuietPacketFilter.java`（配方 3：對單一玩家隱藏粒子／音效，PacketEvents）
+### `QuietPacketFilter.java`(recipe 3: hide particles/sounds for a single player, PacketEvents)
 
 ```java
 package com.example.filter.packet;
@@ -583,7 +583,7 @@ public final class QuietPacketFilter extends PacketListenerAbstract {
 }
 ```
 
-### `PacketEventsBridge.java`（唯一碰 PacketEvents 的註冊點）
+### `PacketEventsBridge.java`(the only registration point that touches PacketEvents)
 
 ```java
 package com.example.filter.integration;
@@ -644,7 +644,7 @@ final class PacketEventsBridge {
 }
 ```
 
-### `PacketEventsHook.java`（軟依賴接點，不含 PacketEvents 型別）
+### `PacketEventsHook.java`(soft-dependency entry point, no PacketEvents types)
 
 ```java
 package com.example.filter.integration;
@@ -713,7 +713,7 @@ public final class PacketEventsHook {
 }
 ```
 
-### `ProtocolLibLoreAdapter.java`（ProtocolLib 版：PacketAdapter）
+### `ProtocolLibLoreAdapter.java`(ProtocolLib variant: PacketAdapter)
 
 ```java
 package com.example.filter.packet;
@@ -897,7 +897,7 @@ public final class ProtocolLibHook {
 }
 ```
 
-### `GameModeTracker.java`（主執行緒發布快照；不含封包型別）
+### `GameModeTracker.java`(main thread publishes the snapshot; no packet types)
 
 ```java
 package com.example.filter;
@@ -956,7 +956,7 @@ public final class GameModeTracker implements Listener {
 }
 ```
 
-### `FilterPlugin.java`（生命週期）
+### `FilterPlugin.java`(lifecycle)
 
 ```java
 package com.example.filter;
@@ -1005,53 +1005,53 @@ public final class FilterPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/filter/
-├── FilterPlugin.java              ← 生命週期；只依賴 Hook，不 import 封包型別
-├── GameModeTracker.java           ← 主執行緒事件 → 發布快照
-├── state/                         ← 無封包型別，Bukkit 可安全載入
+├── FilterPlugin.java              <- lifecycle; depends only on the Hook, imports no packet types
+├── GameModeTracker.java           <- main-thread events -> publish snapshot
+├── state/                         <- no packet types, safe for Bukkit to load
 │   ├── FilterSnapshot.java
 │   ├── FilterState.java
 │   └── FailOpenGuard.java
-├── packet/                        ← 只有這裡與 Bridge 會 import 封包函式庫
+├── packet/                        <- only here and the Bridge import the packet library
 │   ├── ChatPacketFilter.java
 │   ├── LoreInjector.java
-│   ├── LorePainter.java           ← 只用 Bukkit 型別
+│   ├── LorePainter.java           <- Bukkit types only
 │   ├── QuietPacketFilter.java
 │   └── ProtocolLibLoreAdapter.java
 └── integration/
-    ├── PacketEventsHook.java      ← 無封包型別
+    ├── PacketEventsHook.java      <- no packet types
     ├── PacketEventsBridge.java
     ├── ProtocolLibHook.java
     └── ProtocolLibBridge.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-| 規則 | 說明 |
+| Rule | Description |
 |------|------|
-| 監聽器在 Netty 執行緒 | `onPacketSend` / `onPacketSending` 不在主執行緒，一個慢監聽器會拖慢該玩家的整條連線 |
-| 只讀快照 | `state.current()` 每個封包讀一次，存成區域變數；快照不可變，不需要鎖 |
-| 禁用 Bukkit API | `Bukkit.*`、`Player.*`（除了 UUID）、世界、方塊、排程器一律不碰。身分用 `event.getUser().getUUID()`；要記 log 也只記 UUID |
-| 只改 clone | `SpigotConversionUtil` 轉出的 `ItemStack` 與 `LorePainter` 的 clone 可以改；伺服器端的物品、背包絕不能改 |
-| 狀態只在主執行緒寫 | 事件、指令、reload 在主執行緒組新快照後 `state.update(...)`；監聽器永遠不寫 |
-| 重送封包 | 狀態先改、再重送（`player.updateInventory()` 或 PacketEvents `PlayerManager#sendPacket`，後者會再經過監聽鏈）；重送在主執行緒呼叫 |
-| 例外 | 一律 fail-open：`catch (RuntimeException \| LinkageError)` → `guard.trip(e)`；`setCancelled(true)` / `markForReEncode(true)` 放在 try 的最後一行 |
+| Listeners run on the Netty thread | `onPacketSend` / `onPacketSending` are not on the main thread; one slow listener slows that player's whole connection |
+| Read-only snapshot | Read `state.current()` once per packet and keep it in a local variable; the snapshot is immutable, so no lock is needed |
+| No Bukkit API | Never touch `Bukkit.*`, `Player.*` (except the UUID), worlds, blocks or the scheduler. Use `event.getUser().getUUID()` for identity; when logging, log only the UUID |
+| Modify clones only | The `ItemStack` produced by `SpigotConversionUtil` and the clone from `LorePainter` may be modified; server-side items and inventories must never be modified |
+| Write state on the main thread only | Events, commands and reload build a new snapshot on the main thread and then call `state.update(...)`; listeners never write |
+| Resending packets | Change state first, then resend (`player.updateInventory()` or PacketEvents `PlayerManager#sendPacket`, which goes through the listener chain again); call the resend on the main thread |
+| Exceptions | Always fail-open: `catch (RuntimeException \| LinkageError)` -> `guard.trip(e)`; put `setCancelled(true)` / `markForReEncode(true)` on the last line of the try |
 
-詳見 [`references/paper-threading.md`](references/paper-threading.md)。
+See [`references/paper-threading.md`](references/paper-threading.md).
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| `NoClassDefFoundError: com/github/retrooper/...` | 沒裝 packetevents，但 Bukkit 反射到引用其型別的類別（欄位、方法簽名、lambda 參數） | 封包型別只出現在 `packet/` 與 Bridge；Hook／Plugin／Listener 成員簽名不得出現；寫一個缺函式庫 classpath 的反射測試 |
-| 啟動時 `registerListener` 丟 `NoSuchMethodError` | 伺服器上的 packetevents 版本與編譯版本 API 不一致 | Hook 接 `LinkageError` 降級並記 WARNING；升級伺服器上的 packetevents |
-| 過濾器突然不作用、console 一行 WARNING | 某個封包解析失敗（MC 版本新、別的插件塞了奇怪 component）→ guard 已 trip | 這是 fail-open 的預期行為；確認 packetevents 支援目前 MC 版本 |
-| 玩家登入時沒有 lore，一動背包才出現 | 登入握手期間沒有 Bukkit 玩家，該批封包被跳過 | 加入後一 tick `player.updateInventory()`（見 `GameModeTracker`） |
-| 創造模式物品疊不起來 | 客戶端把看到的 lore 原樣回傳給伺服器 | 跳過創造模式觀看者，並在 `CREATIVE_INVENTORY_ACTION` 剝除標記行 |
-| 兩個 lore 插件的行順序不一致 | 重送時直接送「已注入」封包而繞過監聽鏈 | 重送原物品，讓封包走一般監聽鏈 |
-| ProtocolLib：`UnsupportedOperationException` 於 `getUniqueId()` | 連線仍是 `TemporaryPlayer` | 先檢查 `event.isPlayerTemporary()` |
-| 取消註冊時例外 | packetevents／ProtocolLib 已先被停用 | `uninstall()` 接 `LinkageError \| RuntimeException`，只記 FINE |
-| 同一個封包被處理兩次 | 重複 `register`、或兩個後端同時註冊 | Hook 在已有 handle 時忽略；PacketEvents 優先，ProtocolLib 只作備援 |
+| `NoClassDefFoundError: com/github/retrooper/...` | packetevents is not installed, but Bukkit reflects on a class that references its types (fields, method signatures, lambda parameters) | Packet types appear only in `packet/` and the Bridge; they must not appear in Hook/Plugin/Listener member signatures; write a reflection test on a classpath without the library |
+| `registerListener` throws `NoSuchMethodError` at startup | The packetevents version on the server has an API that differs from the compiled version | The Hook catches `LinkageError`, degrades and logs a WARNING; upgrade packetevents on the server |
+| A filter suddenly stops working and the console shows one WARNING line | A packet failed to parse (newer MC version, another plugin injected an odd component) -> the guard has tripped | This is the expected fail-open behavior; confirm packetevents supports the current MC version |
+| Players have no lore on login; it only appears after they move something in the inventory | There is no Bukkit player during the login handshake, so that batch of packets was skipped | Call `player.updateInventory()` one tick after joining (see `GameModeTracker`) |
+| Creative-mode items do not stack | The client echoes the lore it sees back to the server unchanged | Skip creative-mode viewers and strip the marker line in `CREATIVE_INVENTORY_ACTION` |
+| Two lore plugins show their lines in an inconsistent order | The resend sent an already-injected packet directly, bypassing the listener chain | Resend the original item so the packet goes through the normal listener chain |
+| ProtocolLib: `UnsupportedOperationException` in `getUniqueId()` | The connection is still a `TemporaryPlayer` | Check `event.isPlayerTemporary()` first |
+| Exception while unregistering | packetevents/ProtocolLib was disabled first | `uninstall()` catches `LinkageError \| RuntimeException` and logs only at FINE |
+| The same packet is processed twice | `register` was called twice, or both backends registered at once | The Hook ignores the call when a handle already exists; PacketEvents takes priority and ProtocolLib is only a backup |

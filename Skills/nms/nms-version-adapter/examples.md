@@ -1,6 +1,6 @@
 # examples — nms-version-adapter
 
-## 範例 1：單模組（只支援一個版本）起步
+## Example 1: Single module (one supported version) getting started
 
 **Input:**
 ```
@@ -9,20 +9,20 @@ adapter_interface: NmsAdapter
 supported_versions: 26.2
 ```
 
-**使用端：雖只支援單版本，但透過 adapter 未來升級更容易:**
+**Usage: even with a single version, an adapter makes future upgrades easier:**
 ```java
 // onEnable
 AdapterRegistry.register(new V26_2_Adapter());
 AdapterRegistry.initialize();
 
-// 業務代碼
-Component msg = Component.text("歡迎！").color(NamedTextColor.GREEN);
+// Business code
+Component msg = Component.text("Welcome!").color(NamedTextColor.GREEN);
 AdapterRegistry.get().sendActionBar(player, msg);
 ```
 
 ---
 
-## 範例 2：支援 26.2 與 26.3（Try-catch 註冊）
+## Example 2: Supporting 26.2 and 26.3 (try-catch registration)
 
 **Input:**
 ```
@@ -31,7 +31,7 @@ adapter_interface: NmsAdapter
 supported_versions: 26.2, 26.3
 ```
 
-**使用端：安全註冊（執行環境若不含某 adapter class 也不崩潰）:**
+**Usage: safe registration (no crash if the runtime lacks some adapter class):**
 ```java
 @Override
 public void onEnable() {
@@ -59,9 +59,9 @@ private void tryRegister(String className) {
 
 ---
 
-## 範例 3：Multi-module Gradle build 結構
+## Example 3: Multi-module Gradle build structure
 
-**根目錄 settings.gradle:**
+**Root settings.gradle:**
 ```groovy
 rootProject.name = 'my-plugin'
 
@@ -71,7 +71,7 @@ include 'adapter-v26_3'
 include 'plugin'
 ```
 
-**core/build.gradle（版本無關介面）:**
+**core/build.gradle (version-independent interface):**
 ```groovy
 plugins { id 'java' }
 
@@ -112,7 +112,7 @@ dependencies {
 java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
 ```
 
-**plugin/build.gradle（整合打包）:**
+**plugin/build.gradle (integration and packaging):**
 ```groovy
 plugins {
     id 'java'
@@ -133,21 +133,21 @@ shadowJar {
 
 ---
 
-## 範例 4：Adapter 方法加 default 實作（向後相容）
+## Example 4: Add default implementations to adapter methods (backward compatible)
 
-**使用端：新增 adapter 方法時不破壞既有 adapter:**
+**Usage: add adapter methods without breaking existing adapters:**
 ```java
 public interface NmsAdapter {
     NmsVersion version();
     void sendActionBar(Player player, Component message);
 
-    /** 新增方法，提供預設（退化）實作 */
+    /** New method with a default (degraded) implementation */
     default void sendTitle(Player player, Component title, Component subtitle) {
-        // 退化：用 Bukkit API
+        // Degraded: use the Bukkit API
         player.showTitle(Title.title(title, subtitle));
     }
 
-    /** 特定版本才有的功能，不支援時丟例外 */
+    /** Feature only available on specific versions; throws when unsupported */
     default void playClientSound(Player player, String soundKey) {
         throw new UnsupportedOperationException(
             "playClientSound not supported on " + version());
@@ -155,12 +155,12 @@ public interface NmsAdapter {
 }
 ```
 
-**使用端檢查支援性:**
+**Usage: check for support:**
 ```java
 try {
     AdapterRegistry.get().playClientSound(player, "custom.ambient");
 } catch (UnsupportedOperationException e) {
-    // Fallback 至 Bukkit API
+    // Fall back to the Bukkit API
     player.playSound(player.getLocation(), Sound.AMBIENT_CAVE, 1f, 1f);
 }
 ```

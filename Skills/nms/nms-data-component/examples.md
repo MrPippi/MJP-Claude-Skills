@@ -1,91 +1,91 @@
 # examples — nms-data-component
 
-## 範例 1：讀寫 CustomData 自定義欄位
+## Example 1: Read and write custom CustomData fields
 
 **Input:**
 ```
 package_name: com.example.item
 ```
 
-**Output — 在物品中儲存玩家 UUID 作為綁定標記:**
+**Output — store a player UUID in the item as a binding marker:**
 ```java
-// 寫入綁定 UUID
+// Write the bound UUID
 org.bukkit.inventory.ItemStack bound = CustomDataHelper.setString(
     item, "bound_to", player.getUniqueId().toString());
 player.getInventory().setItemInMainHand(bound);
 
-// 讀取並驗證
+// Read and verify
 String boundTo = CustomDataHelper.getString(
     player.getInventory().getItemInMainHand(), "bound_to").orElse(null);
 
 if (!player.getUniqueId().toString().equals(boundTo)) {
-    player.sendMessage("§c此物品已綁定給其他玩家！");
+    player.sendMessage("§cThis item is bound to another player!");
     event.setCancelled(true);
 }
 ```
 
 ---
 
-## 範例 2：設定物品最大堆疊數
+## Example 2: Set the item's max stack size
 
 **Input:**
 ```
 package_name: com.example.item
 ```
 
-**Output — 建立可堆疊 64 個的特殊物品:**
+**Output — create a special item with a custom stack limit:**
 ```java
 org.bukkit.inventory.ItemStack customItem =
     new org.bukkit.inventory.ItemStack(Material.PAPER);
 
-// 設定最大堆疊 16
+// Set max stack size to 16
 customItem = ItemComponentUtil.setMaxStackSize(customItem, 16);
 
-// 檢查是否設定成功
+// Check that it was applied
 boolean has = ItemComponentUtil.has(customItem, DataComponents.MAX_STACK_SIZE);
 Optional<Integer> maxSize = ItemComponentUtil.get(customItem, DataComponents.MAX_STACK_SIZE);
-player.sendMessage("最大堆疊: " + maxSize.orElse(64));
+player.sendMessage("Max stack size: " + maxSize.orElse(64));
 ```
 
 ---
 
-## 範例 3：設定不可破壞屬性
+## Example 3: Make an item unbreakable
 
 **Input:**
 ```
 package_name: com.example.item
 ```
 
-**Output — 建立不可破壞的神器（顯示 Unbreakable 標籤）:**
+**Output — create an unbreakable artifact (showing the Unbreakable tooltip):**
 ```java
 org.bukkit.inventory.ItemStack artifact =
     new org.bukkit.inventory.ItemStack(Material.NETHERITE_SWORD);
 
-// 設定不可破壞（showTooltip=true 顯示標籤）
+// Make unbreakable (showTooltip=true shows the tooltip)
 artifact = ItemComponentUtil.setUnbreakable(artifact, true);
 
 player.getInventory().addItem(artifact);
-player.sendMessage("§d你獲得了不可破壞的神器！");
+player.sendMessage("§dYou obtained an unbreakable artifact!");
 ```
 
 ---
 
-## 範例 4：讀取附魔資訊
+## Example 4: Read enchantment info
 
 **Input:**
 ```
 package_name: com.example.item
 ```
 
-**Output — 讀取 NMS 附魔列表並顯示:**
+**Output — read the NMS enchantment list and display it:**
 ```java
 org.bukkit.inventory.ItemStack sword = player.getInventory().getItemInMainHand();
 
 ItemComponentUtil.getEnchantments(sword).ifPresent(enchantments -> {
-    player.sendMessage("§6=== 附魔列表 ===");
+    player.sendMessage("§6=== Enchantments ===");
     enchantments.entrySet().forEach(entry -> {
-        // entry.getKey() 是 Holder<Enchantment>，.value() 取得 Enchantment
-        // entry.getIntValue() 是附魔等級
+        // entry.getKey() is a Holder<Enchantment>; .value() returns the Enchantment
+        // entry.getIntValue() is the enchantment level
         player.sendMessage("§f- " + entry.getKey().value().description().getString()
             + " §e" + entry.getIntValue());
     });

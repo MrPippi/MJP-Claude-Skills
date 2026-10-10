@@ -3,77 +3,77 @@ name: paper-safe-teleport
 description: "安全隨機傳送（RTP）與安全落點傳送：getChunkAtAsync 後在主執行緒判定、teleportAsync 完成後重新驗證、暖機移動取消與冷卻、預找落點池 / Safe random teleport and safe-location teleports on Paper with async chunk loading, re-validation, warmup, cooldowns and a spot pool"
 ---
 
-# Paper Safe Teleport / 安全傳送
+# Paper Safe Teleport
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-safe-teleport`
 
-## 目的 / Purpose
+## Purpose
 
-實作「不會把玩家傳進岩漿、虛空或牆裡」的傳送：隨機傳送（RTP）、傳送到玩家設定點（家、地標）前的落點檢查，以及暖機（站著不動 N 秒）與冷卻。
+Implement teleports that never drop a player into lava, the void, or a wall: random teleport (RTP), landing-spot checks before teleporting to player-set points (homes, waypoints), plus warmup (stand still for N seconds) and cooldown.
 
-核心做法：
-- 先用 `World#getChunkAtAsync` 讓 Paper 在背景載入／生成區塊，future 在**主執行緒**完成後才讀方塊並判定安全
-- 判定規則集中在一個無狀態類別，RTP、家、配對傳送共用
-- 找點次數有上限，找不到就回覆玩家訊息，不無限重試
-- `Player#teleportAsync` 完成後回主執行緒收尾；每個非同步階段回來都**重新驗證**（玩家在線、沒進入戰鬥、世界沒變）
-- 可選的預找落點池：分步補點，取用時重驗並立即作廢，避免同 tick 兩人傳到同一點
+Core approach:
+- Use `World#getChunkAtAsync` first so Paper loads/generates chunks in the background; read blocks and judge safety only after the future completes on the **main thread**
+- Keep the safety rules in one stateless class shared by RTP, homes, and paired teleports
+- Cap the number of search attempts; if nothing is found, reply to the player instead of retrying forever
+- Finish on the main thread after `Player#teleportAsync` completes; **re-validate** after every async stage (player online, not in combat, world unchanged)
+- Optional pre-found spot pool: refill step by step, re-validate on take and invalidate immediately, so two players never land on the same spot in one tick
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（範本在兩版皆編譯驗證，無差異）
-- 純 Paper API，不需要 Paperweight
-- 只用 `World`、`WorldBorder`、`HeightMap`、`Player#teleportAsync`、`BukkitScheduler`
+- Paper 1.21.11 / 26.2 (templates are compile-verified on both, no differences)
+- Pure Paper API, no Paperweight required
+- Uses only `World`, `WorldBorder`, `HeightMap`, `Player#teleportAsync`, `BukkitScheduler`
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「隨機傳送」「RTP」「random teleport」「/rtp」「wild」
-- 「安全傳送」「safe teleport」「安全落點」「safe location」
-- 「傳送暖機」「warmup」「冷卻」「teleport cooldown」
-- 「teleportAsync」「getChunkAtAsync」「落點池」「spot pool」
+- "隨機傳送", "RTP", "random teleport", "/rtp", "wild"
+- "安全傳送", "safe teleport", "安全落點", "safe location"
+- "傳送暖機", "warmup", "冷卻", "teleport cooldown"
+- "teleportAsync", "getChunkAtAsync", "落點池", "spot pool"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.teleport` | 產生類別的 package |
-| `world` | `world` | RTP 目標世界 |
-| `min_radius` / `max_radius` | `500` / `5000` | 以世界出生點為中心的環狀範圍（格） |
-| `max_attempts` | `12` | 每次搜尋最多嘗試幾個隨機點 |
-| `warmup_ticks` | `100` | 暖機時間（0 = 不暖機） |
-| `cooldown` | `PT5M` | 冷卻時間（ISO-8601 Duration） |
-| `pool_size` | `4` | 預找落點池容量（0 = 不使用） |
+| `base_package` | `com.example.teleport` | Package of the generated classes |
+| `world` | `world` | RTP target world |
+| `min_radius` / `max_radius` | `500` / `5000` | Ring range around the world spawn (blocks) |
+| `max_attempts` | `12` | Maximum random points tried per search |
+| `warmup_ticks` | `100` | Warmup time (0 = no warmup) |
+| `cooldown` | `PT5M` | Cooldown (ISO-8601 Duration) |
+| `pool_size` | `4` | Pre-found spot pool capacity (0 = disabled) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `SafeLocationRules.java` — 無狀態安全判定（落點規則、下界天花板、世界邊界）
-- `SafeSpotFinder.java` — 有次數上限的非同步找點
-- `SafeSpotPool.java` — 預找落點池（分步補點、一次性取用、chunk ticket）
-- `TeleportGuard.java` — 傳送前閘門（戰鬥狀態等），回傳拒絕原因
-- `TeleportCooldowns.java` — 以 UUID 為 key、存時間戳的冷卻
-- `TeleportSettings.java` — 不可變設定
-- `SafeTeleportService.java` — 暖機 → 找點 → 重驗 → `teleportAsync` → 收尾
-- `WarmupListener.java` — 移動取消與離線清理
+- `SafeLocationRules.java` — stateless safety checks (landing rules, Nether ceiling, world border)
+- `SafeSpotFinder.java` — async spot search with an attempt cap
+- `SafeSpotPool.java` — pre-found spot pool (step-wise refill, single-use take, chunk tickets)
+- `TeleportGuard.java` — pre-teleport gate (combat status, etc.) that returns a denial reason
+- `TeleportCooldowns.java` — cooldowns keyed by UUID and stored as timestamps
+- `TeleportSettings.java` — immutable config
+- `SafeTeleportService.java` — warmup -> search -> re-validate -> `teleportAsync` -> finish
+- `WarmupListener.java` — cancel on movement and cleanup on quit
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。戰鬥標記由 [`paper-combat-tag`](../paper-combat-tag/SKILL.md) 提供，本技能只透過 `TeleportGuard` 介面接入，不在編譯期依賴它。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` (`compileOnly`) is required. Combat tagging is provided by [`paper-combat-tag`](../paper-combat-tag/SKILL.md); this skill integrates with it only through the `TeleportGuard` interface and has no compile-time dependency on it.
 
-## 安全落點規則 / Safe Location Rules
+## Safe Location Rules
 
-| 項目 | 規則 |
+| Item | Rule |
 |------|------|
-| 腳下方塊 | 實心、非液體、不在危險清單、不是樹葉 |
-| 身體空間 | 腳（y+1）與頭（y+2）都可通行且非液體 |
-| 頭頂淨空 | 再往上一格（y+3）也必須可通行，避免跳起撞頭或被卡住 |
-| 危險方塊 | 岩漿、水、火、營火、岩漿塊、細雪、仙人掌、甜漿果叢、滴水石錐、凋零玫瑰、蜘蛛網、傳送門 |
-| 高度圖 | 地上世界用 `HeightMap.MOTION_BLOCKING_NO_LEAVES`，不會落在樹冠上 |
-| 虛空 | 最高方塊落在世界最低高度（無地面）視為失敗 |
-| 世界邊界 | 落點必須 `WorldBorder#isInside` |
-| 下界 | `World#hasCeiling()` 的世界（下界）最高方塊是岩盤頂（y 約 123–127），改由 `logicalHeight - 8`（120）往下找地板，頭頂不會碰到岩盤層，也不會落在 y ≥ 127 的屋頂上 |
+| Floor block | Solid, not a liquid, not on the hazard list, not leaves |
+| Body space | Feet (y+1) and head (y+2) are both passable and not liquid |
+| Headroom | The block above (y+3) must also be passable, to avoid bumping the head when jumping or getting stuck |
+| Hazard blocks | Lava, water, fire, campfires, magma blocks, powder snow, cactus, sweet berry bushes, pointed dripstone, wither roses, cobwebs, portals |
+| Heightmap | Overworld-like worlds use `HeightMap.MOTION_BLOCKING_NO_LEAVES`, so players never land on tree canopies |
+| Void | A highest block at the world's minimum height (no ground) counts as a failure |
+| World border | The spot must satisfy `WorldBorder#isInside` |
+| Nether | In a `World#hasCeiling()` world (the Nether) the highest block is the bedrock roof (y about 123-127), so scan down for a floor starting at `logicalHeight - 8` (120); the head never touches the bedrock layer and players never land on the roof at y >= 127 |
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `SafeLocationRules.java`
 
@@ -92,14 +92,14 @@ import java.util.OptionalInt;
 import java.util.Set;
 
 /**
- * 無狀態的安全落點判定。<b>只能在主執行緒、且該區塊已載入時呼叫</b>
- * （先 {@code getChunkAtAsync}，future 完成後再來這裡）。
+ * Stateless safe-location checks. <b>Call only on the main thread and only when the chunk is loaded</b>
+ * (call {@code getChunkAtAsync} first, then come here after the future completes).
  */
 public final class SafeLocationRules {
 
-    /** 腳（y+1）、頭（y+2）、頭頂淨空（y+3）。 */
+    /** Feet (y+1), head (y+2), headroom (y+3). */
     private static final int HEADROOM = 3;
-    /** 下界岩盤頂在 logicalHeight-5 ~ -1；地面最高取 logicalHeight-8，頭頂三格仍在岩盤層之下。 */
+    /** The Nether bedrock roof sits at logicalHeight-5 to -1; the highest floor is logicalHeight-8, so the three blocks above stay below the bedrock layer. */
     private static final int CEILING_CLEARANCE = 8;
     private static final int CHUNK_SHIFT = 4;
     private static final double CENTER_OFFSET = 0.5;
@@ -113,7 +113,7 @@ public final class SafeLocationRules {
 
     private SafeLocationRules() {}
 
-    /** 在 (x, z) 這一欄找安全落點；回傳腳的位置（方塊中心）。區塊未載入、不安全或在邊界外回 empty。 */
+    /** Finds a safe landing spot in the (x, z) column; returns the feet position (block center). Returns empty if the chunk is not loaded, the spot is unsafe, or it is outside the border. */
     public static Optional<Location> evaluate(World world, int x, int z) {
         if (!world.isChunkLoaded(x >> CHUNK_SHIFT, z >> CHUNK_SHIFT)) {
             return Optional.empty();
@@ -126,7 +126,7 @@ public final class SafeLocationRules {
         return world.getWorldBorder().isInside(feet) ? Optional.of(feet) : Optional.empty();
     }
 
-    /** 以 center 為中心，由近到遠（方形環）找最近的安全落點；只看已載入的區塊。 */
+    /** Finds the nearest safe landing spot around center, from near to far (square rings); only looks at loaded chunks. */
     public static Optional<Location> findNearby(World world, Location center, int radius) {
         int cx = center.getBlockX();
         int cz = center.getBlockZ();
@@ -145,7 +145,7 @@ public final class SafeLocationRules {
     private static OptionalInt surfaceFloor(World world, int x, int z) {
         int y = world.getHighestBlockAt(x, z, HeightMap.MOTION_BLOCKING_NO_LEAVES).getY();
         if (y <= world.getMinHeight() || y + HEADROOM >= world.getMaxHeight()) {
-            return OptionalInt.empty(); // 虛空或頂到世界高度
+            return OptionalInt.empty(); // Void or at the world height limit
         }
         return safeColumn(world, x, y, z) ? OptionalInt.of(y) : OptionalInt.empty();
     }
@@ -168,7 +168,7 @@ public final class SafeLocationRules {
         }
         for (int i = 1; i <= HEADROOM; i++) {
             Block above = world.getBlockAt(x, y + i, z);
-            // 可通行不代表安全：FIRE、SWEET_BERRY_BUSH 沒有碰撞箱，要另外比對危險清單
+            // Passable does not mean safe: FIRE and SWEET_BERRY_BUSH have no collision box, so check the hazard list separately
             if (!above.isPassable() || above.isLiquid() || HAZARDS.contains(above.getType())) {
                 return false;
             }
@@ -191,8 +191,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.random.RandomGenerator;
 
 /**
- * 有次數上限的非同步找點：隨機 (x, z) → {@code getChunkAtAsync}（future 在主執行緒完成）→ 主執行緒判定。
- * 無狀態；亂數來源由外部注入（測試可給固定種子）。
+ * Async spot search with an attempt cap: random (x, z) -> {@code getChunkAtAsync} (future completes on the main thread) -> check on the main thread.
+ * Stateless; the random source is injected (tests can supply a fixed seed).
  */
 public final class SafeSpotFinder {
 
@@ -204,7 +204,7 @@ public final class SafeSpotFinder {
         this.rng = rng;
     }
 
-    /** 在出生點周圍 [minRadius, maxRadius] 的環內找；用盡 maxAttempts 次回 empty（future 不會以例外完成）。 */
+    /** Searches the ring [minRadius, maxRadius] around spawn; returns empty after maxAttempts attempts (the future never completes exceptionally). */
     public CompletableFuture<Optional<Location>> find(World world, int minRadius, int maxRadius, int maxAttempts) {
         return attempt(world, minRadius, maxRadius, maxAttempts, 0);
     }
@@ -224,7 +224,7 @@ public final class SafeSpotFinder {
                 if (err != null || chunk == null) {
                     return Optional.<Location>empty();
                 }
-                return SafeLocationRules.evaluate(world, x, z); // 此處已在主執行緒
+                return SafeLocationRules.evaluate(world, x, z); // Already on the main thread here
             })
             .thenCompose(found -> found.isPresent()
                 ? CompletableFuture.completedFuture(found)
@@ -244,15 +244,15 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 傳送前閘門：回傳拒絕原因（MiniMessage 字串），empty 代表放行。
- * 暖機開始前、搜尋完成後、{@code teleportAsync} 前各檢查一次——戰鬥標記可能在暖機期間才產生。
+ * Pre-teleport gate: returns a denial reason (MiniMessage string); empty means allowed.
+ * Checked before warmup starts, after the search completes, and before {@code teleportAsync}, since a combat tag can appear during warmup.
  */
 @FunctionalInterface
 public interface TeleportGuard {
 
     Optional<String> denyReason(Player player);
 
-    /** 戰鬥狀態來源；由 paper-combat-tag 的服務實作（見該技能）。 */
+    /** Combat status source; implemented by the paper-combat-tag service (see that skill). */
     @FunctionalInterface
     interface CombatStatus {
         boolean isTagged(UUID playerId);
@@ -262,14 +262,14 @@ public interface TeleportGuard {
         return player -> Optional.empty();
     }
 
-    /** 戰鬥中禁止傳送。 */
+    /** Blocks teleporting while in combat. */
     static TeleportGuard blockWhileTagged(CombatStatus status) {
         return player -> status.isTagged(player.getUniqueId())
             ? Optional.of("<red>You cannot teleport while in combat.")
             : Optional.empty();
     }
 
-    /** 依序套用，第一個拒絕原因勝出。 */
+    /** Applies in order; the first denial reason wins. */
     default TeleportGuard and(TeleportGuard other) {
         return player -> {
             Optional<String> mine = denyReason(player);
@@ -291,8 +291,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 冷卻：以 UUID 為 key，存「上次成功傳送的時間戳（epoch millis）」。
- * 存時間戳而非倒數秒數：重啟後仍可還原，也不需要每 tick 遞減。Clock 注入以利測試。
+ * Cooldown: keyed by UUID, stores the timestamp of the last successful teleport (epoch millis).
+ * Storing a timestamp instead of a countdown means it can be restored after a restart and needs no per-tick decrement. The Clock is injected for testing.
  */
 public final class TeleportCooldowns {
 
@@ -304,7 +304,7 @@ public final class TeleportCooldowns {
         this.lastUsedMillis = new ConcurrentHashMap<>(restored);
     }
 
-    /** 剩餘冷卻；已結束或沒有紀錄回 {@link Duration#ZERO}。 */
+    /** Remaining cooldown; returns {@link Duration#ZERO} if it has ended or there is no record. */
     public Duration remaining(UUID playerId, Duration cooldown) {
         Long last = lastUsedMillis.get(playerId);
         if (last == null) return Duration.ZERO;
@@ -312,12 +312,12 @@ public final class TeleportCooldowns {
         return left.isNegative() ? Duration.ZERO : left;
     }
 
-    /** 傳送「成功」之後才呼叫；失敗不應吃掉玩家的冷卻。 */
+    /** Call only after a successful teleport; a failure must not consume the player's cooldown. */
     public void mark(UUID playerId) {
         lastUsedMillis.put(playerId, clock.millis());
     }
 
-    /** 不可變快照，供持久化（例如 onDisable 時寫檔）。 */
+    /** Immutable snapshot for persistence (e.g. writing to a file in onDisable). */
     public Map<UUID, Long> snapshot() {
         return Map.copyOf(lastUsedMillis);
     }
@@ -331,7 +331,7 @@ package com.example.teleport;
 
 import java.time.Duration;
 
-/** 不可變設定；非法值在建構時直接失敗。 */
+/** Immutable config; invalid values fail immediately at construction. */
 public record TeleportSettings(
     int warmupTicks,
     Duration cooldown,
@@ -365,13 +365,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * 單一世界的預找落點池，只在主執行緒使用。
+ * Pre-found spot pool for a single world; use on the main thread only.
  *
  * <ul>
- *   <li>分步補點：一次只跑一個搜尋，完成後隔 {@code STEP_DELAY_TICKS} 再補下一個，不一次吃光 tick 預算</li>
- *   <li>一次性：{@link #take} 先把點移出池再重驗，同一個點不可能發給兩個人（同 tick 也不會）</li>
- *   <li>每個池內點的區塊掛 plugin chunk ticket，取用時區塊必定已載入、重驗不讀盤；取出後下一 tick 才釋放</li>
- *   <li>世代計數：{@link #close} 之後回來的搜尋結果一律丟棄</li>
+ *   <li>Step-wise refill: run only one search at a time and wait {@code STEP_DELAY_TICKS} after it completes before the next, so the tick budget is never used up at once</li>
+ *   <li>Single use: {@link #take} removes the spot from the pool before re-validating, so the same spot can never be given to two players (not even in the same tick)</li>
+ *   <li>Each pooled spot's chunk holds a plugin chunk ticket, so the chunk is always loaded on take and re-validation never reads from disk; the ticket is released on the next tick after the spot is taken</li>
+ *   <li>Generation counter: search results that return after {@link #close} are discarded</li>
  * </ul>
  */
 public final class SafeSpotPool {
@@ -403,7 +403,7 @@ public final class SafeSpotPool {
         this.capacity = Math.max(0, capacity);
     }
 
-    /** 容量 0 的池：永遠取不到、不補點，用於「不使用池」。 */
+    /** A pool with capacity 0: never yields a spot and never refills; used for "no pool". */
     public static SafeSpotPool disabled(Plugin plugin, SafeSpotFinder finder, TeleportSettings settings) {
         return new SafeSpotPool(plugin, finder, new UUID(0L, 0L), settings, 0);
     }
@@ -412,15 +412,15 @@ public final class SafeSpotPool {
         refill();
     }
 
-    /** 取一個重驗過的落點；池空或全部失效回 empty。不論結果都會觸發補點。 */
+    /** Takes a re-validated spot; returns empty if the pool is empty or every spot is stale. Triggers a refill either way. */
     public Optional<Location> take(World world) {
         requireMainThread();
         Optional<Location> result = Optional.empty();
         if (!closed && world.getUID().equals(worldId)) {
             while (result.isEmpty() && !spots.isEmpty()) {
-                PooledSpot spot = spots.pollFirst();   // 先移出池 → 一次性
+                PooledSpot spot = spots.pollFirst();   // Remove from the pool first -> single use
                 releaseNextTick(spot);
-                result = SafeLocationRules.evaluate(world, spot.x(), spot.z()); // 地形可能已被改建
+                result = SafeLocationRules.evaluate(world, spot.x(), spot.z()); // The terrain may have been rebuilt
             }
         }
         refill();
@@ -456,7 +456,7 @@ public final class SafeSpotPool {
         boolean added = false;
         if (err == null && found != null && found.isPresent() && world != null) {
             PooledSpot spot = new PooledSpot(found.get().getBlockX(), found.get().getBlockZ());
-            if (!holdsChunk(spot.chunkX(), spot.chunkZ())) { // 同區塊不重複存，避免兩人落在一起
+            if (!holdsChunk(spot.chunkX(), spot.chunkZ())) { // Do not store two spots in the same chunk, so two players do not land together
                 world.addPluginChunkTicket(spot.chunkX(), spot.chunkZ(), plugin);
                 spots.addLast(spot);
                 added = true;
@@ -470,7 +470,7 @@ public final class SafeSpotPool {
         plugin.getServer().getScheduler().runTaskLater(plugin, this::refill, delay);
     }
 
-    /** 下一 tick 才放 ticket：取用當下玩家還沒抵達。那時池裡若有同區塊的點就不放。 */
+    /** Release the ticket on the next tick, since the player has not arrived at the moment of taking. Skip the release if the pool still holds a spot in the same chunk. */
     private void releaseNextTick(PooledSpot spot) {
         long g = generation;
         plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -525,10 +525,10 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * 暖機 → 找點（池優先）→ 重驗 → teleportAsync → 收尾。只在主執行緒呼叫。
+ * Warmup -> search (pool first) -> re-validate -> teleportAsync -> finish. Call on the main thread only.
  *
- * <p>每個非同步階段回來都重新驗證：玩家仍在線、閘門（戰鬥）仍放行、玩家所在世界與請求時相同。
- * 冷卻只在傳送成功後才記錄。
+ * <p>Re-validates after every async stage: the player is still online, the gate (combat) still allows it, and the player's world matches the one at request time.
+ * The cooldown is recorded only after a successful teleport.
  */
 public final class SafeTeleportService {
 
@@ -557,7 +557,7 @@ public final class SafeTeleportService {
         this.pool = pool;
     }
 
-    /** 隨機傳送到 target 世界。 */
+    /** Randomly teleports to the target world. */
     public void requestRandom(Player player, World target) {
         UUID id = player.getUniqueId();
         Optional<String> denied = guard.denyReason(player);
@@ -589,7 +589,7 @@ public final class SafeTeleportService {
         warmups.put(id, new Warmup(player.getLocation().clone(), task));
     }
 
-    /** 由 {@link WarmupListener} 呼叫：離開起點超過容許範圍就取消暖機。 */
+    /** Called by {@link WarmupListener}: cancels the warmup if the player moves beyond the allowed range from the origin. */
     public void cancelIfMoved(Player player, Location to) {
         Warmup warmup = warmups.get(player.getUniqueId());
         if (warmup == null) return;
@@ -643,7 +643,7 @@ public final class SafeTeleportService {
         World world = spot.getWorld();
         if (player == null || world == null || !stillAllowed(player, originWorldId)) return;
 
-        // 搜尋到現在可能過了幾個 tick，傳送前再判一次
+        // A few ticks may have passed since the search; check again before teleporting
         Optional<Location> verified = SafeLocationRules.evaluate(world, spot.getBlockX(), spot.getBlockZ());
         if (verified.isEmpty()) {
             player.sendMessage(MM.deserialize("<red>That location is no longer safe. Please try again."));
@@ -667,7 +667,7 @@ public final class SafeTeleportService {
         }
     }
 
-    /** 每個非同步階段回來都呼叫：在線、閘門放行、世界沒變。 */
+    /** Called after every async stage: online, gate allows, world unchanged. */
     private boolean stillAllowed(Player player, UUID originWorldId) {
         if (!player.isOnline()) return false;
         Optional<String> denied = guard.denyReason(player);
@@ -714,7 +714,7 @@ public final class WarmupListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
-        if (!event.hasChangedBlock()) return; // 只轉頭不算移動，也省掉每 tick 的計算
+        if (!event.hasChangedBlock()) return; // Turning the head is not movement, and this also saves per-tick computation
         service.cancelIfMoved(event.getPlayer(), event.getTo());
     }
 
@@ -725,41 +725,41 @@ public final class WarmupListener implements Listener {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/teleport/
-├── SafeLocationRules.java      ← 無狀態判定（RTP／家／配對共用）
-├── SafeSpotFinder.java         ← 非同步找點
-├── SafeSpotPool.java           ← 預找落點池（可選）
-├── TeleportGuard.java          ← 戰鬥等閘門
+├── SafeLocationRules.java      <- stateless checks (shared by RTP/home/pair)
+├── SafeSpotFinder.java         <- async spot search
+├── SafeSpotPool.java           <- pre-found spot pool (optional)
+├── TeleportGuard.java          <- gates such as combat status
 ├── TeleportCooldowns.java
 ├── TeleportSettings.java
 ├── SafeTeleportService.java
 ├── WarmupListener.java
-└── TeleportPlugin.java         ← 組裝（見 examples.md）
+└── TeleportPlugin.java         <- wiring (see examples.md)
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- `getChunkAtAsync` 的 future 與 `teleportAsync` 的完成回呼都應視為「回到主執行緒」；範本仍用 `onMain` 保底，並在 `plugin.isEnabled()` 為 false 時放棄（停用中 `runTask` 會丟 `IllegalPluginAccessException`）
-- 非同步階段之間只攜帶 `UUID`，回來後重新 `getPlayer` / `getWorld`，不持有 `Player` 引用
-- 讀方塊（`SafeLocationRules`）、`WorldBorder`、`addPluginChunkTicket` 一律在主執行緒
-- 池與暖機表只在主執行緒存取，不需要鎖；冷卻表用 `ConcurrentHashMap`，因為持久化可能在其他執行緒讀快照
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
-- 戰鬥中禁止傳送：以 `TeleportGuard.blockWhileTagged` 接入 [`paper-combat-tag`](../paper-combat-tag/SKILL.md)
+- Treat both the `getChunkAtAsync` future and the `teleportAsync` completion callback as "back on the main thread"; the templates still use `onMain` as a safeguard and give up when `plugin.isEnabled()` is false (`runTask` throws `IllegalPluginAccessException` while the plugin is disabling)
+- Carry only a `UUID` between async stages; call `getPlayer` / `getWorld` again afterwards and never hold a `Player` reference
+- Block reads (`SafeLocationRules`), `WorldBorder`, and `addPluginChunkTicket` always run on the main thread
+- The pool and warmup map are accessed only on the main thread and need no locks; the cooldown map uses `ConcurrentHashMap` because persistence may read the snapshot on another thread
+- See [`references/paper-threading.md`](references/paper-threading.md)
+- Block teleporting during combat: integrate [`paper-combat-tag`](../paper-combat-tag/SKILL.md) through `TeleportGuard.blockWhileTagged`
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 問題 | 原因 | 解法 |
+| Problem | Cause | Solution |
 |------|------|------|
-| 一直找不到點 | 範圍內多海洋／岩漿，或 `max_attempts` 太小 | 調整半徑、提高次數；已有玩家訊息，不無限重試 |
-| 傳進地下洞穴／樹頂 | 沒用 `MOTION_BLOCKING_NO_LEAVES` | 地上世界用範本的高度圖，不要自己從 y=319 往下掃 |
-| 下界傳到屋頂或卡進岩盤 | 直接用最高方塊 | `hasCeiling()` 世界從 `logicalHeight - 8` 往下掃 |
-| 傳到邊界外 | 忘記檢查 `WorldBorder#isInside` | 判定規則已含；自訂規則時務必保留 |
-| 站進火或甜漿果叢 | 只判斷「可通行」 | 頭頂各格也比對危險清單 |
-| 兩人同 tick 傳到同一點 | 池沒有一次性取用 | `take` 先移出再重驗；同區塊不重複入池 |
-| 暖機期間進入戰鬥仍被傳走 | 只在指令開頭檢查閘門 | 每個階段回來都 `guard.denyReason` |
-| 玩家登出後 NPE | 持有 `Player` 引用 | 只傳 UUID，回來重取並檢查 `isOnline()` |
-| 重啟後冷卻消失 | 冷卻只在記憶體 | `snapshot()` 持久化，啟動時傳入 `restored` |
-| 池的區塊被卸載 | 沒掛 chunk ticket | `addPluginChunkTicket`；`close()` 時 `removePluginChunkTickets` |
+| Never finds a spot | The range is mostly ocean/lava, or `max_attempts` is too small | Adjust the radius or raise the attempt count; the player already gets a message and it never retries forever |
+| Teleported into an underground cave / tree top | `MOTION_BLOCKING_NO_LEAVES` was not used | Use the template's heightmap in overworld-like worlds; do not scan down from y=319 yourself |
+| Nether teleport lands on the roof or inside bedrock | Used the highest block directly | In `hasCeiling()` worlds scan down from `logicalHeight - 8` |
+| Teleported outside the border | Forgot to check `WorldBorder#isInside` | The rules already include it; keep it in any custom rules |
+| Standing in fire or sweet berry bushes | Only checked "passable" | Also check each block above against the hazard list |
+| Two players land on the same spot in one tick | The pool is not single-use | `take` removes first and then re-validates; no duplicate chunks in the pool |
+| Player teleports despite entering combat during warmup | The gate is checked only at command start | Call `guard.denyReason` after every stage |
+| NPE after the player logs out | Holding a `Player` reference | Pass only the UUID, re-fetch afterwards, and check `isOnline()` |
+| Cooldown disappears after a restart | Cooldowns live only in memory | Persist `snapshot()` and pass `restored` at startup |
+| Pool chunks get unloaded | No chunk ticket held | `addPluginChunkTicket`; call `removePluginChunkTickets` in `close()` |

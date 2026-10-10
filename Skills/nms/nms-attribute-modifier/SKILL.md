@@ -3,43 +3,43 @@ name: nms-attribute-modifier
 description: "透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性（MAX_HEALTH、ATTACK_DAMAGE 等），比 Bukkit API 更精確（Paper NMS + Mojang-mapped）/ Dynamically modify entity attributes via NMS AttributeMap/AttributeModifier"
 ---
 
-# NMS Attribute Modifier / NMS 屬性修改器
+# NMS Attribute Modifier
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-attribute-modifier`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `AttributeMap`、`AttributeInstance`、`AttributeModifier` 精確控制實體屬性，支援加法、倍乘、基底值修改，實現 RPG 裝備加成、Buff/Debuff 系統。
+Precisely control entity attributes through NMS `AttributeMap`, `AttributeInstance`, and `AttributeModifier`. Supports additive and multiplicative modifiers and base value changes, enabling RPG equipment bonuses and Buff/Debuff systems.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both versions compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「attribute modifier」「屬性修改」「AttributeMap」「動態屬性」「entity attribute」
 - 「MAX_HEALTH」「ATTACK_DAMAGE」「MOVEMENT_SPEED」「屬性加成」
 - 「Buff Debuff」「nms attribute」「attribute instance」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.rpg` | 產出類別所在 package |
-| `class_name` | `AttributeUtil` | 工具類名稱 |
+| `package_name` | `com.example.rpg` | Package for the generated classes |
+| `class_name` | `AttributeUtil` | Utility class name |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `AttributeUtil.java` — 屬性讀寫工具
-- `ModifierBuilder.java` — AttributeModifier 建立器
+- `AttributeUtil.java` — attribute read/write utility
+- `ModifierBuilder.java` — AttributeModifier builder
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -47,7 +47,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `AttributeUtil.java`
 
@@ -69,33 +69,33 @@ public final class AttributeUtil {
 
     private AttributeUtil() {}
 
-    /** 取得屬性實例（若實體不支援該屬性則回傳 empty）。 */
+    /** Gets the attribute instance (returns empty if the entity does not support the attribute). */
     public static Optional<AttributeInstance> getInstance(
             LivingEntity entity, Holder<Attribute> attribute) {
         net.minecraft.world.entity.LivingEntity nms = ((CraftLivingEntity) entity).getHandle();
         return Optional.ofNullable(nms.getAttribute(attribute));
     }
 
-    /** 讀取屬性最終值（含所有 modifier 計算後）。 */
+    /** Reads the final attribute value (after all modifiers are applied). */
     public static double getValue(LivingEntity entity, Holder<Attribute> attribute) {
         return getInstance(entity, attribute)
             .map(AttributeInstance::getValue)
             .orElse(0.0);
     }
 
-    /** 讀取屬性基底值（不含 modifier）。 */
+    /** Reads the attribute base value (excluding modifiers). */
     public static double getBaseValue(LivingEntity entity, Holder<Attribute> attribute) {
         return getInstance(entity, attribute)
             .map(AttributeInstance::getBaseValue)
             .orElse(0.0);
     }
 
-    /** 設定屬性基底值。 */
+    /** Sets the attribute base value. */
     public static void setBaseValue(LivingEntity entity, Holder<Attribute> attribute, double value) {
         getInstance(entity, attribute).ifPresent(inst -> inst.setBaseValue(value));
     }
 
-    /** 新增 AttributeModifier（若相同 id 已存在會先移除）。 */
+    /** Adds an AttributeModifier (removes any existing one with the same id first). */
     public static void addModifier(LivingEntity entity, Holder<Attribute> attribute,
                                    AttributeModifier modifier) {
         getInstance(entity, attribute).ifPresent(inst -> {
@@ -104,19 +104,19 @@ public final class AttributeUtil {
         });
     }
 
-    /** 移除指定 id 的 AttributeModifier（1.21 起 modifier id 為 Identifier（1.21.11 前稱 ResourceLocation），不再是 UUID）。 */
+    /** Removes the AttributeModifier with the given id (since 1.21 the modifier id is an Identifier (called ResourceLocation before 1.21.11), no longer a UUID). */
     public static void removeModifier(LivingEntity entity, Holder<Attribute> attribute,
                                       net.minecraft.resources.Identifier id) {
         getInstance(entity, attribute).ifPresent(inst -> inst.removeModifier(id));
     }
 
-    /** 移除全部 modifier（僅保留基底值）。 */
+    /** Removes all modifiers (keeps only the base value). */
     public static void clearModifiers(LivingEntity entity, Holder<Attribute> attribute) {
         getInstance(entity, attribute).ifPresent(inst ->
             inst.getModifiers().forEach(m -> inst.removeModifier(m.id())));
     }
 
-    // ─── 常用屬性常數快捷 ───────────────────────────────────────────
+    // ─── Shortcuts for common attributes ───────────────────────────────────────────
 
     public static double getMaxHealth(LivingEntity e) { return getValue(e, Attributes.MAX_HEALTH); }
     public static void setMaxHealth(LivingEntity e, double v) { setBaseValue(e, Attributes.MAX_HEALTH, v); }
@@ -138,18 +138,18 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
- * AttributeModifier 建立器。
+ * AttributeModifier builder.
  *
- * Operation 說明：
- *  ADDITION        — 加法：baseValue + amount
- *  MULTIPLY_BASE   — 乘基底：baseValue + baseValue * amount
- *  MULTIPLY_TOTAL  — 乘總值：totalValue * (1 + amount)
+ * Operation descriptions:
+ *  ADDITION        — addition: baseValue + amount
+ *  MULTIPLY_BASE   — multiply base: baseValue + baseValue * amount
+ *  MULTIPLY_TOTAL  — multiply total: totalValue * (1 + amount)
  */
 public final class ModifierBuilder {
 
     private ModifierBuilder() {}
 
-    /** 建立加法 modifier（e.g. +5 攻擊力）。 */
+    /** Creates an addition modifier (e.g. +5 attack damage). */
     public static AttributeModifier addition(String namespace, String path, double amount) {
         return new AttributeModifier(
             Identifier.fromNamespaceAndPath(namespace, path),
@@ -158,7 +158,7 @@ public final class ModifierBuilder {
         );
     }
 
-    /** 建立乘基底 modifier（e.g. +10% 攻擊力）。 */
+    /** Creates a multiply-base modifier (e.g. +10% attack damage). */
     public static AttributeModifier multiplyBase(String namespace, String path, double multiplier) {
         return new AttributeModifier(
             Identifier.fromNamespaceAndPath(namespace, path),
@@ -167,7 +167,7 @@ public final class ModifierBuilder {
         );
     }
 
-    /** 建立乘總值 modifier（e.g. 全部計算後再 ×1.1）。 */
+    /** Creates a multiply-total modifier (e.g. x1.1 after everything else is calculated). */
     public static AttributeModifier multiplyTotal(String namespace, String path, double multiplier) {
         return new AttributeModifier(
             Identifier.fromNamespaceAndPath(namespace, path),
@@ -178,7 +178,7 @@ public final class ModifierBuilder {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -188,17 +188,17 @@ src/main/java/com/example/
     └── ModifierBuilder.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ `AttributeInstance` 操作**必須在主執行緒呼叫**（NMS 實體狀態非執行緒安全）
-- ✅ `ModifierBuilder` 的方法為純資料建立，可在任意執行緒呼叫
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ `AttributeInstance` operations **must be called on the main thread** (NMS entity state is not thread-safe)
+- ✅ `ModifierBuilder` methods only build data and can be called from any thread
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `getInstance` 回傳 empty | 實體不支援該屬性 | 確認 EntityType 支援（如 Slime 無 ATTACK_DAMAGE） |
-| modifier 無效果 | Operation 選擇錯誤 | 參考 Operation 說明選擇正確計算方式 |
-| 屬性值被重置 | 實體死亡/重生後 modifier 消失 | 在 EntitySpawnEvent 重新套用 modifier |
-| `addModifier` 拋 IllegalArgumentException | 相同 Identifier 已存在 | 呼叫前先 `removeModifier()` |
+| `getInstance` returns empty | The entity does not support the attribute | Verify the EntityType supports it (e.g. Slime has no ATTACK_DAMAGE) |
+| Modifier has no effect | Wrong Operation chosen | Check the Operation descriptions and pick the correct calculation |
+| Attribute value reset | Modifiers are lost after the entity dies or respawns | Reapply the modifier in EntitySpawnEvent |
+| `addModifier` throws IllegalArgumentException | An identical Identifier already exists | Call `removeModifier()` first |

@@ -3,43 +3,43 @@ name: nms-chunk-access
 description: "透過 NMS LevelChunk 直接讀寫方塊、高度圖、ChunkSection 資料，比 Bukkit Chunk API 更快更底層（Paper NMS + Mojang-mapped）/ Direct LevelChunk block, heightmap, and ChunkSection access for high-performance operations"
 ---
 
-# NMS Chunk Access / NMS 區塊直接存取
+# NMS Chunk Access
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-chunk-access`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `LevelChunk`、`ChunkAccess`、`LevelChunkSection` 直接讀寫方塊狀態與高度圖，繞過 Bukkit `Chunk.getBlock()` 的逐格開銷，實現高效能的大範圍方塊操作（如結構生成、地圖掃描）。
+Read and write block states and heightmaps directly through NMS `LevelChunk`, `ChunkAccess`, and `LevelChunkSection`. This bypasses the per-block overhead of Bukkit `Chunk.getBlock()` and enables high-performance large-scale block operations (such as structure generation and map scanning).
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「chunk access」「LevelChunk」「區塊操作」「chunk data」「直接讀寫方塊」
-- 「ChunkSection」「heightmap」「高度圖」「chunk NMS」「bulk block」
-- 「大量方塊」「高效能方塊操作」「structure paste」
+- "chunk access", "LevelChunk", "區塊操作", "chunk data", "直接讀寫方塊"
+- "ChunkSection", "heightmap", "高度圖", "chunk NMS", "bulk block"
+- "大量方塊", "高效能方塊操作", "structure paste"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.world` | 產出類別所在 package |
-| `class_name` | `ChunkAccessUtil` | 工具類名稱 |
+| `package_name` | `com.example.world` | Package of the generated classes |
+| `class_name` | `ChunkAccessUtil` | Utility class name |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ChunkAccessUtil.java` — LevelChunk 讀寫工具
-- `BulkBlockEditor.java` — 批次方塊操作（最小化客戶端更新）
+- `ChunkAccessUtil.java` — LevelChunk read/write utility
+- `BulkBlockEditor.java` — bulk block operations (minimizes client updates)
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -47,7 +47,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ChunkAccessUtil.java`
 
@@ -72,12 +72,12 @@ public final class ChunkAccessUtil {
 
     private ChunkAccessUtil() {}
 
-    /** 取得 NMS LevelChunk（CraftChunk.getHandle(ChunkStatus) 回傳的是 ChunkAccess，非 LevelChunk）。 */
+    /** Gets the NMS LevelChunk (CraftChunk.getHandle(ChunkStatus) returns a ChunkAccess, not a LevelChunk). */
     public static LevelChunk getChunk(Chunk chunk) {
         return ((CraftWorld) chunk.getWorld()).getHandle().getChunk(chunk.getX(), chunk.getZ());
     }
 
-    /** 取得指定世界座標的 NMS BlockState（不觸發光照更新）。 */
+    /** Gets the NMS BlockState at the given world position (does not trigger a light update). */
     public static BlockState getBlockState(Location loc) {
         net.minecraft.world.level.Level level = ((CraftWorld) loc.getWorld()).getHandle();
         BlockPos pos = new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
@@ -85,9 +85,9 @@ public final class ChunkAccessUtil {
     }
 
     /**
-     * 直接設定方塊狀態（跳過部分 Bukkit 處理，效能較高）。
+     * Sets the block state directly (skips some Bukkit handling, so it is faster).
      * flags: 1=update neighbors, 2=send to clients, 3=both
-     * 必須在主執行緒呼叫。
+     * Must be called on the main thread.
      */
     public static void setBlockState(Location loc, BlockState state, int flags) {
         net.minecraft.world.level.Level level = ((CraftWorld) loc.getWorld()).getHandle();
@@ -95,7 +95,7 @@ public final class ChunkAccessUtil {
         level.setBlock(pos, state, flags);
     }
 
-    /** 取得指定 X/Z 位置的地面高度（WORLD_SURFACE 高度圖）。 */
+    /** Gets the surface height at the given X/Z (WORLD_SURFACE heightmap). */
     public static int getSurfaceHeight(World world, int x, int z) {
         net.minecraft.world.level.Level level = ((CraftWorld) world).getHandle();
         BlockPos pos = new BlockPos(x, 0, z);
@@ -103,7 +103,7 @@ public final class ChunkAccessUtil {
         return chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
     }
 
-    /** 取得指定 X/Z 位置的動態高度（MOTION_BLOCKING，含水）。 */
+    /** Gets the motion-blocking height at the given X/Z (MOTION_BLOCKING, includes water). */
     public static int getMotionBlockingHeight(World world, int x, int z) {
         net.minecraft.world.level.Level level = ((CraftWorld) world).getHandle();
         BlockPos pos = new BlockPos(x, 0, z);
@@ -111,19 +111,19 @@ public final class ChunkAccessUtil {
         return chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x & 15, z & 15);
     }
 
-    /** 取得 ChunkSection（16 格高的子區段），sectionY 為 section index（非方塊 Y）。 */
+    /** Gets a ChunkSection (a 16-block-tall sub-section); sectionY is the section Y coordinate (not a block Y). */
     public static LevelChunkSection getSection(Chunk chunk, int sectionY) {
         LevelChunk nms = getChunk(chunk);
         return nms.getSections()[nms.getSectionIndexFromSectionY(sectionY)];
     }
 
-    /** 讀取 ChunkSection 中的方塊狀態（localX/Y/Z 為 0-15 相對座標）。 */
+    /** Reads a block state inside a ChunkSection (localX/Y/Z are relative coordinates 0-15). */
     public static BlockState getSectionBlockState(
             LevelChunkSection section, int localX, int localY, int localZ) {
         return section.getBlockState(localX, localY, localZ);
     }
 
-    /** 取得指定位置的光照等級（SKY 或 BLOCK）。 */
+    /** Gets the light level at the given position (SKY or BLOCK). */
     public static int getLightLevel(Location loc, LightLayer layer) {
         net.minecraft.world.level.Level level = ((CraftWorld) loc.getWorld()).getHandle();
         BlockPos pos = new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
@@ -132,7 +132,7 @@ public final class ChunkAccessUtil {
 }
 ```
 
-### `BulkBlockEditor.java`（批次方塊操作）
+### `BulkBlockEditor.java` (bulk block operations)
 
 ```java
 package com.example.world;
@@ -148,9 +148,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 批次方塊操作工具。
- * 收集所有修改後一次性提交，減少客戶端更新封包數量。
- * 必須在主執行緒使用。
+ * Bulk block operation utility.
+ * Collects all changes and commits them at once to reduce the number of client update packets.
+ * Must be used on the main thread.
  */
 @SuppressWarnings("UnstableApiUsage")
 public class BulkBlockEditor {
@@ -162,13 +162,13 @@ public class BulkBlockEditor {
         this.level = ((CraftWorld) world).getHandle();
     }
 
-    /** 排隊一個方塊修改。 */
+    /** Queues a single block change. */
     public BulkBlockEditor set(int x, int y, int z, BlockState state) {
         pending.put(new BlockPos(x, y, z), state);
         return this;
     }
 
-    /** 排隊填充一個立方體範圍（minX..maxX, minY..maxY, minZ..maxZ）。 */
+    /** Queues a fill of a cuboid region (minX..maxX, minY..maxY, minZ..maxZ). */
     public BulkBlockEditor fill(int x1, int y1, int z1, int x2, int y2, int z2, BlockState state) {
         for (int x = x1; x <= x2; x++)
             for (int y = y1; y <= y2; y++)
@@ -178,9 +178,9 @@ public class BulkBlockEditor {
     }
 
     /**
-     * 提交所有修改。
-     * flags=2 只發送封包給客戶端，不觸發鄰居更新（效能最高）。
-     * flags=3 觸發鄰居更新 + 發送封包（物理效果正確但較慢）。
+     * Commits all changes.
+     * flags=2 only sends packets to clients without triggering neighbor updates (fastest).
+     * flags=3 triggers neighbor updates and sends packets (correct physics but slower).
      */
     public void commit(int flags) {
         for (Map.Entry<BlockPos, BlockState> entry : pending.entrySet()) {
@@ -189,7 +189,7 @@ public class BulkBlockEditor {
         pending.clear();
     }
 
-    /** 清除所有排隊的修改。 */
+    /** Clears all queued changes. */
     public void clear() {
         pending.clear();
     }
@@ -200,7 +200,7 @@ public class BulkBlockEditor {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -210,19 +210,19 @@ src/main/java/com/example/
     └── BulkBlockEditor.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ 所有 Chunk/Block 讀寫操作**必須在主執行緒呼叫**
-- ⚠️ `BulkBlockEditor.commit()` 亦需在主執行緒呼叫
-- ✅ 唯讀操作（`getBlockState`、`getHeight`）在不修改世界的前提下可在 async 讀取，但 Paper 不保證一致性
-- ⚠️ 批次大量方塊修改可能造成 TPS 下降，建議每 tick 分批處理（每 tick ≤ 500 格）
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ All Chunk/Block read/write operations **must be called on the main thread**
+- ⚠️ `BulkBlockEditor.commit()` must also be called on the main thread
+- ✅ Read-only operations (`getBlockState`, `getHeight`) can be read async as long as the world is not modified, but Paper does not guarantee consistency
+- ⚠️ Bulk block changes can lower TPS; process them in batches per tick (at most 500 blocks per tick)
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `getChunk()` 回傳未載入狀態 | 區塊未完全生成 | 呼叫前先 `world.loadChunk(cx, cz)` 確保載入 |
-| `ArrayIndexOutOfBoundsException` | sectionY 超出範圍 | 用 `chunk.getSectionIndexFromSectionY(sectionY)` 換算索引，並確認結果在 `0` 至 `getSectionsCount() - 1` 之間 |
-| 方塊更新後客戶端無反應 | flags=0 或未呼叫 `commit()` | 改用 flags=2（`SEND_TO_CLIENTS`） |
-| 大量更新造成伺服器卡頓 | 單 tick 修改過多方塊 | 分批執行（Bukkit scheduler runTaskTimer） |
+| `getChunk()` returns an unloaded state | Chunk is not fully generated | Call `world.loadChunk(cx, cz)` first to ensure it is loaded |
+| `ArrayIndexOutOfBoundsException` | sectionY out of range | Convert with `chunk.getSectionIndexFromSectionY(sectionY)` and confirm the result is between `0` and `getSectionsCount() - 1` |
+| Client does not react after a block update | flags=0 or `commit()` was not called | Use flags=2 (`SEND_TO_CLIENTS`) |
+| Large updates lag the server | Too many blocks changed in a single tick | Run in batches (Bukkit scheduler runTaskTimer) |

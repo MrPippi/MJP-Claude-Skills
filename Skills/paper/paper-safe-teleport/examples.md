@@ -1,6 +1,6 @@
 # examples — paper-safe-teleport
 
-## 範例 1：`/rtp` 指令組裝（暖機 5 秒、冷卻 5 分鐘、落點池 4 個、戰鬥中禁止）
+## Example 1: `/rtp` command wiring (5-second warmup, 5-minute cooldown, 4-spot pool, blocked in combat)
 
 **Input:**
 ```
@@ -14,7 +14,7 @@ cooldown: PT5M
 pool_size: 4
 ```
 
-**Output — 插件主類別（組裝、啟動池、停用時收尾）:**
+**Output — main plugin class (wiring, starting the pool, cleanup on disable):**
 ```java
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -44,7 +44,7 @@ public final class TeleportPlugin extends JavaPlugin {
         SafeSpotFinder finder = new SafeSpotFinder(RandomGenerator.getDefault());
         pool = new SafeSpotPool(this, finder, world.getUID(), settings, 4);
 
-        // paper-combat-tag 提供的服務在這裡接入；沒有安裝時用 allowAll()
+        // Plug in the service provided by paper-combat-tag here; use allowAll() when it is not installed
         TeleportGuard guard = TeleportGuard.allowAll();
 
         TeleportCooldowns cooldowns = new TeleportCooldowns(Clock.systemUTC(), Map.of());
@@ -93,22 +93,22 @@ permissions:
     default: op
 ```
 
-要點：
-- 指令只負責「發出請求」，暖機、找點、重驗全在 `SafeTeleportService`
-- 池只服務目標世界；其他世界的請求自然 fallback 到即時搜尋
-- 換成 [`paper-combat-tag`](../paper-combat-tag/SKILL.md) 後：`TeleportGuard.blockWhileTagged(combatTagService::isTagged)`
+Key points:
+- The command only issues the request; warmup, search, and re-validation all live in `SafeTeleportService`
+- The pool serves only the target world; requests for other worlds naturally fall back to a live search
+- After switching to [`paper-combat-tag`](../paper-combat-tag/SKILL.md): `TeleportGuard.blockWhileTagged(combatTagService::isTagged)`
 
 ---
 
-## 範例 2：傳到「家」前先確認落點安全，不安全就找附近
+## Example 2: Verify the landing spot before teleporting home, and search nearby if it is unsafe
 
 **Input:**
 ```
 base_package: com.example.teleport
-scenario: 玩家的家被改建（地板被挖、被岩漿淹沒），傳送前要檢查
+scenario: the player's home was rebuilt (floor dug out, flooded with lava), so it must be checked before teleporting
 ```
 
-**Output — 家的落點解析（主執行緒；先確保區塊已載入）:**
+**Output — home landing-spot resolution (main thread; make sure the chunk is loaded first):**
 ```java
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
@@ -134,7 +134,7 @@ public final class HomeTeleporter {
         this.guard = guard;
     }
 
-    /** home 為玩家儲存的位置。在主執行緒呼叫。 */
+    /** home is the player's saved location. Call on the main thread. */
     public void teleportHome(Player player, Location home) {
         World world = home.getWorld();
         if (world == null) {
@@ -157,7 +157,7 @@ public final class HomeTeleporter {
                     p.sendMessage(MM.deserialize("<red>Teleport cancelled."));
                     return;
                 }
-                // 原位置仍安全 → 用原位置；否則找最近的安全點；都沒有就拒絕，不硬傳
+                // Original spot still safe -> use it; otherwise find the nearest safe spot; if none, refuse instead of forcing the teleport
                 Optional<Location> target = SafeLocationRules.evaluate(world, home.getBlockX(), home.getBlockZ())
                     .or(() -> SafeLocationRules.findNearby(world, home, SEARCH_RADIUS));
                 if (target.isEmpty()) {
@@ -180,22 +180,22 @@ public final class HomeTeleporter {
 }
 ```
 
-要點：
-- 家是玩家自己選的位置，**優先保留原位**；只有原位不安全才退而求其次找附近
-- `findNearby` 只看已載入區塊，所以先 `getChunkAtAsync`
-- 同樣的規則類別，RTP 與家不重複實作
+Key points:
+- A home is a location the player chose, so **keep the original spot first**; only search nearby when it is unsafe
+- `findNearby` only looks at loaded chunks, so call `getChunkAtAsync` first
+- RTP and homes share the same rules class and do not reimplement it
 
 ---
 
-## 範例 3：配對／佇列 RTP（兩人一組，落在彼此附近）
+## Example 3: Paired / queued RTP (two players per group, landing near each other)
 
 **Input:**
 ```
 base_package: com.example.teleport
-scenario: 玩家輸入 /rtp pair，兩個人湊成一組後一起傳到同一個隨機區域
+scenario: a player enters /rtp pair; once two players are matched, they teleport together to the same random area
 ```
 
-**Output — 佇列只存 UUID；湊滿兩人才搜尋一次，兩人落點相鄰:**
+**Output — the queue stores only UUIDs; one search runs once two players are matched, and their spots are adjacent:**
 ```java
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
@@ -227,7 +227,7 @@ public final class PairRtpQueue {
         this.finder = finder;
     }
 
-    /** 主執行緒。第一個人排隊，第二個人進來時兩人一起出發。 */
+    /** Main thread. The first player queues; when the second joins, both depart together. */
     public void join(Player player, World world) {
         UUID id = player.getUniqueId();
         Optional<String> denied = guard.denyReason(player);
@@ -252,7 +252,7 @@ public final class PairRtpQueue {
         waiting.remove(playerId);
     }
 
-    /** 取出第一個仍在線的等待者；已離線的直接丟掉。 */
+    /** Takes the first waiting player who is still online; offline players are simply dropped. */
     private UUID pollOnlinePartner() {
         while (!waiting.isEmpty()) {
             UUID candidate = waiting.pollFirst();
@@ -272,14 +272,14 @@ public final class PairRtpQueue {
                     tell(b, "<red>Pair teleport failed. Please queue again.");
                     return;
                 }
-                // 搜尋期間任一人進入戰鬥 → 兩人都取消，避免只剩一人落單
+                // If either player entered combat during the search -> cancel for both, so nobody is left alone
                 if (guard.denyReason(a).isPresent() || guard.denyReason(b).isPresent()) {
                     tell(a, "<red>Pair teleport cancelled.");
                     tell(b, "<red>Pair teleport cancelled.");
                     return;
                 }
                 Location anchor = found.get();
-                // 第二個落點取 anchor 附近的另一個安全點；找不到就和第一個人同點
+                // The second spot is another safe point near the anchor; if none is found, use the same spot as the first player
                 Location partnerSpot = SafeLocationRules.findNearby(world, anchor, PARTNER_RADIUS)
                     .filter(loc -> loc.getBlockX() != anchor.getBlockX() || loc.getBlockZ() != anchor.getBlockZ())
                     .orElse(anchor);
@@ -296,8 +296,8 @@ public final class PairRtpQueue {
 }
 ```
 
-要點：
-- 佇列只存 `UUID`；配對時才 `getPlayer`，離線者直接略過
-- 只搜尋**一次**，第二個人用 `findNearby` 取相鄰安全點，不必兩次載入遠方區塊
-- 出發前兩人都要通過閘門，否則整組取消（不讓一個人落單）
-- 範例略過冷卻與暖機；正式使用時沿用 `SafeTeleportService` 的相同階段（暖機 → 重驗 → 傳送 → 記冷卻）
+Key points:
+- The queue stores only `UUID`s; call `getPlayer` only when matching, and skip anyone who is offline
+- Search only **once**; the second player uses `findNearby` to get an adjacent safe spot, so distant chunks are not loaded twice
+- Both players must pass the gate before departure, otherwise the whole group is cancelled (nobody is left alone)
+- The example skips cooldown and warmup; in production, reuse the same stages as `SafeTeleportService` (warmup -> re-validate -> teleport -> record cooldown)

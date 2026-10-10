@@ -3,44 +3,44 @@ name: nms-boss-event
 description: "透過 NMS ServerBossEvent 操作 Boss Bar 進度條、顏色、風格、可見性，實現每人獨立 Boss Bar（Paper NMS + Mojang-mapped）/ Operate Boss Bar progress, color, style, and per-player visibility via NMS ServerBossEvent"
 ---
 
-# NMS Boss Event / NMS Boss Bar 操作
+# NMS Boss Event
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-boss-event`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `ServerBossEvent` 精確控制 Boss Bar 的進度、顏色、風格（分段線）、可見性，並實現每位玩家獨立的 Boss Bar 內容（Bukkit BossBar API 每個 Bar 對所有玩家相同）。
+Use NMS `ServerBossEvent` to precisely control a Boss Bar's progress, color, style (segment notches) and visibility, and to give each player their own Boss Bar content (with the Bukkit BossBar API, each bar looks the same to all players).
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2(both versions compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「boss bar」「BossEvent」「boss 進度條」「NMS boss bar」「伺服器 boss bar」
-- 「ServerBossEvent」「per-player boss bar」「每人 boss bar」「boss overlay」
-- 「boss 顏色」「boss 風格」「boss 分段」
+- "boss bar", "BossEvent", "boss 進度條", "NMS boss bar", "伺服器 boss bar"
+- "ServerBossEvent", "per-player boss bar", "每人 boss bar", "boss overlay"
+- "boss 顏色", "boss 風格", "boss 分段"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.display` | 產出類別所在 package |
-| `class_name` | `BossBarManager` | 管理器類名稱 |
-| `per_player` | `true` | 是否每人獨立 Boss Bar |
+| `package_name` | `com.example.display` | Package of the generated classes |
+| `class_name` | `BossBarManager` | Manager class name |
+| `per_player` | `true` | Whether each player gets an independent Boss Bar |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `BossBarManager.java` — Boss Bar 建立與管理
-- `NmsBossBar.java` — 單一 ServerBossEvent 封裝
+- `BossBarManager.java` — Boss Bar creation and management
+- `NmsBossBar.java` — Wrapper around a single ServerBossEvent
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -48,9 +48,9 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `NmsBossBar.java`（單一 Boss Bar 封裝）
+### `NmsBossBar.java` (single Boss Bar wrapper)
 
 ```java
 package com.example.display;
@@ -70,78 +70,78 @@ public class NmsBossBar {
     private final ServerBossEvent bossEvent;
 
     /**
-     * 建立 NMS ServerBossEvent。
+     * Creates an NMS ServerBossEvent.
      *
-     * @param title  顯示標題
-     * @param color  BossEvent.BossBarColor（PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE）
-     * @param overlay BossEvent.BossBarOverlay（PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20）
+     * @param title  display title
+     * @param color  BossEvent.BossBarColor (PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE)
+     * @param overlay BossEvent.BossBarOverlay (PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20)
      */
     public NmsBossBar(String title, BossEvent.BossBarColor color,
                       BossEvent.BossBarOverlay overlay) {
-        // 26.x 起建構子需明確傳入 boss bar UUID（1.21.11 無此參數，見行尾標註）
+        // Since 26.x the constructor requires an explicit boss bar UUID (1.21.11 has no such parameter; see the trailing marker)
         this.bossEvent = new ServerBossEvent(UUID.randomUUID(), Component.literal(title), color, overlay); // @1.21.11: this.bossEvent = new ServerBossEvent(Component.literal(title), color, overlay);
     }
 
-    /** 設定進度（0.0 - 1.0）。 */
+    /** Sets the progress (0.0 - 1.0). */
     public void setProgress(float progress) {
         bossEvent.setProgress(Math.max(0f, Math.min(1f, progress)));
     }
 
-    /** 設定顯示標題。 */
+    /** Sets the display title. */
     public void setTitle(String title) {
         bossEvent.setName(Component.literal(title));
     }
 
-    /** 設定顏色。 */
+    /** Sets the color. */
     public void setColor(BossEvent.BossBarColor color) {
         bossEvent.setColor(color);
     }
 
-    /** 設定風格（分段線）。 */
+    /** Sets the style (segment notches). */
     public void setOverlay(BossEvent.BossBarOverlay overlay) {
         bossEvent.setOverlay(overlay);
     }
 
-    /** 設定是否顯示（全部已添加的玩家）。 */
+    /** Sets visibility (for all added players). */
     public void setVisible(boolean visible) {
         bossEvent.setVisible(visible);
     }
 
-    /** 設定是否播放霧氣效果（黑暗化螢幕）。 */
+    /** Sets whether the screen is darkened (fog effect). */
     public void setDarkenScreen(boolean darken) {
         bossEvent.setDarkenScreen(darken);
     }
 
-    /** 設定是否播放 Boss 音樂。 */
+    /** Sets whether boss music is played. */
     public void setPlayBossMusic(boolean play) {
         bossEvent.setPlayBossMusic(play);
     }
 
-    /** 添加玩家（顯示 Boss Bar 給此玩家）。 */
+    /** Adds a player (shows the Boss Bar to this player). */
     public void addPlayer(Player player) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
         bossEvent.addPlayer(nms);
     }
 
-    /** 移除玩家（隱藏 Boss Bar）。 */
+    /** Removes a player (hides the Boss Bar). */
     public void removePlayer(Player player) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
         bossEvent.removePlayer(nms);
     }
 
-    /** 移除所有玩家。 */
+    /** Removes all players. */
     public void removeAllPlayers() {
         bossEvent.removeAllPlayers();
     }
 
-    /** 取得底層 ServerBossEvent（供進階操作）。 */
+    /** Returns the underlying ServerBossEvent (for advanced operations). */
     public ServerBossEvent getHandle() {
         return bossEvent;
     }
 }
 ```
 
-### `BossBarManager.java`（每人獨立 Boss Bar 管理器）
+### `BossBarManager.java` (per-player Boss Bar manager)
 
 ```java
 package com.example.display;
@@ -166,7 +166,7 @@ public class BossBarManager implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
-    /** 取得或建立玩家的 Boss Bar。 */
+    /** Gets or creates the player's Boss Bar. */
     public NmsBossBar getOrCreate(Player player, String title,
                                   BossEvent.BossBarColor color,
                                   BossEvent.BossBarOverlay overlay) {
@@ -177,7 +177,7 @@ public class BossBarManager implements Listener {
         });
     }
 
-    /** 更新玩家 Boss Bar 標題與進度。 */
+    /** Updates the player's Boss Bar title and progress. */
     public void update(Player player, String title, float progress) {
         NmsBossBar bar = playerBars.get(player.getUniqueId());
         if (bar == null) return;
@@ -185,13 +185,13 @@ public class BossBarManager implements Listener {
         bar.setProgress(progress);
     }
 
-    /** 移除玩家的 Boss Bar。 */
+    /** Removes the player's Boss Bar. */
     public void remove(Player player) {
         NmsBossBar bar = playerBars.remove(player.getUniqueId());
         if (bar != null) bar.removePlayer(player);
     }
 
-    /** 移除所有 Boss Bar。 */
+    /** Removes all Boss Bars. */
     public void removeAll() {
         playerBars.values().forEach(NmsBossBar::removeAllPlayers);
         playerBars.clear();
@@ -204,30 +204,30 @@ public class BossBarManager implements Listener {
 }
 ```
 
-### 使用範例
+### Usage Example
 
 ```java
-// 初始化管理器
+// Initialize the manager
 BossBarManager manager = new BossBarManager(plugin);
 
-// 建立玩家 Boss Bar（每人獨立）
+// Create the player's Boss Bar (independent per player)
 NmsBossBar bar = manager.getOrCreate(
     player,
-    "§6§l任務進度",
+    "§6§lQuest Progress",
     BossEvent.BossBarColor.YELLOW,
     BossEvent.BossBarOverlay.PROGRESS
 );
 
-// 更新進度（在主執行緒呼叫）
+// Update progress (call on the main thread)
 Bukkit.getScheduler().runTaskTimer(plugin, () -> {
     for (Player p : Bukkit.getOnlinePlayers()) {
         float progress = getPlayerProgress(p); // 0.0 - 1.0
-        manager.update(p, "§6§l任務進度: " + (int)(progress * 100) + "%", progress);
+        manager.update(p, "§6§lQuest Progress: " + (int)(progress * 100) + "%", progress);
     }
 }, 0L, 20L);
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -237,17 +237,17 @@ src/main/java/com/example/
     └── BossBarManager.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ `addPlayer()`、`removePlayer()`、`setProgress()` 等 `ServerBossEvent` 操作**必須在主執行緒呼叫**
-- ✅ `BossBarManager` 的事件回呼（PlayerQuitEvent）已在主執行緒觸發，安全
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ `addPlayer()`, `removePlayer()`, `setProgress()` and other `ServerBossEvent` operations **must be called on the main thread**
+- ✅ `BossBarManager`'s event callback (PlayerQuitEvent) already fires on the main thread, so it is safe
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| Boss Bar 不顯示 | `addPlayer()` 未呼叫 | 確認 `getOrCreate()` 或 `addPlayer()` 有執行 |
-| 玩家重新加入後 Bar 消失 | 未處理 PlayerJoinEvent | 在 PlayerJoinEvent 中重新 `addPlayer()` |
-| 進度超出範圍崩潰 | progress > 1.0 或 < 0.0 | `setProgress` 已做 clamp，確認傳入值正確 |
-| 記憶體洩漏（玩家離線後仍持有） | 未監聽 PlayerQuitEvent | 使用 `BossBarManager`（已內建 `@EventHandler`） |
+| Boss Bar not shown | `addPlayer()` was not called | Make sure `getOrCreate()` or `addPlayer()` runs |
+| Bar disappears after a player rejoins | PlayerJoinEvent is not handled | Call `addPlayer()` again in PlayerJoinEvent |
+| Crash from out-of-range progress | progress > 1.0 or < 0.0 | `setProgress` already clamps; verify the value you pass |
+| Memory leak (bar still held after the player leaves) | PlayerQuitEvent is not listened to | Use `BossBarManager` (has a built-in `@EventHandler`) |

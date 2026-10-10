@@ -1,6 +1,6 @@
 # examples — nms-nbt-manipulation
 
-## 範例 1：物品 ID 標記（防偽/識別用途）
+## Example 1: Item ID tagging (anti-forgery / identification)
 
 **Input:**
 ```
@@ -8,21 +8,21 @@ package_name: com.example.nbt
 target: item
 ```
 
-**Output — 在發放物品時寫入 ID，取回時驗證:**
+**Output - write an ID when issuing the item, verify it when retrieved:**
 ```java
-// 寫入
+// Write
 org.bukkit.inventory.ItemStack marked = ItemNbtHelper.setString(item, "myplugin:item_id", "legendary_sword");
 
-// 驗證
+// Verify
 String id = ItemNbtHelper.getString(markedItem, "myplugin:item_id").orElse(null);
 if ("legendary_sword".equals(id)) {
-    player.sendMessage("這是傳說之劍！");
+    player.sendMessage("This is the legendary sword!");
 }
 ```
 
 ---
 
-## 範例 2：物品整數屬性（耐久計數）
+## Example 2: Item integer attribute (durability counter)
 
 **Input:**
 ```
@@ -30,25 +30,25 @@ package_name: com.example.nbt
 target: item
 ```
 
-**Output — 追蹤自定義使用次數:**
+**Output - track a custom use count:**
 ```java
-// 讀取當前使用次數
+// Read the current use count
 int uses = ItemNbtHelper.getInt(item, "uses", 0);
 
-// 增加並寫回
+// Increment and write back
 org.bukkit.inventory.ItemStack updated = ItemNbtHelper.setInt(item, "uses", uses + 1);
 player.getInventory().setItemInMainHand(updated);
 
-// 超過上限則消耗
+// Consume the item when the limit is reached
 if (uses + 1 >= 100) {
     player.getInventory().setItemInMainHand(null);
-    player.sendMessage("道具已用盡！");
+    player.sendMessage("The item is used up!");
 }
 ```
 
 ---
 
-## 範例 3：實體自定義資料儲存
+## Example 3: Custom entity data storage
 
 **Input:**
 ```
@@ -56,21 +56,21 @@ package_name: com.example.nbt
 target: entity
 ```
 
-**Output — 讀寫實體 NBT 標記（在主執行緒呼叫）:**
+**Output - read and write entity NBT markers (call on the main thread):**
 ```java
-// 寫入 owner 資訊到實體
+// Write owner info to the entity
 CompoundTag patch = new CompoundTag();
 patch.putString("myplugin:owner", player.getName());
 EntityNbtHelper.mergeTag(entity, patch);
 
-// 讀取
+// Read
 String owner = EntityNbtHelper.getString(entity, "myplugin:owner", "unknown");
-player.sendMessage("此實體的主人：" + owner);
+player.sendMessage("Owner of this entity: " + owner);
 ```
 
 ---
 
-## 範例 4：自定義物件序列化
+## Example 4: Custom object serialization
 
 **Input:**
 ```
@@ -78,22 +78,22 @@ package_name: com.example.nbt
 target: item
 ```
 
-**Output — 將 PlayerData 序列化到物品 NBT，用於傳遞玩家資料:**
+**Output - serialize PlayerData into item NBT to carry player data:**
 ```java
 NbtSerializer.PlayerData data = new NbtSerializer.PlayerData("Steve", 42, 9800.5);
 CompoundTag serialized = NbtSerializer.serialize(data);
 
-// 存到物品
+// Store on the item
 org.bukkit.inventory.ItemStack item = new org.bukkit.inventory.ItemStack(Material.PAPER);
 ItemStack nms = CraftItemStack.asNMSCopy(item);
-// 1.20.5+：物品 NBT 改存於 minecraft:custom_data 組件
+// 1.20.5+: item NBT is stored in the minecraft:custom_data component
 CustomData.update(DataComponents.CUSTOM_DATA, nms, tag -> tag.put("playerData", serialized));
 item = CraftItemStack.asBukkitCopy(nms);
 
-// 讀回
+// Read back
 CompoundTag tag = CraftItemStack.asNMSCopy(item)
     .getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-// 1.21.5+ getCompound 回傳 Optional<CompoundTag>
+// 1.21.5+ getCompound returns Optional<CompoundTag>
 tag.getCompound("playerData").map(NbtSerializer::deserialize).ifPresent(loaded ->
-    player.sendMessage("玩家：" + loaded.name() + " Lv." + loaded.level()));
+    player.sendMessage("Player: " + loaded.name() + " Lv." + loaded.level()));
 ```

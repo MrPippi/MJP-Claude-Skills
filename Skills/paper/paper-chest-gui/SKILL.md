@@ -3,66 +3,66 @@ name: paper-chest-gui
 description: "以 Bukkit API 建立箱子介面 GUI：InventoryHolder 標記介面、單一 GuiListener 取消點擊／拖曳／Shift／數字鍵、每次點擊重新驗證、分頁與去彈跳、gui.yml 圖示、onDisable 關閉所有選單 / Chest-inventory GUIs with the Bukkit API: holder marker interface, one cancelling listener, per-click revalidation, paging, gui.yml icons, safe disable"
 ---
 
-# Paper Chest GUI / 箱子介面
+# Paper Chest GUI
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-chest-gui`
 
-## 目的 / Purpose
+## Purpose
 
-用純 Bukkit／Paper API 做箱子式選單（商店列表、確認頁、設定頁），不碰 NMS。
-重點不是「怎麼顯示」，而是「怎麼不被玩家刷物品」：
+Build chest-style menus (shop lists, confirmation pages, settings pages) with the plain Bukkit/Paper API, without touching NMS.
+The point is not how to display them, but how to keep players from duplicating items:
 
-- 每種選單一個 `InventoryHolder`，並共用一個**標記介面**，讓整個插件只需要一個 `GuiListener` 判斷「這是我的選單」
-- 上方選單的點擊、拖曳一律取消；**下方背包**的 Shift 點擊、數字鍵、雙擊、副手交換也要取消，否則物品會被搬進選單或從選單被抓出來
-- 每次點擊都**重新驗證**狀態（權限、餘額、商品是否還在），不信任畫面上畫的東西
-- 非同步工作回來後，先切回主執行緒，再確認選單**仍開著**才更新
-- `onDisable` 關閉所有開啟中的選單，避免「幽靈物品」；`InventoryCloseEvent` 處理器用 `plugin.isEnabled()` 保護
+- One `InventoryHolder` per menu kind, all sharing one **marker interface**, so the whole plugin needs only one `GuiListener` to decide "this is my menu"
+- Always cancel clicks and drags on the top menu; also cancel Shift-clicks, number keys, double-clicks, and offhand swaps in the **bottom inventory**, otherwise items get moved into the menu or pulled out of it
+- **Revalidate** state on every click (permission, balance, whether the listing still exists); never trust what is drawn on screen
+- After async work completes, switch back to the main thread and confirm the menu is **still open** before updating it
+- Close every open menu in `onDisable` to avoid "ghost items"; guard the `InventoryCloseEvent` handler with `plugin.isEnabled()`
 
-> 表單輸入、確認視窗（是／否）優先用 [`paper-dialog-ui`](../paper-dialog-ui/SKILL.md)，不需要箱子格子。
-> 需要 NMS `AbstractContainerMenu`（自訂容器邏輯、特殊槽位）時改用 `nms-custom-menu`。
+> For form input and confirmation dialogs (yes/no), prefer [`paper-dialog-ui`](../paper-dialog-ui/SKILL.md); no chest slots needed.
+> Use `nms-custom-menu` when you need an NMS `AbstractContainerMenu` (custom container logic, special slots).
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版範本相同；`InventoryView` 在 26.2 改為介面，本技能只用 `event.getInventory()` 與 `player.getOpenInventory()`，兩版皆可編譯）
-- 純 Paper API，不需要 Paperweight
+- Paper 1.21.11 / 26.2 (same template for both; `InventoryView` became an interface in 26.2, and this skill only uses `event.getInventory()` and `player.getOpenInventory()`, so it compiles on both)
+- Pure Paper API, no Paperweight needed
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「箱子 GUI」「chest GUI」「InventoryHolder」「選單」「menu」「createInventory」
-- 「分頁」「paging」「翻頁」「InventoryClickEvent」「物品被拿走」「刷物品」「dupe」
-- 「gui.yml」「圖示設定」「確認購買」
+- "箱子 GUI", "chest GUI", "InventoryHolder", "選單", "menu", "createInventory"
+- "分頁", "paging", "翻頁", "InventoryClickEvent", "物品被拿走", "刷物品", "dupe"
+- "gui.yml", "圖示設定", "確認購買"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package` | `com.example.shop.gui` | GUI 類別所在 package |
-| `menu_kinds` | `PagedListMenu`, `ConfirmPurchaseMenu` | 要做的選單種類（每種一個 holder） |
-| `rows` | `6` | 列數（6 列 = 54 格；上 45 格內容、底列放導覽鍵） |
-| `icons_file` | `gui.yml` | 圖示（Material + MiniMessage 名稱／lore）設定檔 |
-| `permission` | `shop.buy` | 動作所需權限（每次點擊重新檢查） |
+| `package` | `com.example.shop.gui` | Package of the GUI classes |
+| `menu_kinds` | `PagedListMenu`, `ConfirmPurchaseMenu` | Menu kinds to build (one holder per kind) |
+| `rows` | `6` | Row count (6 rows = 54 slots; top 45 for content, bottom row for navigation buttons) |
+| `icons_file` | `gui.yml` | Icon config file (Material + MiniMessage name/lore) |
+| `permission` | `shop.buy` | Permission required for the action (rechecked on every click) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ShopMenu.java` — 標記介面（`InventoryHolder` + `onClick`／`onClose`）
-- `MenuClick.java` — 傳給選單的點擊資料（不可變）
-- `NavSlot.java` — 固定導覽格位
-- `Icons.java` — 從 `gui.yml` 載入圖示與標題（MiniMessage）
-- `PlayerItems.java` — 背包滿時掉在腳邊
-- `LatestOnly.java` — 「最後一次點擊為準」的版本號
-- `PagedListMenu.java` — 分頁清單 holder
-- `Menus.java` — 開啟／關閉／非同步回主執行緒／`closeAll`
-- `GuiListener.java` — 唯一的點擊、拖曳、關閉監聽器
-- `ShopPlugin.java` — 註冊監聽器、`onDisable` 關閉選單
-- `gui.yml` — 圖示與標題設定
+- `ShopMenu.java` — marker interface (`InventoryHolder` + `onClick`/`onClose`)
+- `MenuClick.java` — click data passed to the menu (immutable)
+- `NavSlot.java` — fixed navigation slots
+- `Icons.java` — loads icons and titles (MiniMessage) from `gui.yml`
+- `PlayerItems.java` — drops items at the player's feet when the inventory is full
+- `LatestOnly.java` — ticket numbers for "the last click wins"
+- `PagedListMenu.java` — paged list holder
+- `Menus.java` — open/close/return from async to main thread/`closeAll`
+- `GuiListener.java` — the single click, drag, and close listener
+- `ShopPlugin.java` — registers the listener and closes menus in `onDisable`
+- `gui.yml` — icon and title config
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` (`compileOnly`) is needed.
 
-`src/main/resources/gui.yml`（預設內容；`Icons.load` 第一次會寫到 `plugins/<name>/gui.yml`）：
+`src/main/resources/gui.yml` (default contents; `Icons.load` writes it to `plugins/<name>/gui.yml` on first run):
 
 ```yaml
 titles:
@@ -94,13 +94,13 @@ icons:
     name: "<red>Cancel"
 ```
 
-- 玩家看到的文字一律放 `gui.yml`（英文、MiniMessage），程式碼不寫字面值（唯一例外是「發生錯誤」這類防呆訊息，實務上也應搬進 `lang.yml`）
-- 清單選項的「已選／未選」標記沿用同一套前綴（已選 `" <white>▸ "`、未選 `"   <gray>"`），讓不同選單長得一致
-- 空格就留空，不鋪玻璃片；真的需要「死格」時用 `setHideTooltip(true)`，避免空的提示框
+- All player-visible text goes in `gui.yml` (English, MiniMessage); code contains no literals (the only exception is defensive messages such as "something went wrong", which in practice should also move to `lang.yml`)
+- Selected/unselected markers in list options reuse the same prefixes (selected `" <white>▸ "`, unselected `"   <gray>"`) so different menus look consistent
+- Leave empty slots empty instead of filling them with glass panes; when you really need a "dead slot", use `setHideTooltip(true)` to avoid an empty tooltip box
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `ShopMenu.java`（標記介面）
+### `ShopMenu.java` (marker interface)
 
 ```java
 package com.example.shop.gui;
@@ -109,24 +109,24 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 
 /**
- * 本插件所有箱子選單的標記。{@link GuiListener} 以 {@code instanceof ShopMenu} 判斷「這是我的選單」，
- * {@link Menus#closeAll()} 也用它找出要關的選單。
+ * Marker for every chest menu of this plugin. {@link GuiListener} uses {@code instanceof ShopMenu} to decide "this is my menu",
+ * and {@link Menus#closeAll()} uses it to find the menus to close.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li>每個插件有自己的標記介面，<b>不要</b>共用別的插件的型別（否則 {@code closeAll} 會關到別人的選單）</li>
- *   <li>{@link #getInventory()} 必須永遠回傳同一個 Inventory（Bukkit 慣例）</li>
- *   <li>一個 holder 活過整個畫面：翻頁在同一個 inventory 內重畫，不重開</li>
+ *   <li>Each plugin has its own marker interface; <b>do not</b> share another plugin's type (otherwise {@code closeAll} closes other plugins' menus)</li>
+ *   <li>{@link #getInventory()} must always return the same Inventory (Bukkit convention)</li>
+ *   <li>One holder lives for the whole screen: paging redraws within the same inventory instead of reopening</li>
  * </ul>
  */
 public interface ShopMenu extends InventoryHolder {
 
-    /** 玩家點擊上方選單的某一格。主執行緒；{@link GuiListener} 已取消事件與去彈跳。 */
+    /** The player clicked a slot of the top menu. Main thread; {@link GuiListener} has already cancelled the event and debounced. */
     void onClick(MenuClick click);
 
     /**
-     * 選單關閉。預設什麼都不做；需要退還暫存物品的選單覆寫它。
-     * 插件停用時 {@code closeAll()} 也會同步呼叫它：只做同步清理；若要排程任務，先檢查 {@code plugin.isEnabled()}。
+     * Menu closed. Does nothing by default; menus that must return held items override it.
+     * {@code closeAll()} also calls it synchronously when the plugin is disabled: do only synchronous cleanup; to schedule a task, check {@code plugin.isEnabled()} first.
      */
     default void onClose(Player player) {
     }
@@ -141,7 +141,7 @@ package com.example.shop.gui;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 
-/** 一次點擊的不可變快照。{@code slot} 是上方選單的格位（0 起算）。 */
+/** An immutable snapshot of one click. {@code slot} is the slot in the top menu (0-based). */
 public record MenuClick(Player player, int slot, ClickType type) {
 
     public boolean isRight() {
@@ -159,7 +159,7 @@ public record MenuClick(Player player, int slot, ClickType type) {
 ```java
 package com.example.shop.gui;
 
-/** 六列畫面的固定格位：上 45 格內容，底列放導覽鍵，其餘底列格留空。 */
+/** Fixed slots of the six-row screen: top 45 slots for content, bottom row for navigation buttons, other bottom-row slots left empty. */
 public final class NavSlot {
 
     public static final int ROWS = 45;
@@ -173,7 +173,7 @@ public final class NavSlot {
 }
 ```
 
-### `Icons.java`（`gui.yml` 載入）
+### `Icons.java` (loading `gui.yml`)
 
 ```java
 package com.example.shop.gui;
@@ -195,10 +195,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 從 gui.yml 載入的圖示與標題。載入後不可變；reload 時整個換成新的 {@code Icons}。
+ * Icons and titles loaded from gui.yml. Immutable after loading; on reload the whole thing is replaced by a new {@code Icons}.
  *
- * <p>名稱與 lore 是 MiniMessage；Bukkit 會把自訂名稱渲染成斜體，所以這裡統一關掉斜體
- * （呼叫端不必每個都記得）。
+ * <p>Names and lore are MiniMessage; Bukkit renders custom names in italics, so italics are turned off here
+ * (callers do not have to remember to do it each time).
  */
 public final class Icons {
 
@@ -251,7 +251,7 @@ public final class Icons {
         return new Icons(defs, titles);
     }
 
-    /** 建一個新的圖示；找不到 key 時回一個明顯的 BARRIER，而不是丟例外讓選單打不開。 */
+    /** Builds a new icon; when the key is missing, returns an obvious BARRIER instead of throwing and making the menu fail to open. */
     public ItemStack build(String key, TagResolver... resolvers) {
         Def def = defs.get(key);
         if (def == null) {
@@ -284,7 +284,7 @@ public final class Icons {
 }
 ```
 
-### `PlayerItems.java`（背包滿時掉在腳邊）
+### `PlayerItems.java` (drop at feet when the inventory is full)
 
 ```java
 package com.example.shop.gui;
@@ -294,13 +294,13 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Map;
 
-/** 給玩家物品；背包放不下的部分掉在腳邊，而不是消失。只在主執行緒呼叫。 */
+/** Gives items to a player; whatever does not fit in the inventory is dropped at their feet instead of vanishing. Call on the main thread only. */
 public final class PlayerItems {
 
     private PlayerItems() {
     }
 
-    /** @return 是否有任何物品掉到地上（呼叫端可據此提示玩家） */
+    /** @return whether any item was dropped on the ground (callers can use this to notify the player) */
     public static boolean giveOrDrop(Player player, ItemStack stack) {
         Map<Integer, ItemStack> leftover = player.getInventory().addItem(stack.clone());
         for (ItemStack rest : leftover.values()) {
@@ -311,7 +311,7 @@ public final class PlayerItems {
 }
 ```
 
-### `LatestOnly.java`（最後一次點擊為準）
+### `LatestOnly.java` (the last click wins)
 
 ```java
 package com.example.shop.gui;
@@ -319,8 +319,8 @@ package com.example.shop.gui;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 「最後一次點擊為準」：每次發起非同步載入前 {@link #next()} 取號，結果回來時
- * 用 {@link #isCurrent(long)} 檢查，舊的結果直接丟掉，不覆蓋較新的畫面。
+ * "The last click wins": call {@link #next()} for a ticket before starting each async load, and when the result comes back
+ * check it with {@link #isCurrent(long)}; stale results are discarded and never overwrite a newer screen.
  */
 public final class LatestOnly {
 
@@ -336,7 +336,7 @@ public final class LatestOnly {
 }
 ```
 
-### `PagedListMenu.java`（分頁清單 holder）
+### `PagedListMenu.java` (paged list holder)
 
 ```java
 package com.example.shop.gui;
@@ -351,14 +351,14 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * 分頁清單。上 45 格放項目，底列放上一頁／頁碼／下一頁。
+ * Paged list. The top 45 slots hold entries; the bottom row holds previous page / page number / next page.
  *
- * <p>翻頁在同一個 inventory 內重畫（不重開視窗，不閃）。頁碼只在主執行緒改；
- * 每次點擊都以「目前頁」計算，連點時最後一次點擊的結果為準。
+ * <p>Paging redraws within the same inventory (no reopening, no flicker). The page index changes on the main thread only;
+ * every click is computed against the "current page", so with rapid clicking the last click wins.
  */
 public final class PagedListMenu<T> implements ShopMenu {
 
-    /** 點到某個項目時的處理。主執行緒；處理器自己負責重新驗證。 */
+    /** Handler for clicking an entry. Main thread; the handler revalidates on its own. */
     public interface PickHandler<T> {
         void pick(Player player, T entry);
     }
@@ -429,7 +429,7 @@ public final class PagedListMenu<T> implements ShopMenu {
 }
 ```
 
-### `Menus.java`（開啟、關閉、非同步回主執行緒）
+### `Menus.java` (open, close, async back to main thread)
 
 ```java
 package com.example.shop.gui;
@@ -445,7 +445,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 /**
- * 選單的開啟與生命週期。每個插件一個實例（建構時注入 plugin），沒有靜態可變狀態。
+ * Menu opening and lifecycle. One instance per plugin (plugin injected at construction); no static mutable state.
  */
 public final class Menus {
 
@@ -455,14 +455,14 @@ public final class Menus {
         this.plugin = plugin;
     }
 
-    /** 玩家目前最上層開著的，是不是這個選單（不是別的選單、也不是已關閉）。 */
+    /** Whether the top inventory the player currently has open is this menu (not another menu, and not closed). */
     public boolean isOpen(Player player, ShopMenu menu) {
         return player.getOpenInventory().getTopInventory().getHolder() == menu;
     }
 
     /**
-     * 下一 tick 開啟選單。在 {@code InventoryClickEvent} 內不要直接 {@code openInventory}：
-     * 同一個事件裡換掉玩家的容器視窗，客戶端游標與背包同步會錯亂。
+     * Opens a menu on the next tick. Do not call {@code openInventory} directly inside an {@code InventoryClickEvent}:
+     * replacing the player's container window within the same event desyncs the client cursor and inventory.
      */
     public void openNextTick(Player player, ShopMenu menu) {
         if (!plugin.isEnabled()) {
@@ -477,7 +477,7 @@ public final class Menus {
         });
     }
 
-    /** 下一 tick 關閉玩家目前的容器（確認頁完成後使用）。 */
+    /** Closes the player's current container on the next tick (used after a confirmation page completes). */
     public void closeNextTick(Player player) {
         if (!plugin.isEnabled()) {
             return;
@@ -492,16 +492,16 @@ public final class Menus {
     }
 
     /**
-     * 非同步工作完成後開啟新選單：回到主執行緒，確認插件仍啟用、玩家仍在線，才建立並開啟。
-     * {@code factory} 在主執行緒執行，可以安全建立 Inventory。
+     * Opens a new menu after async work completes: returns to the main thread, and builds and opens it only if the plugin is still enabled and the player is still online.
+     * {@code factory} runs on the main thread, so it can safely create an Inventory.
      */
     public void openOnMain(UUID playerId, Supplier<? extends ShopMenu> factory) {
         runOnMain(playerId, player -> player.openInventory(factory.get().getInventory()));
     }
 
     /**
-     * 非同步工作完成後更新「已經開著」的選單：只有玩家仍開著<b>這個</b>選單時才執行 {@code update}，
-     * 玩家若已關閉或換成別的畫面，結果直接丟掉。
+     * Updates an "already open" menu after async work completes: runs {@code update} only if the player still has <b>this</b> menu open;
+     * if the player has closed it or switched to another screen, the result is discarded.
      */
     public void updateIfStillOpen(UUID playerId, ShopMenu menu, Consumer<Player> update) {
         runOnMain(playerId, player -> {
@@ -533,13 +533,13 @@ public final class Menus {
     }
 
     /**
-     * 關閉所有玩家開著的本插件選單。{@code onDisable} 必須呼叫，否則伺服器停止／reload 時
-     * 選單裡的物品與暫存狀態沒有清理，玩家可能帶著「幽靈物品」。
+     * Closes every plugin menu that players have open. {@code onDisable} must call this, otherwise on server stop/reload
+     * the items and temporary state in menus are never cleaned up, and players may keep "ghost items".
      *
-     * <p>{@code closeInventory()} 會<b>同步</b>觸發 {@code InventoryCloseEvent}，而此時監聽器還沒註銷；
-     * 所以每位玩家各自 try/catch，一個壞掉的處理器不能讓其他人的選單留著。
+     * <p>{@code closeInventory()} fires {@code InventoryCloseEvent} <b>synchronously</b>, and the listener is not yet unregistered at that point;
+     * so each player has its own try/catch, and one broken handler must not leave other players' menus open.
      *
-     * @return 實際關閉的選單數
+     * @return the number of menus actually closed
      */
     public int closeAll() {
         int closed = 0;
@@ -559,7 +559,7 @@ public final class Menus {
 }
 ```
 
-### `GuiListener.java`（唯一的監聽器）
+### `GuiListener.java` (the single listener)
 
 ```java
 package com.example.shop.gui;
@@ -587,13 +587,13 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * 本插件所有箱子選單的點擊、拖曳、關閉。選單自己的邏輯在 {@link ShopMenu#onClick}，這裡只做「防刷」：
+ * Clicks, drags, and closes for every chest menu of this plugin. The menu's own logic lives in {@link ShopMenu#onClick}; this class only does "anti-dupe":
  *
  * <ul>
- *   <li>上方選單：點擊與拖曳一律取消</li>
- *   <li>下方背包：Shift 點擊（會把物品塞進選單）、雙擊（會從選單收集同款物品）、數字鍵／副手交換
- *       一律取消；其餘一般背包操作放行</li>
- *   <li>去彈跳：同一位玩家 {@value #DEBOUNCE_MILLIS} ms 內的重複點擊忽略（取消但不分派）</li>
+ *   <li>Top menu: always cancel clicks and drags</li>
+ *   <li>Bottom inventory: cancel Shift-clicks (which push items into the menu), double-clicks (which collect matching items from the menu), number keys and offhand swaps;
+ *       allow other normal inventory actions</li>
+ *   <li>Debounce: repeated clicks from the same player within {@value #DEBOUNCE_MILLIS} ms are ignored (cancelled but not dispatched)</li>
  * </ul>
  */
 public final class GuiListener implements Listener {
@@ -630,7 +630,7 @@ public final class GuiListener implements Listener {
         Inventory clicked = event.getClickedInventory();
 
         if (clicked != top) {
-            // 下方背包或視窗外：只擋會牽動上方選單的操作
+            // Bottom inventory or outside the window: only block actions that affect the top menu
             if (clicked == null
                     || GUARDED_ACTIONS.contains(event.getAction())
                     || GUARDED_CLICKS.contains(event.getClick())) {
@@ -675,8 +675,8 @@ public final class GuiListener implements Listener {
         }
         lastClickNanos.remove(player.getUniqueId());
         try {
-            // onDisable 的 closeAll() 會同步走到這裡：此時 plugin.isEnabled() 為 false，
-            // 退還物品這類同步清理照做；需要排程的工作必須先檢查 isEnabled()，否則丟 IllegalPluginAccessException
+            // closeAll() in onDisable reaches here synchronously: plugin.isEnabled() is false at that point,
+            // so do synchronous cleanup such as returning items; any scheduled work must check isEnabled() first, otherwise IllegalPluginAccessException is thrown
             menu.onClose(player);
         } catch (RuntimeException e) {
             plugin.getLogger().log(Level.SEVERE, "Menu close handler failed for " + player.getName(), e);
@@ -696,7 +696,7 @@ public final class GuiListener implements Listener {
 }
 ```
 
-### `ShopPlugin.java`（註冊與停用）
+### `ShopPlugin.java` (registration and disable)
 
 ```java
 package com.example.shop;
@@ -720,13 +720,13 @@ public final class ShopPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 先關選單，再做其他清理；此時 isEnabled() 已是 false；menu.onClose 只做同步清理
+        // Close menus first, then do other cleanup; isEnabled() is already false here; menu.onClose must do synchronous cleanup only
         if (menus != null) {
             menus.closeAll();
         }
     }
 
-    /** /shop reload 時換成新的不可變 Icons；已開啟的選單下次重畫才會套用。 */
+    /** On /shop reload, swap in a new immutable Icons; already open menus pick it up the next time they redraw. */
     public void reloadIcons() {
         icons = Icons.load(this);
     }
@@ -741,48 +741,48 @@ public final class ShopPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/shop/
 ├── ShopPlugin.java
 └── gui/
-    ├── ShopMenu.java            ← 標記介面
+    ├── ShopMenu.java            ← marker interface
     ├── MenuClick.java
     ├── NavSlot.java
     ├── Icons.java
     ├── PlayerItems.java
     ├── LatestOnly.java
     ├── Menus.java
-    ├── GuiListener.java         ← 唯一監聽器
-    ├── PagedListMenu.java       ← 每種選單一個 holder
+    ├── GuiListener.java         ← the only listener
+    ├── PagedListMenu.java       ← one holder per menu kind
     └── ConfirmPurchaseMenu.java
 src/main/resources/
 └── gui.yml
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- 事件、`onClick`、建立 Inventory、`openInventory` 全部在主執行緒；JDBC／HTTP 在非同步
-- 非同步 lambda 只帶 `UUID` 與不可變資料（`List.copyOf` 的結果），不帶 `Player`、`Inventory`、`ItemStack`
-- 回主執行緒用 `Menus.openOnMain` / `updateIfStillOpen`：已含「插件仍啟用 → 玩家仍在線 → 選單仍開著」三道檢查
-- 連點／連翻頁：同步重畫時每次點擊都以目前狀態計算；非同步載入用 `LatestOnly` 丟掉過期結果
-- 在 `InventoryClickEvent` 內要開別的選單或關閉視窗，用 `openNextTick` / `closeNextTick`
-- `InventoryCloseEvent` 處理器（`onClose`）內若要排程任務，先 `if (!plugin.isEnabled()) return;`；`onDisable` 的 `closeAll()` 會同步觸發它，此時排程會丟 `IllegalPluginAccessException`；退還物品等同步清理則照做
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- Events, `onClick`, Inventory creation, and `openInventory` all run on the main thread; JDBC/HTTP run async
+- Async lambdas carry only a `UUID` and immutable data (the result of `List.copyOf`), never `Player`, `Inventory`, or `ItemStack`
+- Return to the main thread with `Menus.openOnMain` / `updateIfStillOpen`: they already include the three checks "plugin still enabled -> player still online -> menu still open"
+- Rapid clicking/paging: synchronous redraws compute against the current state on every click; async loads use `LatestOnly` to discard stale results
+- To open another menu or close the window inside an `InventoryClickEvent`, use `openNextTick` / `closeNextTick`
+- Inside the `InventoryCloseEvent` handler (`onClose`), run `if (!plugin.isEnabled()) return;` before scheduling any task; `closeAll()` in `onDisable` triggers it synchronously, and scheduling then throws `IllegalPluginAccessException`; synchronous cleanup such as returning items should still run
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| 玩家能把選單的圖示拿走 | 只取消了上方點擊，漏了 Shift／數字鍵／雙擊 | 用本技能的 `GuiListener`（下方背包的受保護操作也取消） |
-| 拖曳物品進選單 | 沒處理 `InventoryDragEvent` | 拖曳跨到上方格位（`rawSlot < topSize`）一律取消 |
-| 買到東西但沒扣錢／重複扣款 | 信任了畫面，或連點兩次 | 每次點擊重新驗證；去彈跳；扣款失敗不給物品 |
-| 非同步結果覆蓋了新畫面 | 舊請求較晚回來 | `LatestOnly` 取號，過期結果丟棄 |
-| 非同步回來後 NPE／開錯選單 | 玩家已離線或已關閉選單 | `Menus.updateIfStillOpen`（主執行緒 + 仍開著檢查） |
-| `IllegalPluginAccessException`（停用時） | `InventoryCloseEvent` 處理器在 `onDisable` 內排程工作 | 排程前 `plugin.isEnabled()` 檢查（只擋排程，不擋同步清理） |
-| 伺服器重啟後玩家背包多出／少了物品 | `onDisable` 沒關選單 | `Menus.closeAll()`，並在 `onClose` 退還暫存物品 |
-| 背包滿了物品消失 | `addItem` 的回傳值被忽略 | `PlayerItems.giveOrDrop` |
-| 在點擊事件裡直接開新選單，游標或物品錯亂 | 同一事件內換容器 | `openNextTick` |
-| 圖示顯示斜體 | Bukkit 對自訂名稱預設斜體 | `Icons` 統一關閉斜體 |
-| 需要輸入文字／數字／是否確認 | 箱子不是表單 | 改用 `paper-dialog-ui`；NMS 自訂容器改用 `nms-custom-menu` |
+| Players can take the menu icons | Only top-menu clicks were cancelled; Shift/number key/double-click were missed | Use this skill's `GuiListener` (it also cancels guarded actions in the bottom inventory) |
+| Dragging items into the menu | `InventoryDragEvent` not handled | Always cancel drags that reach top slots (`rawSlot < topSize`) |
+| Item bought but no money deducted / charged twice | Trusted the screen, or double-clicked | Revalidate on every click; debounce; do not give the item if payment fails |
+| Async result overwrites the new screen | An older request returned later | Take a ticket with `LatestOnly`; discard stale results |
+| NPE / wrong menu opened after async returns | The player went offline or closed the menu | `Menus.updateIfStillOpen` (main thread + still-open check) |
+| `IllegalPluginAccessException` (on disable) | The `InventoryCloseEvent` handler schedules work inside `onDisable` | Check `plugin.isEnabled()` before scheduling (blocks scheduling only, not synchronous cleanup) |
+| Players have extra/missing items after a server restart | `onDisable` did not close menus | `Menus.closeAll()`, and return held items in `onClose` |
+| Items vanish when the inventory is full | The return value of `addItem` was ignored | `PlayerItems.giveOrDrop` |
+| Cursor or items get messed up when opening a new menu directly in a click event | Container swapped within the same event | `openNextTick` |
+| Icons display in italics | Bukkit italicizes custom names by default | `Icons` turns italics off globally |
+| Need to enter text/numbers/confirm | A chest is not a form | Use `paper-dialog-ui`; for NMS custom containers use `nms-custom-menu` |

@@ -1,13 +1,13 @@
 # examples — nms-chunk-access
 
-## 範例 1：讀取地面高度（掃描地形）
+## Example 1: Read surface height (terrain scan)
 
 **Input:**
 ```
 package_name: com.example.world
 ```
 
-**Output — 找出範圍內最高地面點:**
+**Output — find the highest surface point in range:**
 ```java
 public Location findHighestPoint(World world, int centerX, int centerZ, int radius) {
     int highestY = Integer.MIN_VALUE;
@@ -29,14 +29,14 @@ public Location findHighestPoint(World world, int centerX, int centerZ, int radi
 
 ---
 
-## 範例 2：批次填充地下空洞
+## Example 2: Bulk-fill underground cavities
 
 **Input:**
 ```
 package_name: com.example.world
 ```
 
-**Output — 將指定範圍的 AIR 方塊填充為 STONE（主執行緒）:**
+**Output — fill AIR blocks in the given range with STONE (main thread):**
 ```java
 public void fillCave(World world, int x1, int y1, int z1,
                      int x2, int y2, int z2) {
@@ -54,21 +54,21 @@ public void fillCave(World world, int x1, int y1, int z1,
             }
 
     int filled = editor.pendingCount();
-    editor.commit(3); // flags=3: 觸發鄰居更新 + 發送封包
-    player.sendMessage("§a已填充 " + filled + " 個空洞");
+    editor.commit(3); // flags=3: trigger neighbor updates + send packets
+    player.sendMessage("§aFilled " + filled + " cavity blocks");
 }
 ```
 
 ---
 
-## 範例 3：高效平原填充（無觸發事件）
+## Example 3: Efficient flat-area fill (no events triggered)
 
 **Input:**
 ```
 package_name: com.example.world
 ```
 
-**Output — 快速填充 32×32 平面為草地（flags=2 只發封包，不觸發物理）:**
+**Output — quickly fill a 32x32 plane with grass (flags=2 only sends packets, no physics):**
 ```java
 public void flattenArea(Player player, int radius) {
     Location origin = player.getLocation();
@@ -83,33 +83,33 @@ public void flattenArea(Player player, int radius) {
             int absX = origin.getBlockX() + x;
             int absZ = origin.getBlockZ() + z;
             editor.set(absX, baseY, absZ, grass);
-            // 清除上方的方塊
+            // Clear the block above
             editor.set(absX, baseY + 1, absZ, Blocks.AIR.defaultBlockState());
         }
     }
 
-    editor.commit(2); // 只發客戶端封包，不觸發 BlockPhysics
-    player.sendMessage("§a已平整 " + (radius * 2 + 1) + "² 範圍");
+    editor.commit(2); // Only send client packets, do not trigger BlockPhysics
+    player.sendMessage("§aFlattened a " + (radius * 2 + 1) + "² area");
 }
 ```
 
 ---
 
-## 範例 4：讀取 ChunkSection 掃描礦石
+## Example 4: Scan ore through ChunkSection
 
 **Input:**
 ```
 package_name: com.example.world
 ```
 
-**Output — 掃描區塊 Section 尋找鑽石礦:**
+**Output — scan chunk sections for diamond ore:**
 ```java
 public List<Location> findDiamonds(Chunk chunk) {
     List<Location> result = new ArrayList<>();
     LevelChunk nms = ChunkAccessUtil.getChunk(chunk);
 
-    // 鑽石礦在 Y -64 到 Y 16（section -4 到 1）
-    // 1.21.2+ 的 getMinSection() 改名為 getMinSectionY()；用 index 迴圈可同時相容 1.21–1.21.3
+    // Diamond ore spawns from Y -64 to Y 16 (sections -4 to 1)
+    // In 1.21.2+ getMinSection() was renamed to getMinSectionY(); an index loop works on both 1.21-1.21.3
     for (int index = 0; index < nms.getSectionsCount(); index++) {
         int sectionY = nms.getSectionYFromSectionIndex(index);
         LevelChunkSection section = nms.getSections()[index];

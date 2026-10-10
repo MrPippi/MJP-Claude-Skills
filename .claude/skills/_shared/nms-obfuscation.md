@@ -1,29 +1,29 @@
-# NMS 混淆與 Mojang 映射 / NMS Obfuscation & Mojang Mappings
+# NMS Obfuscation & Mojang Mappings / NMS 混淆與 Mojang 映射
 
-Paper NMS 開發的命名系統說明。**Minecraft 26.1 起 Mojang 不再混淆 Java 版**，伺服器 jar 直接使用官方名稱；
-本專案一律使用 Mojang 官方名稱（透過 Paperweight userdev），不支援 Spigot/混淆映射。
+Explains the naming systems for Paper NMS development. **Since Minecraft 26.1, Mojang no longer obfuscates Java Edition**, and the server jar uses official names directly;
+this project always uses official Mojang names (via Paperweight userdev) and does not support Spigot/obfuscated mappings.
 
 ---
 
-## 映射系統對比
+## Mappings Comparison
 
-| 映射 | 範例類名 | 範例方法名 | 用途 |
+| Mappings | Example class name | Example method name | Purpose |
 |------|----------|-----------|------|
-| **Mojang（官方）** | `net.minecraft.server.level.ServerPlayer` | `connection.send(packet)` | 開發時可讀 |
-| **Spigot（歷史）** | `net.minecraft.server.v1_21_R1.EntityPlayer` | `b.a(packet)` | 已淘汰；26.x 執行不了 Spigot 命名的外掛 |
-| **Intermediary（Fabric）** | `class_3222` | `method_14369` | 僅 Fabric 使用 |
+| **Mojang (official)** | `net.minecraft.server.level.ServerPlayer` | `connection.send(packet)` | Readable during development |
+| **Spigot (historical)** | `net.minecraft.server.v1_21_R1.EntityPlayer` | `b.a(packet)` | Obsolete; plugins using Spigot names cannot run on 26.x |
+| **Intermediary (Fabric)** | `class_3222` | `method_14369` | Fabric only |
 
-Paper 1.20.5+ 伺服器 runtime 即使用 Mojang 名稱；26.1 起原版本身已不混淆。Paperweight 產出的 plugin **無需 remap**，部署後直接可用。
+Paper 1.20.5+ server runtime already uses Mojang names; since 26.1 vanilla itself is no longer obfuscated. Plugins produced by Paperweight **need no remap** and work directly once deployed.
 
 ---
 
-## Paperweight userdev 核心
+## Paperweight userdev Essentials
 
-`io.papermc.paperweight.userdev` Gradle plugin 提供：
+The `io.papermc.paperweight.userdev` Gradle plugin provides:
 
-1. **`paperweight.paperDevBundle(version)`** — 以 Mojang-mapped 形式暴露 Paper + NMS API
-2. **不需要 `reobfJar`** — 26.x 沒有混淆可還原；直接使用 `assemble` / `shadowJar` 產物
-3. **自動下載** Paper Dev Bundle（含完整 NMS sources）
+1. **`paperweight.paperDevBundle(version)`** — exposes Paper + NMS API in Mojang-mapped form
+2. **No `reobfJar` needed** — 26.x has no obfuscation to reverse; use the `assemble` / `shadowJar` output directly
+3. **Automatic download** of the Paper Dev Bundle (including full NMS sources)
 
 ```gradle
 plugins {
@@ -42,22 +42,22 @@ java {
 
 ---
 
-## 套件命名對照
+## Package Naming Reference
 
-| 層級 | Mojang 名稱 | 常見內容 |
+| Layer | Mojang name | Typical contents |
 |------|------------|---------|
-| 玩家 | `net.minecraft.server.level.ServerPlayer` | NMS 玩家本體 |
-| 世界 | `net.minecraft.server.level.ServerLevel` | NMS 世界 |
-| 連線 | `net.minecraft.server.network.ServerGamePacketListenerImpl` | 玩家網路連線 |
-| 封包基類 | `net.minecraft.network.protocol.Packet<?>` | 所有封包超型 |
-| Clientbound 封包 | `net.minecraft.network.protocol.game.Clientbound*` | 伺服器→客戶端 |
-| Serverbound 封包 | `net.minecraft.network.protocol.game.Serverbound*` | 客戶端→伺服器 |
-| 實體 | `net.minecraft.world.entity.Entity` | 所有實體基類 |
-| 物品 | `net.minecraft.world.item.ItemStack`（NMS 版） | 與 Bukkit `ItemStack` 不同 |
+| Player | `net.minecraft.server.level.ServerPlayer` | The NMS player itself |
+| World | `net.minecraft.server.level.ServerLevel` | NMS world |
+| Connection | `net.minecraft.server.network.ServerGamePacketListenerImpl` | Player network connection |
+| Packet base | `net.minecraft.network.protocol.Packet<?>` | Supertype of all packets |
+| Clientbound packets | `net.minecraft.network.protocol.game.Clientbound*` | Server → client |
+| Serverbound packets | `net.minecraft.network.protocol.game.Serverbound*` | Client → server |
+| Entity | `net.minecraft.world.entity.Entity` | Base class of all entities |
+| Item | `net.minecraft.world.item.ItemStack` (NMS version) | Different from Bukkit `ItemStack` |
 
 ---
 
-## Bukkit ↔ NMS 橋接
+## Bukkit ↔ NMS Bridge
 
 ```java
 import org.bukkit.craftbukkit.CraftWorld;
@@ -76,44 +76,44 @@ net.minecraft.world.item.ItemStack nmsItem =
     org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(bukkitItem);
 ```
 
-> Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
-> 若外掛需同時支援 Spigot 或 1.20.4 以前的 Paper，使用 `nms-reflection-bridge` 技能動態取得套件名。
+> Paper 1.20.5+ removed CraftBukkit's version-number relocation, so the package is always `org.bukkit.craftbukkit` (no `v1_21_R1` suffix); `v1_xx_Rx` only exists on Spigot and Paper 1.20.4 and earlier.
+> If the plugin must also support Spigot or Paper 1.20.4 and earlier, use the `nms-reflection-bridge` skill to obtain the package name dynamically.
 
 ---
 
-## 相對路徑穩定性
+## API Location Stability
 
-| 穩定度 | API 位置 | 升級策略 |
+| Stability | API location | Upgrade strategy |
 |--------|----------|---------|
-| 🟢 高 | `net.minecraft.world.*`、`.server.level.*` | 直接升級通常 OK |
-| 🟡 中 | `.network.protocol.game.*`（封包） | 新版常改欄位名/record 結構 |
-| 🔴 低 | `.server.MinecraftServer` 私有欄位 | 每版可能改欄位可見度 |
-| 🟢 高（Paper 1.20.5+） | `org.bukkit.craftbukkit.*` | 不再帶版本號；Spigot / 舊版 Paper 為 `org.bukkit.craftbukkit.v1_xx_Rx.*` |
+| 🟢 High | `net.minecraft.world.*`, `.server.level.*` | Direct upgrade is usually fine |
+| 🟡 Medium | `.network.protocol.game.*` (packets) | New versions often change field names / record structure |
+| 🔴 Low | `.server.MinecraftServer` private fields | Field visibility may change in every version |
+| 🟢 High (Paper 1.20.5+) | `org.bukkit.craftbukkit.*` | No longer versioned; Spigot / older Paper use `org.bukkit.craftbukkit.v1_xx_Rx.*` |
 
 ---
 
-## 為何不用 ReflectionRemapper？
+## Why Not ReflectionRemapper?
 
-歷史上（1.20.4 及以前），Paper plugin 需要透過 `ReflectionRemapper` API 將 Mojang 名稱轉為 runtime Spigot 名稱。**1.20.5 開始 Paper runtime 原生使用 Mojang mappings**，因此：
+Historically (1.20.4 and earlier), Paper plugins needed the `ReflectionRemapper` API to convert Mojang names to the runtime Spigot names. **Starting with 1.20.5 the Paper runtime natively uses Mojang mappings**, so:
 
-- ✅ 寫 Mojang 名稱即是 runtime 名稱
-- ✅ `Class.forName("net.minecraft.server.level.ServerPlayer")` 直接可用
-- ❌ 不需 `PaperLib.getMinecraftVersion()` 做 remap 分支
+- ✅ Writing Mojang names means writing runtime names
+- ✅ `Class.forName("net.minecraft.server.level.ServerPlayer")` works directly
+- ❌ No need for a `PaperLib.getMinecraftVersion()` remap branch
 
 ---
 
-## 跨版本變更追蹤
+## Tracking Cross-Version Changes
 
-升級 NMS 版本時檢查順序：
+When upgrading the NMS version, check in this order:
 
 1. **Paperweight changelog** — https://github.com/PaperMC/Paper/blob/master/build-data/paper.yml
-2. **NMS diff** — 用 IDE 比對 `~/.gradle/caches/paperweight/` 下不同版本的 sources
-3. **Mojang obfuscation maps** — 僅 1.21.11 以前需要；26.1 起原版不混淆、不再提供 mappings
+2. **NMS diff** — compare the sources of different versions under `~/.gradle/caches/paperweight/` in your IDE
+3. **Mojang obfuscation maps** — only needed for 1.21.11 and earlier; since 26.1 vanilla is unobfuscated and mappings are no longer provided
 4. **Paper MiscChangeLog** — https://papermc.io/downloads/paper
 
 ---
 
-## 相關技能
+## Related Skills
 
-- `nms-reflection-bridge` — 需相容 Spigot / 舊版（`v1_xx_Rx` 套件）時的反射策略
-- `nms-version-adapter` — 多版本 adapter 實作
+- `nms-reflection-bridge` — reflection strategy when Spigot / older versions (`v1_xx_Rx` packages) must be supported
+- `nms-version-adapter` — multi-version adapter implementation

@@ -1,28 +1,28 @@
 # Paper NMS Platform / Paper NMS 平台
 
-本平台定義 Paper NMS 開發的基礎建置設定，使用 Paperweight userdev 與 Mojang 官方命名（Minecraft 26.1 起原版不再混淆）。所有 MJP-Paper-Skills NMS 技能產出的代碼皆預設此平台。
+This platform defines the base build setup for Paper NMS development, using Paperweight userdev and official Mojang names (vanilla has no longer been obfuscated since Minecraft 26.1). All code produced by the MJP-Paper-Skills NMS skills targets this platform by default.
 
-- **MC 版本**：**1.21.11** 與 **26.2**（兩版皆經編譯驗證；範本預設 26.2）
-- **Java**：1.21.11 → 21；26.2 → 25（Paper 26.x 最低需求）
-- **建置工具**：Gradle 8.11.2+（Groovy DSL；已驗證 9.8.1）— Paperweight 2.x 不支援更舊的 Gradle
-- **命名**：Mojang 官方名稱（透過 Paperweight userdev 2.0.0-beta.24，pre-release）
-- **Javadoc**：https://jd.papermc.io/paper/26.2/ ・ https://jd.papermc.io/paper/1.21.11/
+- **MC versions**: **1.21.11** and **26.2** (both compile-verified; templates default to 26.2)
+- **Java**: 1.21.11 → 21; 26.2 → 25 (minimum for Paper 26.x)
+- **Build tool**: Gradle 8.11.2+ (Groovy DSL; 9.8.1 verified) — Paperweight 2.x does not support older Gradle
+- **Naming**: official Mojang names (via Paperweight userdev 2.0.0-beta.24, pre-release)
+- **Javadoc**: https://jd.papermc.io/paper/26.2/ | https://jd.papermc.io/paper/1.21.11/
 
-### 版本差異標註慣例
+### Version Difference Annotation Convention
 
-範本預設寫 26.2 的 API。1.21.11 寫法不同的那一行，會在行尾加上替代程式碼：
+Templates default to the 26.2 API. For a line that is written differently on 1.21.11, the replacement code is appended at the end of the line:
 
 ```text
 CustomZombie zombie = new CustomZombie(EntityTypes.ZOMBIE, level); // @1.21.11: CustomZombie zombie = new CustomZombie(EntityType.ZOMBIE, level);
 ```
 
-- 目標為 1.21.11 時，把該行換成 `// @1.21.11:` 後面的程式碼
-- 整段只適用單一版本的程式碼區塊，第一行為 `// @only 26.2` 或 `// @only 1.21.11`
-- 驗證流程會依此替換後，分別對兩個 dev bundle 編譯
+- When targeting 1.21.11, replace that line with the code after `// @1.21.11:`
+- A code block that applies to a single version only starts with `// @only 26.2` or `// @only 1.21.11`
+- The verification flow applies these substitutions and then compiles against both dev bundles separately
 
 ---
 
-## 1. `build.gradle` 範本
+## 1. `build.gradle` Template
 
 ```groovy
 plugins {
@@ -39,7 +39,7 @@ repositories {
 }
 
 dependencies {
-    // Paperweight 提供 Mojang-mapped Paper + NMS API
+    // Paperweight provides Mojang-mapped Paper + NMS API
     paperweight.paperDevBundle('26.2.build.132-stable')
 }
 
@@ -53,10 +53,10 @@ tasks {
         options.release.set(25)
     }
 
-    // Paper 1.20.5+ 無需 reobfJar；直接使用 assemble 產物（build/libs/*.jar）
-    // 若有套用 shadow plugin（id 'com.gradleup.shadow'），再加上：
+    // Paper 1.20.5+ does not need reobfJar; use the assemble output directly (build/libs/*.jar)
+    // If the shadow plugin is applied (id 'com.gradleup.shadow'), also add:
     //   assemble { dependsOn 'shadowJar' }
-    // 未套用 shadow 時宣告 dependsOn 'shadowJar' 會讓 assemble 失敗（Task 'shadowJar' not found）
+    // Declaring dependsOn 'shadowJar' without shadow applied makes assemble fail (Task 'shadowJar' not found)
 
     processResources {
         filteringCharset = 'UTF-8'
@@ -71,17 +71,17 @@ tasks {
 }
 ```
 
-**1.21.11 版**：上方範本改三處即可（已實際 build 驗證）
+**1.21.11 version**: change three places in the template above (verified with a real build)
 
-| 項目 | 26.2（預設） | 1.21.11 |
+| Item | 26.2 (default) | 1.21.11 |
 |------|-------------|---------|
 | `paperweight.paperDevBundle(...)` | `'26.2.build.132-stable'` | `'1.21.11-R0.1-SNAPSHOT'` |
 | `JavaLanguageVersion.of(...)` / `options.release.set(...)` | `25` | `21` |
-| `paper-plugin.yml` 的 `api-version` | `'26.2'` | `'1.21.11'` |
+| `api-version` in `paper-plugin.yml` | `'26.2'` | `'1.21.11'` |
 
 ---
 
-## 2. `settings.gradle` 範本
+## 2. `settings.gradle` Template
 
 ```groovy
 rootProject.name = 'my-nms-plugin'
@@ -89,7 +89,7 @@ rootProject.name = 'my-nms-plugin'
 
 ---
 
-## 3. `paper-plugin.yml` 範本
+## 3. `paper-plugin.yml` Template
 
 ```yaml
 name: ${name}
@@ -99,15 +99,15 @@ api-version: '26.2'
 description: '${description}'
 author: YourName
 
-# NMS 插件建議使用 paper-plugin.yml（非 plugin.yml）
-# 以啟用 Paper plugin lifecycle（更好的 load order）
+# NMS plugins should use paper-plugin.yml (not plugin.yml)
+# to enable the Paper plugin lifecycle (better load order)
 ```
 
-> ⚠️ `paper-plugin.yml` 比 `plugin.yml` 更適合 NMS 插件，因為 Paper plugin lifecycle 保證早於 Bukkit plugin 載入，能正確處理 NMS 註冊。
+> ⚠️ `paper-plugin.yml` suits NMS plugins better than `plugin.yml`, because the Paper plugin lifecycle is guaranteed to load before Bukkit plugins, which lets NMS registration be handled correctly.
 
 ---
 
-## 4. 主類別範本
+## 4. Main Class Template
 
 ```java
 package com.example;
@@ -126,41 +126,41 @@ public final class MyNmsPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 清理 Netty handler、entity registration 等
+        // Clean up Netty handlers, entity registration, etc.
     }
 }
 ```
 
 ---
 
-## 5. NMS 版本對照表
+## 5. NMS Version Table
 
-| Paper 建置版本 | MC 版本 | CraftBukkit package | ServerPlayer location |
+| Paper build version | MC version | CraftBukkit package | ServerPlayer location |
 |--------------|--------|--------------------|----------------------|
-| `1.21.11-R0.1-SNAPSHOT`（**已驗證**） | 1.21.11 | `org.bukkit.craftbukkit` | `net.minecraft.server.level.ServerPlayer` |
-| `26.1.2.build.<n>-stable` | 26.1.2 | `org.bukkit.craftbukkit` | 同上 |
-| `26.2.build.132-stable`（**預設、已驗證**） | 26.2 | `org.bukkit.craftbukkit` | 同上 |
-| `26.3.build.<n>-beta` | 26.3（Paper 仍為 beta） | `org.bukkit.craftbukkit` | 同上 |
+| `1.21.11-R0.1-SNAPSHOT` (**verified**) | 1.21.11 | `org.bukkit.craftbukkit` | `net.minecraft.server.level.ServerPlayer` |
+| `26.1.2.build.<n>-stable` | 26.1.2 | `org.bukkit.craftbukkit` | same as above |
+| `26.2.build.132-stable` (**default, verified**) | 26.2 | `org.bukkit.craftbukkit` | same as above |
+| `26.3.build.<n>-beta` | 26.3 (Paper still in beta) | `org.bukkit.craftbukkit` | same as above |
 
-> 26.x 起 Paper dev bundle 版本格式改為 `<MC版本>.build.<build號>-<channel>`（不再是 `-R0.1-SNAPSHOT`），可在
-> https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml 查詢最新 build。
+> From 26.x on, the Paper dev bundle version format changed to `<MC version>.build.<build number>-<channel>` (no longer `-R0.1-SNAPSHOT`). The latest build can be looked up at
+> https://repo.papermc.io/repository/maven-public/io/papermc/paper/dev-bundle/maven-metadata.xml
 
-> Paper 1.20.5+ 已移除 CraftBukkit 的版本號 relocation，套件固定為 `org.bukkit.craftbukkit`（無 `v1_21_R1` 後綴）；`v1_xx_Rx` 只存在於 Spigot 與 Paper 1.20.4 以前。
+> Paper 1.20.5+ removed CraftBukkit's version-number relocation, so the package is always `org.bukkit.craftbukkit` (no `v1_21_R1` suffix); `v1_xx_Rx` only exists on Spigot and Paper 1.20.4 and earlier.
 >
-> 1.21.11 → 26.x 主要差異：`ServerBossEvent` 建構子新增 UUID、原版實體常數移至 `EntityTypes`、`ServerboundInteractPacket` 改為 record 並拆出 `ServerboundAttackPacket`、`ClientboundExplodePacket` 建構子改版（範本以 `// @1.21.11:` 或 `// @only` 標註）。
+> Main differences from 1.21.11 → 26.x: `ServerBossEvent` constructor gains a UUID, vanilla entity constants moved to `EntityTypes`, `ServerboundInteractPacket` became a record with `ServerboundAttackPacket` split out, `ClientboundExplodePacket` constructor reworked (templates mark these with `// @1.21.11:` or `// @only`).
 >
-> 從 1.21.3 以前升級到 1.21.11 / 26.x 常見的 NMS 變更（技能範本皆已對應）：
-> - `ResourceLocation` → `Identifier`；原版 `EntityType.XXX` 常數移至 `EntityTypes`；`Entity.moveTo()` → `snapTo()`；`Level.isClientSide` 欄位 → `isClientSide()`
-> - 實體與 BlockEntity 序列化改用 `ValueOutput` / `ValueInput`；`CompoundTag.getXxx(key)` 回傳 `Optional`（另有 `getXxxOr(key, default)`）
-> - `Component.Serializer` 移除，Adventure ↔ NMS 改用 `PaperAdventure.asVanilla()` / `asAdventure()`
-> - authlib：`GameProfile` 成為 record（`id()` / `name()` / `properties()`）；玩家 profile 查詢改用 `MinecraftServer.services()`
-> - 部分 mob 類別移入子套件（例：`net.minecraft.world.entity.monster.zombie.Zombie`）
+> Common NMS changes when upgrading from 1.21.3 and earlier to 1.21.11 / 26.x (all skill templates already account for them):
+> - `ResourceLocation` → `Identifier`; vanilla `EntityType.XXX` constants moved to `EntityTypes`; `Entity.moveTo()` → `snapTo()`; `Level.isClientSide` field → `isClientSide()`
+> - Entity and BlockEntity serialization now uses `ValueOutput` / `ValueInput`; `CompoundTag.getXxx(key)` returns `Optional` (plus `getXxxOr(key, default)`)
+> - `Component.Serializer` removed; Adventure ↔ NMS now uses `PaperAdventure.asVanilla()` / `asAdventure()`
+> - authlib: `GameProfile` became a record (`id()` / `name()` / `properties()`); player profile lookup now uses `MinecraftServer.services()`
+> - Some mob classes moved into subpackages (e.g. `net.minecraft.world.entity.monster.zombie.Zombie`)
 
 ---
 
 ## 6. `@SuppressWarnings("UnstableApiUsage")`
 
-所有存取 NMS 的類別必須加上此註解。Paper NMS API 標記為 unstable，編譯器會警告，`@SuppressWarnings("UnstableApiUsage")` 抑制警告但不影響 runtime。
+Every class that accesses NMS must have this annotation. The Paper NMS API is marked unstable and the compiler warns; `@SuppressWarnings("UnstableApiUsage")` suppresses the warning without affecting runtime.
 
 ```java
 @SuppressWarnings("UnstableApiUsage")
@@ -169,48 +169,48 @@ public class MyHandler { ... }
 
 ---
 
-## 7. 部署差異（vs 一般 Paper plugin）
+## 7. Deployment Differences (vs a regular Paper plugin)
 
-| 項目 | 一般 Paper plugin | NMS plugin |
+| Item | Regular Paper plugin | NMS plugin |
 |------|------------------|-----------|
-| build plugin | `java`、`shadow`（選） | `paperweight.userdev` |
-| 映射來源 | Bukkit/Paper API | Paper + NMS（Mojang-mapped） |
-| 部署產物 | `build/libs/*.jar` | `build/libs/*.jar`（無需 reobf） |
-| 版本相容 | 廣（api-version）| 窄（每個 MC 版本需重編） |
+| Build plugin | `java`, `shadow` (optional) | `paperweight.userdev` |
+| Mappings source | Bukkit/Paper API | Paper + NMS (Mojang-mapped) |
+| Deployment artifact | `build/libs/*.jar` | `build/libs/*.jar` (no reobf needed) |
+| Version compatibility | Broad (api-version) | Narrow (recompile for each MC version) |
 
 ---
 
-## 8. NMS 隔離與版本守門 / NMS Confinement & Version Guard
+## 8. NMS Confinement & Version Guard
 
-NMS 是插件中最容易隨版本（甚至同版本不同 Paper build）壞掉的部分，所有 NMS 技能都遵守：
+NMS is the part of a plugin most likely to break across versions (even across Paper builds of the same version). All NMS skills follow these rules:
 
-| 規則 | 做法 |
+| Rule | Approach |
 |------|------|
-| 單一套件 | 只有 `…/nms/` 套件可以 import `net.minecraft` / `org.bukkit.craftbukkit`；可用原始碼掃描測試守住（見 `nms-fake-player` 範例 3） |
-| 公開簽名不出現 NMS 型別 | 對外只交 Bukkit 型別，其他類別才能安全持有，版本不符時也不會在載入時失敗 |
-| 版本守門只關閉該功能 | 守門類別只比對 `Bukkit.getMinecraftVersion()`，不碰 NMS；第一次呼叫 NMS 時接 `LinkageError`，只停用該功能並記錄一次 |
-| jar 不含伺服器類別 | 加 `verifyNoServerClassesInJar` 之類的檢查，確保 `net/minecraft/`、`org/bukkit/craftbukkit/`、`com/mojang/` 沒被打包 |
-| 先找 Paper API | 能用 Paper API 或 PacketEvents 做到的事，不寫 NMS（見 `Skills/paper/`） |
+| Single package | Only the `.../nms/` package may import `net.minecraft` / `org.bukkit.craftbukkit`; guard this with a source-scanning test (see `nms-fake-player` example 3) |
+| No NMS types in public signatures | Expose only Bukkit types, so other classes can hold them safely and nothing fails at load time on a version mismatch |
+| Version guard disables only that feature | The guard class only compares `Bukkit.getMinecraftVersion()` and never touches NMS; catch `LinkageError` on the first NMS call, disable only that feature, and log once |
+| No server classes in the jar | Add a check such as `verifyNoServerClassesInJar` to make sure `net/minecraft/`, `org/bukkit/craftbukkit/`, `com/mojang/` are not bundled |
+| Look for a Paper API first | Don't write NMS for anything achievable with the Paper API or PacketEvents (see `Skills/paper/`) |
 
 ---
 
-## 9. 相關技能
+## 9. Related Skills
 
-| 技能 ID | 用途 |
+| Skill ID | Purpose |
 |--------|------|
-| `nms-packet-sender` | 發送自定義封包 |
-| `nms-packet-interceptor` | Netty pipeline 封包攔截 |
-| `nms-custom-entity` | 自定義 NMS 實體 + AI |
-| `nms-reflection-bridge` | 跨版本反射橋接 |
-| `nms-version-adapter` | 多版本 adapter 模式 |
-| `nms-fake-player` | 沒有客戶端的假玩家（機器人） |
+| `nms-packet-sender` | Send custom packets |
+| `nms-packet-interceptor` | Netty pipeline packet interception |
+| `nms-custom-entity` | Custom NMS entities + AI |
+| `nms-reflection-bridge` | Cross-version reflection bridge |
+| `nms-version-adapter` | Multi-version adapter pattern |
+| `nms-fake-player` | Fake players without a client (bots) |
 
-不需要 NMS 的常見需求（Dialog、SQLite、跨插件 API、封包過濾等）見 [`Skills/paper-api/PLATFORM.md`](../paper-api/PLATFORM.md)。
+For common needs that do not require NMS (Dialog, SQLite, cross-plugin API, packet filtering, etc.), see [`Skills/paper-api/PLATFORM.md`](../paper-api/PLATFORM.md).
 
 ---
 
-## 10. 進階參考
+## 10. Further Reference
 
-- **Paperweight 文件**：https://github.com/PaperMC/paperweight
-- **Paper 開發指南**：https://docs.papermc.io/paper/dev/getting-started/paper-plugins
-- **NMS Javadoc**（非官方整合）：https://nms.screamingsandals.org/
+- **Paperweight docs**: https://github.com/PaperMC/paperweight
+- **Paper development guide**: https://docs.papermc.io/paper/dev/getting-started/paper-plugins
+- **NMS Javadoc** (unofficial integration): https://nms.screamingsandals.org/

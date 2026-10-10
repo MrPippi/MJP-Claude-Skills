@@ -3,45 +3,45 @@ name: nms-nbt-manipulation
 description: "直接操作 CompoundTag 讀寫物品、實體、方塊實體的 NBT 資料（Paper NMS + Mojang-mapped）/ Read and write NBT data on items, entities, and block entities via CompoundTag"
 ---
 
-# NMS NBT Manipulation / NMS NBT 操作
+# NMS NBT Manipulation
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-nbt-manipulation`
 
-## 目的 / Purpose
+## Purpose
 
-透過 NMS `CompoundTag` 直接讀寫物品、實體、方塊實體的 NBT 資料，繞過 Bukkit PersistentDataContainer API 的限制，實現更底層的持久化與資料操作。
+Read and write NBT data on items, entities, and block entities directly through the NMS `CompoundTag`, bypassing the limits of the Bukkit PersistentDataContainer API for lower-level persistence and data manipulation.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「NBT」「CompoundTag」「NBT 讀寫」「物品 NBT」「實體 NBT」
-- 「nbt manipulation」「compound tag」「item nbt」「entity nbt」「nbt data」
-- 「持久化」「NBT 持久化」「nbt persistence」
+- "NBT", "CompoundTag", "NBT 讀寫", "物品 NBT", "實體 NBT"
+- "nbt manipulation", "compound tag", "item nbt", "entity nbt", "nbt data"
+- "持久化", "NBT 持久化", "nbt persistence"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.nbt` | 產出類別所在 package |
-| `target` | `item` / `entity` / `block` | 操作目標（物品、實體、方塊實體） |
-| `class_name` | `NbtHelper` | 工具類名稱 |
+| `package_name` | `com.example.nbt` | Package of the generated classes |
+| `target` | `item` / `entity` / `block` | Operation target (item, entity, block entity) |
+| `class_name` | `NbtHelper` | Utility class name |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ItemNbtHelper.java` — 物品 NBT 讀寫工具
-- `EntityNbtHelper.java` — 實體 NBT 讀寫工具
-- `NbtSerializer.java`（選）— 自定義物件 NBT 序列化工具
+- `ItemNbtHelper.java` - Item NBT read/write utility
+- `EntityNbtHelper.java` - Entity NBT read/write utility
+- `NbtSerializer.java` (optional) - NBT serialization utility for custom objects
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -49,7 +49,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ItemNbtHelper.java`
 
@@ -65,27 +65,27 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import java.util.Optional;
 
 /**
- * 物品自定義 NBT 讀寫。
- * 1.20.5+ 物品已無 getTag()/getOrCreateTag()；自定義 NBT 存放於 {@code minecraft:custom_data} 組件。
+ * Reads and writes custom item NBT.
+ * Since 1.20.5 items no longer have getTag()/getOrCreateTag(); custom NBT is stored in the {@code minecraft:custom_data} component.
  */
 @SuppressWarnings("UnstableApiUsage")
 public final class ItemNbtHelper {
 
     private ItemNbtHelper() {}
 
-    /** 讀取物品 custom_data 的副本（不存在時為空 CompoundTag）。 */
+    /** Reads a copy of the item's custom_data (an empty CompoundTag if absent). */
     private static CompoundTag readTag(org.bukkit.inventory.ItemStack item) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         return nms.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
     }
 
-    /** 讀取字串 NBT。 */
+    /** Reads a string NBT value. */
     public static Optional<String> getString(org.bukkit.inventory.ItemStack item, String key) {
-        // 1.21.5+ CompoundTag getter 直接回傳 Optional
+        // 1.21.5+ CompoundTag getters return Optional directly
         return readTag(item).getString(key);
     }
 
-    /** 寫入字串 NBT 並回傳修改後的 Bukkit ItemStack（不可變模式）。 */
+    /** Writes a string NBT value and returns the modified Bukkit ItemStack (immutable pattern). */
     public static org.bukkit.inventory.ItemStack setString(
             org.bukkit.inventory.ItemStack item, String key, String value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -93,12 +93,12 @@ public final class ItemNbtHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 讀取整數 NBT。 */
+    /** Reads an integer NBT value. */
     public static int getInt(org.bukkit.inventory.ItemStack item, String key, int def) {
         return readTag(item).getIntOr(key, def);
     }
 
-    /** 寫入整數 NBT 並回傳修改後的 Bukkit ItemStack。 */
+    /** Writes an integer NBT value and returns the modified Bukkit ItemStack. */
     public static org.bukkit.inventory.ItemStack setInt(
             org.bukkit.inventory.ItemStack item, String key, int value) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -106,7 +106,7 @@ public final class ItemNbtHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 移除指定 NBT 鍵（custom_data 變空時組件會被移除）。 */
+    /** Removes the given NBT key (the component is removed when custom_data becomes empty). */
     public static org.bukkit.inventory.ItemStack removeKey(
             org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -114,7 +114,7 @@ public final class ItemNbtHelper {
         return CraftItemStack.asBukkitCopy(nms);
     }
 
-    /** 檢查是否含有指定鍵。 */
+    /** Checks whether the given key exists. */
     public static boolean hasKey(org.bukkit.inventory.ItemStack item, String key) {
         ItemStack nms = CraftItemStack.asNMSCopy(item);
         return nms.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).contains(key);
@@ -140,25 +140,25 @@ public final class EntityNbtHelper {
     private EntityNbtHelper() {}
 
     /**
-     * 讀取實體的完整 NBT CompoundTag（含位置、速度、自定義資料等）。
-     * 必須在主執行緒呼叫。
+     * Reads the entity's full NBT CompoundTag (position, motion, custom data, etc.).
+     * Must be called on the main thread.
      */
     public static CompoundTag getTag(org.bukkit.entity.Entity entity) {
         Entity nms = ((CraftEntity) entity).getHandle();
-        // 1.21.6+ Entity 序列化改經 ValueOutput；TagValueOutput 以 CompoundTag 為底層
+        // 1.21.6+ Entity serialization goes through ValueOutput; TagValueOutput is backed by a CompoundTag
         TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, nms.registryAccess());
         nms.saveWithoutId(output);
         return output.buildResult();
     }
 
-    /** 讀取實體自定義 tag（custom_name, Tags 等之外的自定義鍵）。 */
+    /** Reads a custom tag from the entity (custom keys other than custom_name, Tags, etc.). */
     public static String getString(org.bukkit.entity.Entity entity, String key, String def) {
         return getTag(entity).getStringOr(key, def);
     }
 
     /**
-     * 將 CompoundTag 合併回實體（load/merge）。
-     * 必須在主執行緒呼叫，且不可覆寫 UUID/位置。
+     * Merges a CompoundTag back into the entity (load/merge).
+     * Must be called on the main thread and must not overwrite UUID/position.
      */
     public static void mergeTag(org.bukkit.entity.Entity entity, CompoundTag patch) {
         Entity nms = ((CraftEntity) entity).getHandle();
@@ -169,14 +169,14 @@ public final class EntityNbtHelper {
 }
 ```
 
-### `NbtSerializer.java`（自定義物件序列化範例）
+### `NbtSerializer.java` (custom object serialization example)
 
 ```java
 package com.example.nbt;
 
 import net.minecraft.nbt.CompoundTag;
 
-/** 示範如何將自定義物件序列化/反序列化為 CompoundTag。 */
+/** Demonstrates serializing/deserializing a custom object to/from a CompoundTag. */
 public final class NbtSerializer {
 
     private NbtSerializer() {}
@@ -192,7 +192,7 @@ public final class NbtSerializer {
     }
 
     public static PlayerData deserialize(CompoundTag tag) {
-        // 1.21.5+：getXxx(key) 回傳 Optional，getXxxOr(key, default) 回傳原始值
+        // 1.21.5+: getXxx(key) returns Optional, getXxxOr(key, default) returns the raw value
         return new PlayerData(
             tag.getStringOr("name", ""),
             tag.getIntOr("level", 0),
@@ -202,7 +202,7 @@ public final class NbtSerializer {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -213,18 +213,18 @@ src/main/java/com/example/
     └── NbtSerializer.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `ItemNbtHelper` 的方法操作 NMS Copy（不修改原物件），可在任何執行緒呼叫
-- ⚠️ `EntityNbtHelper.getTag()` / `mergeTag()` 存取實體狀態，**必須在主執行緒呼叫**
-- ⚠️ `nms.save()` / `nms.load()` 不執行緒安全，確保在 Bukkit scheduler 內呼叫
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ✅ `ItemNbtHelper` methods operate on NMS copies (the original is not modified) and can be called from any thread
+- ⚠️ `EntityNbtHelper.getTag()` / `mergeTag()` access entity state and **must be called on the main thread**
+- ⚠️ `nms.save()` / `nms.load()` are not thread-safe; make sure they are called inside the Bukkit scheduler
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `getTag()` / `getOrCreateTag()` 找不到方法 | 1.20.5+ 物品 NBT 已移至 `minecraft:custom_data` 組件 | 使用 `ItemNbtHelper`（`DataComponents.CUSTOM_DATA` + `CustomData.update()`） |
-| 資料合併後實體行為異常 | `load()` 覆寫了位置/UUID | 合併前從 patch 移除 `Pos`、`UUID` 鍵 |
-| `ClassCastException: CraftEntity` | 外掛替換實體實作 | 改用 `nms-reflection-bridge` 取得 handle |
-| NBT 鍵消失（重載後） | 未使用 PersistentDataContainer | 若需跨重啟持久化，改用 PDC 或 SQL |
+| `getTag()` / `getOrCreateTag()` method not found | Since 1.20.5 item NBT lives in the `minecraft:custom_data` component | Use `ItemNbtHelper` (`DataComponents.CUSTOM_DATA` + `CustomData.update()`) |
+| Entity misbehaves after merging data | `load()` overwrote position/UUID | Remove the `Pos` and `UUID` keys from the patch before merging |
+| `ClassCastException: CraftEntity` | A plugin replaced the entity implementation | Use `nms-reflection-bridge` to obtain the handle |
+| NBT key disappears (after reload) | PersistentDataContainer not used | For persistence across restarts, use PDC or SQL |

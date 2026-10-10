@@ -1,48 +1,48 @@
 ---
 name: nms-block-entity
-description: "實作自定義 NMS BlockEntity（含 NBT 序列化、Tick 邏輯、客戶端同步），比 Bukkit BlockState 更靈活（Paper NMS + Mojang-mapped）/ Implement custom NMS BlockEntity with NBT serialization, tick logic, and client sync"
+description: "實作自定義 NMS BlockEntity（含 NBT serialization、Tick 邏輯、Client sync），比 Bukkit BlockState 更靈活（Paper NMS + Mojang-mapped）/ Implement custom NMS BlockEntity with NBT serialization, tick logic, and client sync"
 ---
 
-# NMS Block Entity / NMS 自定義方塊實體
+# NMS Block Entity
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-block-entity`
 
-## 目的 / Purpose
+## Purpose
 
-繼承 NMS `BlockEntity` 實作自定義方塊實體，實現 NBT 讀寫、伺服器端 Tick 邏輯（`BlockEntityTicker`）、以及透過封包同步狀態至客戶端。
+Extend NMS `BlockEntity` to implement a custom block entity with NBT read/write, server-side tick logic (`BlockEntityTicker`), and state sync to the client via packets.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both versions compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「BlockEntity」「TileEntity」「自定義方塊實體」「block entity」「tile entity」
 - 「方塊 tick」「block tick」「BlockEntityTicker」「方塊 NBT」「block nbt」
 - 「自定義方塊 NMS」「custom block nms」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.block` | 產出類別所在 package |
-| `entity_class_name` | `GeneratorBlockEntity` | BlockEntity 子類名 |
-| `has_ticker` | `true` | 是否需要 tick 邏輯 |
-| `base_block` | `CHEST` | 用哪個 NMS 方塊作為載體 |
+| `package_name` | `com.example.block` | Package for the generated classes |
+| `entity_class_name` | `GeneratorBlockEntity` | BlockEntity subclass name |
+| `has_ticker` | `true` | Whether tick logic is needed |
+| `base_block` | `CHEST` | Which NMS block to use as the carrier |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `CustomBlockEntity.java` — BlockEntity 實作（含 NBT load/save）
-- `CustomBlockEntityTicker.java`（選）— ServerLevel tick 邏輯
-- `BlockEntityHelper.java` — 在世界中取得/設定 BlockEntity 工具
+- `CustomBlockEntity.java` — BlockEntity implementation (with NBT load/save)
+- `CustomBlockEntityTicker.java`(optional) — ServerLevel tick logic
+- `BlockEntityHelper.java` — utility for getting/setting BlockEntity in the world
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -50,7 +50,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `CustomBlockEntity.java`
 
@@ -74,7 +74,7 @@ import javax.annotation.Nullable;
 @SuppressWarnings("UnstableApiUsage")
 public class CustomBlockEntity extends BlockEntity {
 
-    // 自定義欄位
+    // Custom fields
     private int storedEnergy = 0;
     private String ownerName = "";
 
@@ -82,11 +82,11 @@ public class CustomBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
-    // ─── NBT 序列化 ──────────────────────────────────────────────────
+    // ─── NBT serialization ──────────────────────────────────────────────────
 
     /**
-     * 儲存自定義資料（世界儲存 + 封包同步）。
-     * 1.21.6+ 改用 ValueOutput 抽象（不再直接操作 CompoundTag + HolderLookup.Provider）。
+     * Saves custom data (world save + packet sync).
+     * Since 1.21.6 this uses the ValueOutput abstraction (no longer operates on CompoundTag + HolderLookup.Provider directly).
      */
     @Override
     protected void saveAdditional(ValueOutput output) {
@@ -95,7 +95,7 @@ public class CustomBlockEntity extends BlockEntity {
         output.putString("ownerName", ownerName);
     }
 
-    /** 讀取自定義資料（世界載入 + 封包接收）；缺少欄位時使用預設值。 */
+    /** Loads custom data (world load + packet receive); uses defaults when a field is missing. */
     @Override
     protected void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
@@ -103,22 +103,22 @@ public class CustomBlockEntity extends BlockEntity {
         ownerName = input.getStringOr("ownerName", "");
     }
 
-    // ─── 客戶端同步 ──────────────────────────────────────────────────
+    // ─── Client sync ──────────────────────────────────────────────────
 
-    /** 產生傳送給客戶端的更新封包（BlockEntityDataPacket）。 */
+    /** Creates the update packet sent to the client (BlockEntityDataPacket). */
     @Override
     @Nullable
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    /** 取得用於封包同步的 NBT（可只傳必要欄位）。 */
+    /** Gets the NBT used for packet sync (may include only the necessary fields). */
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
         return saveWithoutMetadata(provider);
     }
 
-    /** 通知客戶端狀態變更（呼叫後自動發送更新封包）。 */
+    /** Notifies clients of a state change (the update packet is sent automatically after the call). */
     public void markDirtyAndSync() {
         setChanged();
         if (level != null && !level.isClientSide()) {
@@ -144,7 +144,7 @@ public class CustomBlockEntity extends BlockEntity {
 }
 ```
 
-### `CustomBlockEntityTicker.java`（Tick 邏輯）
+### `CustomBlockEntityTicker.java`(tick logic)
 
 ```java
 package com.example.block;
@@ -157,17 +157,17 @@ import net.minecraft.world.level.block.state.BlockState;
 @SuppressWarnings("UnstableApiUsage")
 public class CustomBlockEntityTicker implements BlockEntityTicker<CustomBlockEntity> {
 
-    private static final int TICK_INTERVAL = 20; // 每秒執行一次
+    private static final int TICK_INTERVAL = 20; // Runs once per second
     private int tickCount = 0;
 
     @Override
     public void tick(Level level, BlockPos pos, BlockState state, CustomBlockEntity entity) {
-        if (level.isClientSide()) return; // 只在伺服器端執行
+        if (level.isClientSide()) return; // Server side only
 
         tickCount++;
         if (tickCount % TICK_INTERVAL != 0) return;
 
-        // 每 20 tick（1 秒）執行一次邏輯
+        // Run the logic every 20 ticks (1 second)
         if (entity.getStoredEnergy() < 1000) {
             entity.setStoredEnergy(entity.getStoredEnergy() + 10);
         }
@@ -175,7 +175,7 @@ public class CustomBlockEntityTicker implements BlockEntityTicker<CustomBlockEnt
 }
 ```
 
-### `BlockEntityHelper.java`（世界操作工具）
+### `BlockEntityHelper.java`(world operation utility)
 
 ```java
 package com.example.block;
@@ -193,7 +193,7 @@ public final class BlockEntityHelper {
 
     private BlockEntityHelper() {}
 
-    /** 取得指定位置的 BlockEntity（若類型不匹配回傳 empty）。 */
+    /** Gets the BlockEntity at the given location (returns empty if the type does not match). */
     @SuppressWarnings("unchecked")
     public static <T extends BlockEntity> Optional<T> get(
             Location loc, Class<T> type) {
@@ -204,14 +204,14 @@ public final class BlockEntityHelper {
         return Optional.empty();
     }
 
-    /** 取得指定位置的自定義 BlockEntity。 */
+    /** Gets the custom BlockEntity at the given location. */
     public static Optional<CustomBlockEntity> getCustom(Location loc) {
         return get(loc, CustomBlockEntity.class);
     }
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -222,18 +222,18 @@ src/main/java/com/example/
     └── BlockEntityHelper.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ 所有 BlockEntity 操作（讀取、修改、`markDirtyAndSync()`）**必須在主執行緒呼叫**
-- ⚠️ `tick()` 由 NMS 在主執行緒呼叫，內部不可進行阻塞 IO
-- ⚠️ `level.isClientSide()` 必須在 tick 內檢查，防止在客戶端 Tick 執行伺服器邏輯
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ All BlockEntity operations (read, modify, `markDirtyAndSync()`) **must be called on the main thread**
+- ⚠️ `tick()` is called by NMS on the main thread; do not perform blocking IO inside it
+- ⚠️ Check `level.isClientSide()` inside tick to avoid running server logic on the client tick
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| NBT 資料丟失 | `saveAdditional` 未呼叫 `super` | 確保呼叫 `super.saveAdditional(tag, provider)` |
-| 客戶端不同步 | 未呼叫 `markDirtyAndSync()` | 每次修改欄位後呼叫 |
-| `getBlockEntity()` 回傳 null | 方塊位置無 BlockEntity | 確認方塊類型有 BlockEntity 支援 |
-| tick 未執行 | BlockEntityType 未正確注冊 | Paper plugin 環境需透過 RegistryAccess 注冊類型 |
+| NBT data lost | `saveAdditional` does not call `super` | Make sure to call `super.saveAdditional(tag, provider)` |
+| Client out of sync | `markDirtyAndSync()` not called | Call it after every field change |
+| `getBlockEntity()` returns null | No BlockEntity at the block position | Verify the block type supports a BlockEntity |
+| Tick does not run | BlockEntityType not registered correctly | In a Paper plugin environment, register the type through RegistryAccess |

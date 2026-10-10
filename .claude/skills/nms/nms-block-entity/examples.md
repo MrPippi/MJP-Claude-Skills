@@ -1,6 +1,6 @@
 # examples — nms-block-entity
 
-## 範例 1：讀取 BlockEntity 資料
+## Example 1: Read BlockEntity data
 
 **Input:**
 ```
@@ -9,7 +9,7 @@ entity_class_name: GeneratorBlockEntity
 has_ticker: true
 ```
 
-**Output — 玩家右鍵方塊時顯示儲存能量:**
+**Output — show stored energy when a player right-clicks the block:**
 ```java
 @EventHandler
 public void onInteract(PlayerInteractEvent event) {
@@ -18,34 +18,34 @@ public void onInteract(PlayerInteractEvent event) {
     if (block == null) return;
 
     BlockEntityHelper.getCustom(block.getLocation()).ifPresent(be -> {
-        event.getPlayer().sendMessage("§6儲存能量: §e" + be.getStoredEnergy());
-        event.getPlayer().sendMessage("§6擁有者: §f" + be.getOwnerName());
+        event.getPlayer().sendMessage("§6Stored energy: §e" + be.getStoredEnergy());
+        event.getPlayer().sendMessage("§6Owner: §f" + be.getOwnerName());
     });
 }
 ```
 
 ---
 
-## 範例 2：修改 BlockEntity 資料並同步客戶端
+## Example 2: Modify BlockEntity data and sync to clients
 
 **Input:**
 ```
 package_name: com.example.block
 ```
 
-**Output — 指令充能 BlockEntity（必須在主執行緒）:**
+**Output — command that charges a BlockEntity (must run on the main thread):**
 ```java
 public void chargeGenerator(Location loc, int amount) {
     BlockEntityHelper.getCustom(loc).ifPresent(be -> {
         int newEnergy = Math.min(be.getStoredEnergy() + amount, 1000);
-        be.setStoredEnergy(newEnergy); // 內部已呼叫 markDirtyAndSync()
+        be.setStoredEnergy(newEnergy); // markDirtyAndSync() is already called internally
     });
 }
 ```
 
 ---
 
-## 範例 3：Ticker 每秒自動充能
+## Example 3: Ticker auto-charges every second
 
 **Input:**
 ```
@@ -53,9 +53,9 @@ package_name: com.example.block
 has_ticker: true
 ```
 
-**Output — CustomBlockEntityTicker 每 20 tick 充能 10 點（已內建於 SKILL.md 範本）:**
+**Output — CustomBlockEntityTicker adds 10 energy every 20 ticks (already built into the SKILL.md template):**
 ```java
-// 在自定義方塊的 getTicker() 方法中回傳 Ticker
+// Return the Ticker from the custom block's getTicker() method
 @Override
 @Nullable
 public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
@@ -67,25 +67,25 @@ public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
 
 ---
 
-## 範例 4：NBT 持久化驗證
+## Example 4: NBT persistence check
 
 **Input:**
 ```
 package_name: com.example.block
 ```
 
-**Output — 確認 BlockEntity 在伺服器重啟後資料不丟失:**
+**Output — confirm BlockEntity data is not lost after a server restart:**
 ```java
-// 儲存資料
+// Save data
 BlockEntityHelper.getCustom(loc).ifPresent(be -> {
     be.setOwnerName("Steve");
     be.setStoredEnergy(500);
-    // setStoredEnergy 內部呼叫 setChanged()，資料將在下次 chunk 存檔時寫入
+    // setStoredEnergy calls setChanged() internally; data is written on the next chunk save
 });
 
-// 重啟後讀取（無需額外操作，NMS 自動從 NBT 恢復）
+// Read after restart (no extra steps; NMS restores from NBT automatically)
 BlockEntityHelper.getCustom(loc).ifPresent(be -> {
-    assert be.getOwnerName().equals("Steve");   // ✅ 持久化成功
-    assert be.getStoredEnergy() == 500;         // ✅ 能量正確恢復
+    assert be.getOwnerName().equals("Steve");   // ✅ Persistence succeeded
+    assert be.getStoredEnergy() == 500;         // ✅ Energy restored correctly
 });
 ```

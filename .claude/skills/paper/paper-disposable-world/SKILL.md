@@ -3,75 +3,75 @@ name: paper-disposable-world
 description: "拋棄式世界與可重置競技場：VoidChunkGenerator、WorldCreator、流水號命名與 level.dat 守衛、非同步複製模板、卸載後最後才刪 level.dat、預產生池，以及就地還原（變更格子基準表分批還原 + 殘留實體清掃）/ Throw-away Paper worlds and resettable arenas: void generator, serial naming with level.dat guard, async template copy, safe unload and delete, pre-generated pool, and budgeted in-place reset with debris sweep"
 ---
 
-# Paper Disposable World / 拋棄式世界與競技場重置
+# Paper Disposable World
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-disposable-world`
 
-## 目的 / Purpose
+## Purpose
 
-小遊戲、決鬥、副本需要「用完就丟」的世界，或每場結束要還原的競技場。本技能提供兩條路線：
+Minigames, duels, and dungeons need "use and throw away" worlds, or arenas that are restored after every match. This skill provides two routes:
 
-1. **換世界**：從模板資料夾複製出 `arena_<n>`，載入、使用、卸載、刪除；可預先產生一池閒置世界。
-2. **就地還原**：不換世界，記錄一場比賽改過哪些方塊，結束時每 tick 以預算分批還原，並清掉殘留實體。
+1. **World swapping**: copy `arena_<n>` from a template folder, load it, use it, unload it, delete it; an idle pool of worlds can be pre-generated.
+2. **In-place reset**: do not swap worlds; record which blocks a match changed, restore them in per-tick budgeted batches when it ends, and sweep leftover entities.
 
-兩條路線都遵守同一條原則：**世界操作只在主執行緒，只有檔案 IO（複製、刪除）放到非同步**。
+Both routes follow the same principle: **world operations happen only on the main thread; only file IO (copy, delete) goes async**.
 
-最危險的靜默失敗有三個，範本都已防住：
+The three most dangerous silent failures are all guarded against in the template:
 
-- `WorldCreator` 碰到不存在或殘缺的資料夾會**默默生成一張新地形** → 先檢查資料夾與 `level.dat`
-- 刪到一半當機，留下沒有 `level.dat` 的殘骸，之後被誤認為世界 → **`level.dat` 最後才刪**（複製時也是最後才寫）
-- 世界還有玩家就卸載 → 先把玩家傳走、確認後才 `unloadWorld`
+- `WorldCreator` **silently generates a new terrain** when it hits a missing or incomplete folder -> check the folder and `level.dat` first
+- A crash halfway through deletion leaves debris without `level.dat` that is later mistaken for a world -> **delete `level.dat` last** (and write it last when copying)
+- Unloading a world that still has players -> teleport players away first, and call `unloadWorld` only after confirming
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2；純 Paper API，不需要 Paperweight
-- **GameRule**：`org.bukkit.GameRule` 的舊常數（`DO_DAYLIGHT_CYCLE`、`DO_MOB_SPAWNING` 等）在兩版都已標 `@Deprecated`，原版規則改成 snake_case 的 registry key（`advance_time`、`spawn_mobs`…）。本範本一律走 `Registry.GAME_RULE.get(NamespacedKey.minecraft(key))`，兩版相同，也不依賴舊常數；查不到的 key 只記警告、不讓整個世界建立失敗
-- `ChunkGenerator.shouldGenerate*()`、`WorldCreator.keepSpawnLoaded(TriState)`、`Block.getBlockKey(x, y, z)` 兩版簽名相同（javap 核對）
+- Paper 1.21.11 / 26.2; pure Paper API, no Paperweight needed
+- **GameRule**: the old constants in `org.bukkit.GameRule` (`DO_DAYLIGHT_CYCLE`, `DO_MOB_SPAWNING`, etc.) are `@Deprecated` in both versions, and vanilla rules were changed to snake_case registry keys (`advance_time`, `spawn_mobs`...). This template always uses `Registry.GAME_RULE.get(NamespacedKey.minecraft(key))`, which is identical in both versions and does not depend on the old constants; a key that cannot be found only logs a warning and does not make world creation fail
+- `ChunkGenerator.shouldGenerate*()`, `WorldCreator.keepSpawnLoaded(TriState)`, and `Block.getBlockKey(x, y, z)` have identical signatures in both versions (verified with javap)
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「拋棄式世界」「臨時世界」「競技場重置」「arena reset」「disposable world」「temporary world」
 - 「WorldCreator」「複製世界模板」「copy world folder」「unloadWorld」「刪除世界資料夾」
 - 「虛空世界」「void generator」「ChunkGenerator」「遊戲規則」「GameRule」
 - 「還原方塊」「baseline」「changed blocks」「殘留實體」「掉落物清理」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `base_package` | `com.example.arena` | 範本所在 package |
-| `name_prefix` | `arena_` | 世界資料夾前綴（**保留給本機制，勿與正式世界同名**） |
-| `template_folder` | `plugins/Arena/templates/duel_map` | 模板世界資料夾（含 `level.dat`） |
-| `pool_size` | `2` | 預先產生的閒置世界數 |
-| `reset_mode` | `swap` / `in-place` | 換世界，或就地還原 |
-| `blocks_per_tick` / `nanos_per_tick` | `2000` / `2_000_000` | 就地還原每 tick 的方塊數與時間預算 |
+| `base_package` | `com.example.arena` | Package the template lives in |
+| `name_prefix` | `arena_` | World folder prefix (**reserved for this mechanism; do not share it with real worlds**) |
+| `template_folder` | `plugins/Arena/templates/duel_map` | Template world folder (contains `level.dat`) |
+| `pool_size` | `2` | Number of idle worlds to pre-generate |
+| `reset_mode` | `swap` / `in-place` | World swapping, or in-place reset |
+| `blocks_per_tick` / `nanos_per_tick` | `2000` / `2_000_000` | Per-tick block count and time budget for in-place reset |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `VoidChunkGenerator.java` — 什麼都不生成的區塊生成器
-- `ArenaNames.java` — 流水號命名（回頭使用、跳過佔用）
-- `ArenaRules.java` — 建立後立刻套用的遊戲規則
-- `WorldFolders.java` — 複製模板（略過 `uid.dat`、`session.lock`）、刪除（`level.dat` 最後）
-- `DisposableWorlds.java` — 建立／複製／卸載／刪除的主流程
-- `ArenaPool.java` — 預產生世界池
-- `ChangeRecorder.java` — 記錄被改過的方塊（基準表）
-- `ArenaResetService.java` — 預算式分批還原
-- `DebrisSweeper.java` — 殘留實體清掃（重置時全清 / 定時清）
-- `ArenaPlugin.java` — 組裝與生命週期
+- `VoidChunkGenerator.java` - chunk generator that generates nothing
+- `ArenaNames.java` - serial naming (reuses numbers, skips ones in use)
+- `ArenaRules.java` - game rules applied right after creation
+- `WorldFolders.java` - copy template (skips `uid.dat`, `session.lock`), delete (`level.dat` last)
+- `DisposableWorlds.java` - main flow for create / copy / unload / delete
+- `ArenaPool.java` - pre-generated world pool
+- `ChangeRecorder.java` - records changed blocks (baseline map)
+- `ArenaResetService.java` - budgeted batch restore
+- `DebrisSweeper.java` - leftover entity sweep (sweep everything on reset / periodic sweep)
+- `ArenaPlugin.java` - wiring and lifecycle
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). Only `paper-api` is needed:
 
 ```groovy
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11：'1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable' // 1.21.11: '1.21.11-R0.1-SNAPSHOT'
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `VoidChunkGenerator.java`
 
@@ -85,10 +85,10 @@ import org.bukkit.generator.ChunkGenerator;
 import java.util.Random;
 
 /**
- * 什麼都不生成的世界（虛空）。
+ * A world that generates nothing (void).
  *
- * <p>注意：自訂生成器**不會**寫進世界資料夾。每次載入既有世界（包含從模板複製出來的）都要再傳一次，
- * 否則新區塊會用原版地形生成，和舊區塊接不起來。
+ * <p>Note: a custom generator is **not** written into the world folder. It must be passed again every time an existing world is loaded (including ones copied from a template),
+ * otherwise new chunks are generated with vanilla terrain and will not connect to the old chunks.
  */
 public final class VoidChunkGenerator extends ChunkGenerator {
 
@@ -127,7 +127,7 @@ public final class VoidChunkGenerator extends ChunkGenerator {
         return false;
     }
 
-    /** 固定出生點；沒有它，Paper 會在虛空裡搜尋一個「安全」的出生點而卡很久。 */
+    /** Fixed spawn point; without it, Paper searches the void for a "safe" spawn point and stalls for a long time. */
     @Override
     public Location getFixedSpawnLocation(World world, Random random) {
         return new Location(world, 0.5, 64.0, 0.5);
@@ -144,8 +144,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
- * 流水號命名：{@code arena_1} … {@code arena_<max>}，到頂回到 1 並跳過仍被佔用的號碼。
- * 純邏輯，不碰 Bukkit；「佔用」由呼叫端的 predicate 判斷（已載入、已預約、資料夾已存在）。
+ * Serial naming: {@code arena_1} ... {@code arena_<max>}; wraps back to 1 at the top and skips numbers still in use.
+ * Pure logic, does not touch Bukkit; "in use" is decided by the caller's predicate (loaded, reserved, folder exists).
  */
 public final class ArenaNames {
 
@@ -162,7 +162,7 @@ public final class ArenaNames {
         this.max = max;
     }
 
-    /** 刪除前的守衛：只有符合本機制命名的資料夾才允許被刪。 */
+    /** Guard before deletion: only folders matching this mechanism's naming may be deleted. */
     public static boolean isArena(String worldName) {
         return PATTERN.matcher(worldName).matches();
     }
@@ -194,10 +194,10 @@ import org.bukkit.World;
 import java.util.logging.Logger;
 
 /**
- * 世界建立後**立刻**套用的設定（在任何玩家進入、任何 tick 之前）。
+ * Settings applied **immediately** after world creation (before any player enters, before any tick).
  *
- * <p>規則一律用 registry key 查（{@code advance_time}、{@code spawn_mobs}…），不用已棄用的
- * {@code GameRule.DO_DAYLIGHT_CYCLE} 等常數：舊常數會隨版本改名，key 查不到時只警告，不讓建立流程失敗。
+ * <p>Rules are always looked up by registry key ({@code advance_time}, {@code spawn_mobs}...), not through the deprecated
+ * constants such as {@code GameRule.DO_DAYLIGHT_CYCLE}: old constants get renamed across versions, and a key that cannot be found only warns instead of failing the creation flow.
  */
 public final class ArenaRules {
 
@@ -209,14 +209,14 @@ public final class ArenaRules {
 
     public void apply(World world) {
         world.setDifficulty(Difficulty.NORMAL);
-        world.setAutoSave(false);          // 拋棄式：不要把區塊寫回磁碟
+        world.setAutoSave(false);          // Disposable: do not write chunks back to disk
         world.setTime(6000L);
         world.setStorm(false);
         world.setThundering(false);
 
-        setBoolean(world, "advance_time", false);          // 舊名 doDaylightCycle
-        setBoolean(world, "advance_weather", false);       // 舊名 doWeatherCycle
-        setBoolean(world, "spawn_mobs", false);            // 舊名 doMobSpawning
+        setBoolean(world, "advance_time", false);          // formerly doDaylightCycle
+        setBoolean(world, "advance_weather", false);       // formerly doWeatherCycle
+        setBoolean(world, "spawn_mobs", false);            // formerly doMobSpawning
         setBoolean(world, "spawn_monsters", false);
         setBoolean(world, "mob_griefing", false);
         setBoolean(world, "keep_inventory", true);
@@ -254,11 +254,11 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * 世界資料夾的檔案操作。**全部是阻塞 IO，只能在非同步執行緒呼叫**（關服時例外）。
+ * File operations on world folders. **All blocking IO; call only from an async thread** (except at server shutdown).
  */
 public final class WorldFolders {
 
-    /** uid.dat 讓兩個世界撞 UUID；session.lock 是原世界的鎖。複製時都不能帶。 */
+    /** uid.dat makes two worlds collide on UUID; session.lock is the original world's lock. Neither may be copied. */
     private static final Set<String> SKIP = Set.of("uid.dat", "session.lock");
     private static final String LEVEL_DAT = "level.dat";
 
@@ -269,7 +269,7 @@ public final class WorldFolders {
         return Files.isRegularFile(folder.resolve(LEVEL_DAT));
     }
 
-    /** 複製模板；{@code level.dat} 最後才寫，所以複製到一半當機的資料夾不會被當成世界。 */
+    /** Copy the template; {@code level.dat} is written last, so a folder that crashed mid-copy is not taken for a world. */
     public static void copyTemplate(Path template, Path target) throws IOException {
         if (!hasLevelDat(template)) {
             throw new IOException("Template has no level.dat: " + template);
@@ -298,8 +298,8 @@ public final class WorldFolders {
     }
 
     /**
-     * 刪除世界資料夾，**{@code level.dat} 最後刪**：刪到一半當機時，殘骸沒有 level.dat，
-     * 不會被 {@code WorldCreator} 或管理員誤認為一張可以載入的世界。
+     * Delete a world folder, **deleting {@code level.dat} last**: if a crash happens mid-deletion, the debris has no level.dat,
+     * so neither {@code WorldCreator} nor an admin mistakes it for a loadable world.
      */
     public static void deleteWorld(Path folder) throws IOException {
         if (!Files.exists(folder)) {
@@ -308,7 +308,7 @@ public final class WorldFolders {
         Path levelDat = folder.resolve(LEVEL_DAT);
         List<Path> paths;
         try (Stream<Path> walk = Files.walk(folder)) {
-            paths = walk.sorted(Comparator.reverseOrder()).toList();   // 子項在前、資料夾在後
+            paths = walk.sorted(Comparator.reverseOrder()).toList();   // children first, folders last
         }
         for (Path path : paths) {
             if (!path.equals(folder) && !path.equals(levelDat)) {
@@ -352,11 +352,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 拋棄式世界的建立與銷毀。
+ * Creation and destruction of disposable worlds.
  *
- * <p>執行緒：{@code createVoid}、{@code createFromTemplate}、{@code destroy} 必須在主執行緒呼叫；
- * 世界的載入／卸載一律在主執行緒；只有複製與刪除資料夾在非同步。回傳的 future 一律在主執行緒完成。
- * 本類別的欄位只在主執行緒讀寫，所以不需要鎖。
+ * <p>Threading: {@code createVoid}, {@code createFromTemplate}, and {@code destroy} must be called on the main thread;
+ * world loading/unloading always happens on the main thread; only copying and deleting folders is async. Returned futures always complete on the main thread.
+ * This class's fields are read and written only on the main thread, so no locks are needed.
  */
 public final class DisposableWorlds {
 
@@ -376,7 +376,7 @@ public final class DisposableWorlds {
         this.container = server.getWorldContainer().toPath();
     }
 
-    /** 建立一張虛空世界，中央放一格出生平台（實務上換成你的貼上流程）。 */
+    /** Create a void world with a single spawn platform block in the center (in practice, replace with your paste flow). */
     public World createVoid() {
         requireMainThread();
         String name = names.next(this::taken);
@@ -387,15 +387,15 @@ public final class DisposableWorlds {
     }
 
     /**
-     * 非同步複製模板，再於主執行緒載入。
+     * Copy the template async, then load it on the main thread.
      *
-     * @param generator 模板若是虛空圖就傳 {@link VoidChunkGenerator}；原版地形傳 {@code null}
+     * @param generator pass {@link VoidChunkGenerator} if the template is a void map; pass {@code null} for vanilla terrain
      */
     public CompletableFuture<World> createFromTemplate(Path template, ChunkGenerator generator) {
         requireMainThread();
         String name = names.next(this::taken);
         requireFresh(name);
-        reserved.add(name);                      // 複製期間先佔住號碼，避免同一 tick 的第二次呼叫撞名
+        reserved.add(name);                      // Hold the number during the copy so a second call in the same tick does not collide on the name
         Path target = container.resolve(name);
         CompletableFuture<World> pipeline = CompletableFuture
                 .runAsync(() -> copy(template, target), this::async)
@@ -403,7 +403,7 @@ public final class DisposableWorlds {
         return finishOnMain(pipeline, () -> reserved.remove(name), failure -> async(() -> deleteQuietly(target)));
     }
 
-    /** 把玩家傳走 → 確認沒人 → 卸載（不存檔）→ 非同步刪資料夾。 */
+    /** Teleport players away -> confirm nobody is left -> unload (without saving) -> delete the folder async. */
     public CompletableFuture<Void> destroy(World world) {
         requireMainThread();
         String name = world.getName();
@@ -423,7 +423,7 @@ public final class DisposableWorlds {
         return finishOnMain(pipeline, () -> { }, failure -> { });
     }
 
-    /** 啟動時清掉上次當機留下的 arena_* 資料夾（前綴保留給本機制）。 */
+    /** On startup, clean up arena_* folders left by the last crash (the prefix is reserved for this mechanism). */
     public void purgeStaleAsync() {
         Set<String> loaded = server.getWorlds().stream().map(World::getName).collect(Collectors.toSet());
         async(() -> {
@@ -440,7 +440,7 @@ public final class DisposableWorlds {
         });
     }
 
-    /** onDisable 專用：scheduler 已不接受任務，所以同步卸載並刪除（關服時阻塞是可接受的）。 */
+    /** For onDisable only: the scheduler no longer accepts tasks, so unload and delete synchronously (blocking is acceptable at shutdown). */
     public void closeAllSync() {
         Location exit = server.getWorlds().get(0).getSpawnLocation();
         for (String name : List.copyOf(owned)) {
@@ -460,13 +460,13 @@ public final class DisposableWorlds {
         }
     }
 
-    // ---- 內部 ----
+    // ---- Internals ----
 
     private boolean taken(String name) {
         return server.getWorld(name) != null || reserved.contains(name) || Files.exists(container.resolve(name));
     }
 
-    /** 守衛：資料夾已存在就拒絕。WorldCreator 會把殘缺資料夾當成新世界默默生成地形。 */
+    /** Guard: refuse if the folder already exists. WorldCreator treats an incomplete folder as a new world and silently generates terrain. */
     private void requireFresh(String name) {
         if (server.getWorld(name) != null) {
             throw new IllegalStateException("World already loaded: " + name);
@@ -490,7 +490,7 @@ public final class DisposableWorlds {
         if (world == null) {
             throw new IllegalStateException("createWorld returned null for " + name);
         }
-        rules.apply(world);                       // 建立後立刻套用，早於任何玩家與 tick
+        rules.apply(world);                       // Apply right after creation, before any player or tick
         owned.add(name);
         return world;
     }
@@ -545,7 +545,7 @@ public final class DisposableWorlds {
         return future;
     }
 
-    /** 無論 pipeline 在哪個執行緒結束，都回到主執行緒才完成回傳的 future；失敗時先跑 onFailure。 */
+    /** Whichever thread the pipeline ends on, the returned future completes back on the main thread; on failure, onFailure runs first. */
     private <T> CompletableFuture<T> finishOnMain(CompletableFuture<T> pipeline, Runnable mainCleanup,
                                                   Consumer<Throwable> onFailure) {
         CompletableFuture<T> result = new CompletableFuture<>();
@@ -590,10 +590,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 /**
- * 預先產生的閒置世界池。全部在主執行緒；複製在非同步，由 {@link DisposableWorlds} 負責，
- * 它的 future 一律在主執行緒完成，所以這裡不需要鎖。
+ * Pool of pre-generated idle worlds. Everything runs on the main thread; copying is async and handled by {@link DisposableWorlds},
+ * whose futures always complete on the main thread, so no locks are needed here.
  *
- * <p>補貨失敗後冷卻 {@value #FAILURE_COOLDOWN_MS} 毫秒，避免模板壞掉時每 5 秒狂複製、狂寫 log。
+ * <p>After a refill failure, back off for {@value #FAILURE_COOLDOWN_MS} ms, to avoid copying and spamming the log every 5 seconds when the template is broken.
  */
 public final class ArenaPool {
 
@@ -619,12 +619,12 @@ public final class ArenaPool {
         refillTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::refill, 20L, 100L);
     }
 
-    /** 池空時回 empty：呼叫端應讓玩家排隊，不要在主執行緒同步等複製。 */
+    /** Returns empty when the pool is empty: the caller should queue the players rather than wait synchronously for a copy on the main thread. */
     public Optional<World> acquire() {
         return Optional.ofNullable(idle.pollFirst());
     }
 
-    /** 用完歸還＝銷毀（拋棄式世界不重用）；補貨由計時器負責。 */
+    /** Returning after use = destroying (disposable worlds are not reused); the timer handles refilling. */
     public CompletableFuture<Void> release(World world) {
         return worlds.destroy(world);
     }
@@ -637,7 +637,7 @@ public final class ArenaPool {
         if (refillTask != null) {
             refillTask.cancel();
         }
-        idle.clear();     // 世界本體由 DisposableWorlds.closeAllSync() 處理
+        idle.clear();     // The worlds themselves are handled by DisposableWorlds.closeAllSync()
     }
 
     private void refill() {
@@ -647,7 +647,7 @@ public final class ArenaPool {
         while (idle.size() + pending < target) {
             pending++;
             worlds.createFromTemplate(template, new VoidChunkGenerator()).whenComplete((world, error) -> {
-                pending--;                       // 主執行緒
+                pending--;                       // Main thread
                 if (error == null) {
                     idle.addLast(world);
                     return;
@@ -696,14 +696,14 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 記錄「一場比賽改過哪些格子」的基準表：key＝{@code Block.getBlockKey(x, y, z)}，value＝**第一次被改之前**的 BlockData。
- * 同一格被改十次只記第一次（{@code putIfAbsent}），還原時寫回的就是比賽開始前的狀態。
+ * Records the baseline of "which cells a match changed": key = {@code Block.getBlockKey(x, y, z)}, value = the BlockData **before the first change**.
+ * A cell changed ten times records only the first ({@code putIfAbsent}), so what is written back on restore is the state before the match started.
  *
- * <p>全部在主執行緒（事件 handler 與還原都是）。用 {@link EventPriority#MONITOR}：
- * 事件已確定會生效，而且方塊還沒真的被改（放置事件用 replaced state 取舊值）。
+ * <p>Everything runs on the main thread (event handlers and restore alike). Uses {@link EventPriority#MONITOR}:
+ * the event is already certain to take effect, and the block has not actually been changed yet (place events take the old value from the replaced state).
  *
- * <p>超過 {@link #MAX_CELLS} 格代表這場破壞太大，基準表不再可信 → 標成 overflowed，
- * 呼叫端改走「換世界」路線。
+ * <p>Beyond {@link #MAX_CELLS} cells, the destruction was too large and the baseline is no longer trustworthy -> mark as overflowed,
+ * and the caller falls back to the "world swapping" route.
  */
 public final class ChangeRecorder implements Listener {
 
@@ -734,7 +734,7 @@ public final class ChangeRecorder implements Listener {
         return cells == null ? 0 : cells.size();
     }
 
-    /** 取走目前的基準表（不可變副本）並開始記下一輪。 */
+    /** Take the current baseline (an immutable copy) and start recording the next round. */
     public Map<Long, BlockData> drain(World world) {
         Map<Long, BlockData> cells = baselines.get(world.getUID());
         if (cells == null) {
@@ -745,7 +745,7 @@ public final class ChangeRecorder implements Listener {
         return snapshot;
     }
 
-    // ---- 記錄 ----
+    // ---- Recording ----
 
     private void record(Block block) {
         Map<Long, BlockData> cells = baselines.get(block.getWorld().getUID());
@@ -772,7 +772,7 @@ public final class ChangeRecorder implements Listener {
     private void recordWithNeighbours(Block block) {
         record(block);
         for (BlockFace face : ADJACENT) {
-            record(block.getRelative(face));      // 火把、門、植物會因為依附的方塊消失而掉落
+            record(block.getRelative(face));      // Torches, doors, and plants drop when the block they are attached to disappears
         }
     }
 
@@ -790,12 +790,12 @@ public final class ChangeRecorder implements Listener {
         }
     }
 
-    // ---- 事件 ----
+    // ---- Events ----
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent event) {
         recordOriginal(event.getBlock(), event.getBlockReplacedState().getBlockData());
-        if (event instanceof BlockMultiPlaceEvent multi) {       // 床、門等多格方塊
+        if (event instanceof BlockMultiPlaceEvent multi) {       // Multi-cell blocks such as beds and doors
             for (BlockState replaced : multi.getReplacedBlockStates()) {
                 recordOriginal(replaced.getBlock(), replaced.getBlockData());
             }
@@ -817,7 +817,7 @@ public final class ChangeRecorder implements Listener {
         recordAll(event.blockList());
     }
 
-    /** 液體流動：被流到的那格。 */
+    /** Liquid flow: the cell flowed into. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onFlow(BlockFromToEvent event) {
         record(event.getToBlock());
@@ -848,7 +848,7 @@ public final class ChangeRecorder implements Listener {
         record(event.getBlock());
     }
 
-    /** 沙子落下、終界使者搬方塊、凋零破壞等。 */
+    /** Falling sand, endermen carrying blocks, wither destruction, etc. */
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityChangeBlock(EntityChangeBlockEvent event) {
         record(event.getBlock());
@@ -888,16 +888,16 @@ import org.bukkit.entity.minecart.ExplosiveMinecart;
 import java.util.List;
 
 /**
- * 殘留實體清掃：方塊還原不會還原實體，掉落物、箭、TNT 礦車會留到下一場。
+ * Leftover entity sweep: restoring blocks does not restore entities, so dropped items, arrows, and TNT minecarts would linger into the next match.
  *
- * <p>兩種模式：
+ * <p>Two modes:
  * <ul>
- *   <li>{@link #sweepAll}：重置時全清，**包含**界伏盒物品（比賽結束了，玩家的東西也不留）</li>
- *   <li>{@link #sweepStale}：定時清理（比賽進行中），只清活夠久且附近沒人的；
- *       <b>豁免</b>已點燃的 TNT 礦車（遠處點燃的不能「點了沒反應」）和界伏盒物品
- *       （被炸掉的界伏盒內容會一起掉出來，那是玩家的東西）</li>
+ *   <li>{@link #sweepAll}: sweep everything on reset, **including** shulker box items (the match is over, so players' items are not kept either)</li>
+ *   <li>{@link #sweepStale}: periodic cleanup (during a match), removing only entities that have lived long enough with nobody nearby;
+ *       <b>exempts</b> ignited TNT minecarts (one ignited from afar must not "light and do nothing") and shulker box items
+ *       (when a shulker box is blown up its contents drop with it, and those are the players' items)</li>
  * </ul>
- * 只掃已載入的實體，不為了清理去載入區塊。主執行緒呼叫。
+ * Scans only loaded entities and does not load chunks for cleanup. Call on the main thread.
  */
 public final class DebrisSweeper {
 
@@ -972,13 +972,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * 就地還原：把 {@link ChangeRecorder} 記下的格子，每 tick 在**預算內**寫回去，最後清殘留實體。
+ * In-place reset: write the cells recorded by {@link ChangeRecorder} back **within a budget** each tick, then sweep leftover entities.
  *
- * <p>預算有兩層：每 tick 最多 {@code maxBlocksPerTick} 格，以及 {@code maxNanosPerTick} 的時間上限
- * （每 64 格檢查一次時鐘）。一次寫太多會拖慢整個伺服器的 tick，而不只是這個競技場。
+ * <p>The budget has two layers: at most {@code maxBlocksPerTick} cells per tick, plus a {@code maxNanosPerTick} time cap
+ * (the clock is checked once every 64 cells). Writing too much at once slows the whole server's tick, not just this arena.
  *
- * <p>還原用 {@code setBlockData(data, false)}（不觸發方塊物理），所以不會再產生事件、
- * 不會被 {@link ChangeRecorder} 重複記錄。還原期間請先把玩家移出競技場。主執行緒呼叫。
+ * <p>Restore uses {@code setBlockData(data, false)} (no block physics), so it produces no further events
+ * and is not recorded again by {@link ChangeRecorder}. Move players out of the arena before restoring. Call on the main thread.
  */
 public final class ArenaResetService {
 
@@ -998,7 +998,7 @@ public final class ArenaResetService {
         this.maxNanosPerTick = maxNanosPerTick;
     }
 
-    /** @return 完成時的還原格數；基準表溢位或已在還原中則以例外完成（請改走換世界）。 */
+    /** @return the number of restored cells on completion; completes exceptionally if the baseline overflowed or a reset is already running (swap worlds instead). */
     public CompletableFuture<Integer> reset(World world) {
         if (!plugin.getServer().isPrimaryThread()) {
             throw new IllegalStateException("reset must be called on the main thread");
@@ -1013,7 +1013,7 @@ public final class ArenaResetService {
             return done;
         }
         Map<Long, BlockData> baseline = recorder.drain(world);
-        // 依 key 排序＝依座標分群，連續寫同一個區塊，比 HashMap 的隨機順序快
+        // Sorting by key = grouping by coordinates, writing the same chunk consecutively, which is faster than HashMap's random order
         long[] keys = baseline.keySet().stream().mapToLong(Long::longValue).sorted().toArray();
         plugin.getServer().getScheduler().runTaskTimer(plugin, new Job(world, keys, baseline, done), 1L, 1L);
         return done;
@@ -1054,7 +1054,7 @@ public final class ArenaResetService {
                 }
             }
             if (cursor >= keys.length) {
-                sweeper.sweepAll(world);          // 方塊還原完才清實體，避免清完又有新的掉出來
+                sweeper.sweepAll(world);          // Sweep entities only after blocks are restored, so new drops do not appear after the sweep
                 finish(task, null);
             }
         }
@@ -1131,71 +1131,71 @@ public final class ArenaPlugin extends JavaPlugin {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/arena/
 ├── ArenaPlugin.java
-├── world/                       ← 換世界路線
+├── world/                       ← world swapping route
 │   ├── DisposableWorlds.java
 │   ├── ArenaPool.java
 │   ├── ArenaNames.java
 │   ├── ArenaRules.java
-│   ├── WorldFolders.java        ← 唯一做阻塞檔案 IO 的類別
+│   ├── WorldFolders.java        ← the only class doing blocking file IO
 │   └── VoidChunkGenerator.java
-└── reset/                       ← 就地還原路線
+└── reset/                       ← in-place reset route
     ├── ChangeRecorder.java
     ├── ArenaResetService.java
     └── DebrisSweeper.java
-plugins/Arena/templates/duel_map/   ← 模板世界（含 level.dat、region/）
+plugins/Arena/templates/duel_map/   ← template world (contains level.dat, region/)
 ```
 
-（上面範本為了單檔可編譯都放在 `com.example.arena`；實際專案可依此結構拆 package。）
+(The templates above all sit in `com.example.arena` so each file compiles on its own; a real project can split packages following this structure.)
 
-## 選擇路線 / Choosing a Route
+## Choosing a Route
 
-| | 換世界（copy + unload + delete） | 就地還原（record + restore） |
+| | World swapping (copy + unload + delete) | In-place reset (record + restore) |
 |---|---|---|
-| 適合 | 大型破壞、方塊實體內容重要、場地很大 | 小場地、破壞量有限、要快速連打 |
-| 每場成本 | 複製一份資料夾（可預產生掩蓋） | 與「被改格數」成正比 |
-| 還原完整度 | 完整（連箱子內容、區塊實體） | 只還原方塊型態；容器內容、告示牌文字、頭顱需另外處理 |
-| 風險 | 磁碟空間、Windows 檔案鎖 | 漏記的變更來源（見失敗回退） |
-| 溢位處理 | — | `overflowed` → 退回換世界 |
+| Best for | Large-scale destruction, important block entity contents, large arenas | Small arenas, limited destruction, rapid back-to-back matches |
+| Cost per match | Copy a folder (can be hidden by pre-generation) | Proportional to the number of changed cells |
+| Restore completeness | Complete (including chest contents and chunk entities) | Restores block types only; container contents, sign text, and heads need separate handling |
+| Risk | Disk space, Windows file locks | Change sources that go unrecorded (see Fallback) |
+| Overflow handling | - | `overflowed` -> fall back to world swapping |
 
-兩條路線可並用：平常就地還原，`ChangeRecorder.overflowed(world)` 為真時銷毀並從池領一張新的。
+The two routes can be combined: normally reset in place, and when `ChangeRecorder.overflowed(world)` is true, destroy the world and take a fresh one from the pool.
 
-## NMS 快速路徑 / NMS Fast Path
+## NMS Fast Path
 
-就地還原的瓶頸是 `Block#setBlockData` 每格一次的 Bukkit 包裝與光照更新。格子數很大（數十萬）時，改用直接寫 `LevelChunk` / `LevelChunkSection` 再統一重算光照與通知客戶端，見 [`nms-chunk-access`](../../nms/nms-chunk-access/SKILL.md)。Paper API 版本已足夠大多數小遊戲；不要為了「可能很大」而預先引入 Paperweight。
+The bottleneck of in-place reset is the Bukkit wrapper and lighting update that `Block#setBlockData` incurs per cell. For very large cell counts (hundreds of thousands), write `LevelChunk` / `LevelChunkSection` directly, then recompute lighting and notify clients in one pass; see [`nms-chunk-access`](../../nms/nms-chunk-access/SKILL.md). The Paper API version is enough for most minigames; do not introduce Paperweight up front just because it "might get large".
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-| 操作 | 執行緒 |
+| Operation | Thread |
 |------|-------|
-| `WorldCreator.createWorld()`、`unloadWorld`、`setGameRule`、`teleportAsync` 呼叫 | **主執行緒** |
-| `getBlockAt` / `setBlockData` / `getEntitiesByClasses` / `remove()` | **主執行緒** |
-| `ChangeRecorder` 的事件與 `drain` | 主執行緒（欄位不需鎖） |
-| `WorldFolders.copyTemplate` / `deleteWorld` | **非同步**（阻塞 IO）；關服時 `closeAllSync` 例外 |
-| `teleportAsync` 的完成回呼 | 主執行緒（Paper 保證），但仍要重新驗證世界還在 |
+| `WorldCreator.createWorld()`, `unloadWorld`, `setGameRule`, `teleportAsync` calls | **Main thread** |
+| `getBlockAt` / `setBlockData` / `getEntitiesByClasses` / `remove()` | **Main thread** |
+| `ChangeRecorder` events and `drain` | Main thread (fields need no locks) |
+| `WorldFolders.copyTemplate` / `deleteWorld` | **Async** (blocking IO); `closeAllSync` is the exception at shutdown |
+| `teleportAsync` completion callback | Main thread (guaranteed by Paper), but still re-validate that the world exists |
 
-- 非同步 lambda 只攜帶 `Path` / `String`，不攜帶 `World`、`Player`
-- 回傳的 future 一律在主執行緒完成，呼叫端可直接碰 Bukkit 物件
-- `onDisable` 時 scheduler 不再接受新任務：用 `closeAllSync()` 同步收尾，不要再 `runTask`
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- Async lambdas carry only `Path` / `String`, never `World` or `Player`
+- Returned futures always complete on the main thread, so callers can touch Bukkit objects directly
+- At `onDisable` the scheduler no longer accepts new tasks: finish up synchronously with `closeAllSync()`, and do not `runTask` again
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 重啟後世界變成空白新圖 | 資料夾被刪掉，`WorldCreator` 默默生成新地形 | 載入前檢查 `level.dat`；`requireFresh` 拒絕蓋在殘缺資料夾上 |
-| 殘骸資料夾被當成世界載入 | 刪除時 `level.dat` 先被刪（或複製時先被寫） | 刪除最後刪、複製最後寫 `level.dat`；啟動時 `purgeStaleAsync` |
-| 兩個世界 UUID 衝突／`session.lock` 錯誤 | 複製了 `uid.dat`、`session.lock` | `WorldFolders` 的 `SKIP` 清單 |
-| 載入複製出的世界後地形變成原版 | 自訂生成器沒有隨世界保存 | 每次載入都傳 `generator(...)` |
-| `unloadWorld` 回 false | 世界還有玩家、或是預設世界 | 先 `teleportAsync` 傳走並確認 `getPlayers().isEmpty()`；永遠不要卸載 `getWorlds().get(0)` |
-| Windows 上刪資料夾丟 `AccessDeniedException` | 區域檔剛卸載、檔案鎖尚未釋放 | 延遲數秒重試刪除；啟動時 `purgeStaleAsync` 補刪 |
-| `All N arena names are in use` | 世界沒被銷毀（洩漏） | 檢查所有結束路徑都呼叫 `destroy`；調大 `max` |
-| 遊戲規則沒生效／log 警告 unknown rule | 版本間 key 改名 | 用 `javap` 或 `Registry.GAME_RULE` 列出 key 核對；舊常數已棄用，不要用 |
-| 還原後仍有漏網的方塊 | 變更來源沒被事件涵蓋（命令方塊、其他插件直接改方塊） | 其他插件的改動不會觸發事件 → 該場地改走換世界；或另掃區域與基準比對 |
-| 還原後箱子／界伏盒內容是空的 | 基準表只記 `BlockData` | 需要容器內容時改走換世界，或另外記 `TileState` 快照 |
-| 還原讓伺服器卡頓 | 預算太大 | 調小 `maxBlocksPerTick` / `maxNanosPerTick`；超大場地改用 `nms-chunk-access` |
-| 殘留箭、TNT 礦車、掉落物 | 實體不是方塊 | 重置時 `DebrisSweeper.sweepAll`；比賽中用 `sweepStale` 定時清 |
+| World becomes an empty new map after restart | The folder was deleted and `WorldCreator` silently generated new terrain | Check `level.dat` before loading; `requireFresh` refuses to create over an incomplete folder |
+| Debris folder is loaded as a world | `level.dat` was deleted first on delete (or written first on copy) | Delete `level.dat` last and write it last when copying; `purgeStaleAsync` at startup |
+| Two worlds with the same UUID / `session.lock` error | `uid.dat` and `session.lock` were copied | The `SKIP` set in `WorldFolders` |
+| Terrain turns vanilla after loading a copied world | The custom generator is not saved with the world | Pass `generator(...)` on every load |
+| `unloadWorld` returns false | The world still has players, or it is the default world | `teleportAsync` them away first and confirm `getPlayers().isEmpty()`; never unload `getWorlds().get(0)` |
+| Deleting a folder throws `AccessDeniedException` on Windows | Region files were just unloaded and the file lock is not yet released | Retry the delete after a few seconds' delay; `purgeStaleAsync` at startup cleans up the rest |
+| `All N arena names are in use` | Worlds were not destroyed (leak) | Check that every end path calls `destroy`; raise `max` |
+| Game rules not taking effect / log warns unknown rule | Key renamed between versions | Verify keys by listing them with `javap` or `Registry.GAME_RULE`; the old constants are deprecated, do not use them |
+| Some blocks still missed after restore | A change source not covered by events (command blocks, other plugins changing blocks directly) | Other plugins' changes do not fire events -> switch that arena to world swapping; or additionally scan the region and compare against the baseline |
+| Chest / shulker box contents are empty after restore | The baseline records only `BlockData` | When container contents matter, use world swapping, or additionally record `TileState` snapshots |
+| Restore makes the server lag | Budget too large | Lower `maxBlocksPerTick` / `maxNanosPerTick`; for huge arenas use `nms-chunk-access` |
+| Leftover arrows, TNT minecarts, dropped items | Entities are not blocks | `DebrisSweeper.sweepAll` on reset; `sweepStale` periodically during a match |

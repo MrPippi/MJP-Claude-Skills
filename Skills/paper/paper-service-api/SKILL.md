@@ -3,65 +3,65 @@ name: paper-service-api
 description: "透過 Bukkit ServicesManager 發布與取用跨插件 API：只加不改的 api 介面、提供端註冊、使用端 Hook（每次 load、容忍版本落差）/ Cross-plugin API via ServicesManager with add-only interfaces and version-skew-tolerant consumer hooks"
 ---
 
-# Paper Service API / 跨插件 API
+# Paper Service API
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `paper-service-api`
 
-## 目的 / Purpose
+## Purpose
 
-讓同一個插件集裡的插件安全地互相呼叫（例如 Shop 扣 Economy 的錢、Chat 顯示 Country 的國旗）。
-各插件的 jar 會各自 relocate 共用程式碼，無法直接共享型別，因此提供端把**只含 JDK 型別的 `api` 介面**註冊到 Bukkit `ServicesManager`，使用端以 `compileOnly` 依賴並在執行期取得。
+Lets plugins in the same plugin suite call each other safely (for example, Shop charging money from Economy, or Chat showing a flag from Country).
+Each plugin's jar relocates its shared code separately, so they cannot share types directly. The provider therefore registers an **`api` interface that uses only JDK types** with the Bukkit `ServicesManager`, and the consumer depends on it as `compileOnly` and looks it up at runtime.
 
-重點是處理「兩個 jar 版本不一致」：使用端比提供端新時，呼叫到不存在的方法會丟 `NoSuchMethodError` / `AbstractMethodError`（都是 `LinkageError`），Hook 必須接住並降級，而不是讓整個功能崩潰。
+The key concern is handling "the two jars are different versions": when the consumer is newer than the provider, calling a method that does not exist throws `NoSuchMethodError` / `AbstractMethodError` (both are `LinkageError`). The hook must catch it and degrade, instead of letting the whole feature crash.
 
-## Paper 版本需求 / Paper Version Requirements
+## Paper Version Requirements
 
-- Paper 1.21.11 / 26.2（只用 Bukkit `ServicesManager`，兩版相同）
-- 純 Paper API，不需要 Paperweight
+- Paper 1.21.11 / 26.2 (uses only the Bukkit `ServicesManager`, identical on both versions)
+- Pure Paper API, no Paperweight needed
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「跨插件 API」「cross-plugin API」「ServicesManager」「service provider」
 - 「插件之間呼叫」「別的插件取得資料」「API 介面」「api package」
 - 「NoSuchMethodError」「AbstractMethodError」「API 版本不合」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `provider_plugin` | `Wallet` | 提供 API 的插件（plugin.yml `name`） |
-| `api_package` | `com.example.wallet.api` | API 介面所在 package（**不可被 relocate**） |
-| `api_name` | `WalletApi` | 介面名稱 |
-| `consumer_package` | `com.example.shop.integration` | 使用端 Hook 所在 package |
-| `operations` | `balance`, `withdraw` | 要開放的操作 |
+| `provider_plugin` | `Wallet` | The plugin that provides the API (plugin.yml `name`) |
+| `api_package` | `com.example.wallet.api` | Package containing the API interface (**must not be relocated**) |
+| `api_name` | `WalletApi` | Interface name |
+| `consumer_package` | `com.example.shop.integration` | Package containing the consumer hook |
+| `operations` | `balance`, `withdraw` | Operations to expose |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `WalletApi.java` — 提供端的 API 介面（只用 JDK 型別、只加不改）
-- `ApiResult.java` — 操作結果 enum（取代例外，讓呼叫端好處理）
-- `WalletApiImpl.java` — 提供端實作（檢查主執行緒）
-- `WalletPlugin.java` — 提供端註冊／取消註冊
-- `WalletHook.java` — 使用端 Hook（每次 load、接 `LinkageError`、只警告一次）
+- `WalletApi.java` - the provider's API interface (JDK types only, add-only)
+- `ApiResult.java` - operation result enum (replaces exceptions so callers can handle results easily)
+- `WalletApiImpl.java` - provider implementation (checks the main thread)
+- `WalletPlugin.java` - provider registration / unregistration
+- `WalletHook.java` - consumer hook (loads on every call, catches `LinkageError`, warns only once)
 
-## 建置設定 / Build Setup
+## Build Setup
 
-見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。多模組專案中，使用端以 `compileOnly` 依賴提供端：
+See [`references/paper-api-platform.md`](references/paper-api-platform.md). In a multi-module project, the consumer depends on the provider with `compileOnly`:
 
 ```groovy
 // shop/build.gradle
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:26.2.build.132-stable'
-    compileOnly project(':wallet')   // 只為了編譯期看得到 WalletApi，不可打包進 jar
+    compileOnly project(':wallet')   // only so WalletApi is visible at compile time; must not be packaged into the jar
 }
 ```
 
-使用端 `plugin.yml` 宣告 `softdepend: [Wallet]`（功能可缺）或 `depend: [Wallet]`（缺了就不啟動）。
+The consumer's `plugin.yml` declares `softdepend: [Wallet]` (the feature is optional) or `depend: [Wallet]` (do not start without it).
 
-## 代碼範本 / Code Template
+## Code Template
 
-### `WalletApi.java`（提供端，api package）
+### `WalletApi.java` (provider, api package)
 
 ```java
 package com.example.wallet.api;
@@ -70,37 +70,37 @@ import java.util.OptionalLong;
 import java.util.UUID;
 
 /**
- * Wallet 給其他插件使用的介面。
+ * The interface Wallet exposes to other plugins.
  *
- * <p>取得方式：{@code getServer().getServicesManager().load(WalletApi.class)}，<b>每次呼叫前取一次、不要快取</b>；
- * null 代表 Wallet 未啟用。
+ * <p>How to obtain it: {@code getServer().getServicesManager().load(WalletApi.class)}, <b>load it before each call and do not cache it</b>;
+ * null means Wallet is not enabled.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li>只用 JDK 型別（不要出現 Bukkit 或本插件內部型別），避免 relocate 與 class 載入問題</li>
- *   <li><b>只加不改</b>：已發布的方法不得改簽名或刪除；新增方法放在介面最後</li>
- *   <li>所有方法只能在主執行緒呼叫，否則丟 {@link IllegalStateException}</li>
+ *   <li>Use JDK types only (no Bukkit types or this plugin's internal types) to avoid relocation and class loading problems</li>
+ *   <li><b>Add-only</b>: published methods must not change signature or be removed; add new methods at the end of the interface</li>
+ *   <li>All methods may be called only on the main thread, otherwise {@link IllegalStateException} is thrown</li>
  * </ul>
  */
 public interface WalletApi {
 
-    /** 無帳號 → empty。金額單位為最小單位（例如 1 元 = 100）。 */
+    /** No account -> empty. Amounts are in the smallest unit (for example 1 dollar = 100). */
     OptionalLong balance(UUID player);
 
-    /** 入帳；amount &lt; 0 → INVALID_AMOUNT。note 為呼叫端自報來源，存入交易紀錄。 */
+    /** Deposit; amount &lt; 0 -> INVALID_AMOUNT. note is the caller's self-reported source, stored in the transaction log. */
     ApiResult deposit(UUID player, long amount, String note);
 
-    /** 扣款；餘額不足 → INSUFFICIENT，餘額不變。 */
+    /** Withdraw; insufficient balance -> INSUFFICIENT, balance unchanged. */
     ApiResult withdraw(UUID player, long amount, String note);
 }
 ```
 
-### `ApiResult.java`（提供端，api package）
+### `ApiResult.java` (provider, api package)
 
 ```java
 package com.example.wallet.api;
 
-/** API 操作結果。新增值只能加在最後（只加不改）。 */
+/** API operation result. New values may only be added at the end (add-only). */
 public enum ApiResult {
     OK,
     NO_ACCOUNT,
@@ -109,7 +109,7 @@ public enum ApiResult {
 }
 ```
 
-### `WalletApiImpl.java`（提供端實作）
+### `WalletApiImpl.java` (provider implementation)
 
 ```java
 package com.example.wallet;
@@ -123,7 +123,7 @@ import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 範例用的記憶體帳本；實務上換成 paper-sqlite-repository 的 Repository。 */
+/** In-memory ledger for the example; in practice replace it with the Repository from paper-sqlite-repository. */
 final class WalletApiImpl implements WalletApi {
 
     private final Map<UUID, Long> balances = new ConcurrentHashMap<>();
@@ -162,7 +162,7 @@ final class WalletApiImpl implements WalletApi {
 }
 ```
 
-### `WalletPlugin.java`（提供端註冊）
+### `WalletPlugin.java` (provider registration)
 
 ```java
 package com.example.wallet;
@@ -175,7 +175,7 @@ public final class WalletPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // 其餘初始化（設定、資料庫）完成後才註冊，確保使用端拿到的是可用的實作
+        // Register only after the rest of initialization (config, database) is done, so consumers get a usable implementation
         getServer().getServicesManager().register(WalletApi.class, new WalletApiImpl(), this, ServicePriority.Normal);
     }
 
@@ -186,7 +186,7 @@ public final class WalletPlugin extends JavaPlugin {
 }
 ```
 
-### `WalletHook.java`（使用端）
+### `WalletHook.java` (consumer)
 
 ```java
 package com.example.shop.integration;
@@ -200,14 +200,14 @@ import java.util.UUID;
 import java.util.logging.Level;
 
 /**
- * Wallet 的使用端接點。
+ * Consumer-side entry point for Wallet.
  *
- * <p>規則：
+ * <p>Rules:
  * <ul>
- *   <li>{@code WalletApi} 只出現在方法本體的 {@code try} 裡（不放欄位、不放方法簽名），
- *       Wallet 未安裝時本類別仍可被載入</li>
- *   <li>每次呼叫都重新 {@code load}：Wallet 被 reload／停用後不會拿到舊實作</li>
- *   <li>接 {@link LinkageError}：兩個 jar 版本不一致（呼叫到對方沒有的方法）時降級並只警告一次</li>
+ *   <li>{@code WalletApi} appears only inside the {@code try} of a method body (not in fields or method signatures),
+ *       so this class can still be loaded when Wallet is not installed</li>
+ *   <li>Call {@code load} again on every call: after Wallet is reloaded or disabled you never get a stale implementation</li>
+ *   <li>Catch {@link LinkageError}: when the two jars are different versions (calling a method the other side lacks), degrade and warn only once</li>
  * </ul>
  */
 public final class WalletHook {
@@ -225,7 +225,7 @@ public final class WalletHook {
         return plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME);
     }
 
-    /** Wallet 不可用或版本不合時回 empty。只在主執行緒呼叫。 */
+    /** Returns empty when Wallet is unavailable or the version mismatches. Call only on the main thread. */
     public OptionalLong balance(UUID player) {
         if (!available()) return OptionalLong.empty();
         try {
@@ -237,7 +237,7 @@ public final class WalletHook {
         }
     }
 
-    /** 扣款成功回 true；Wallet 不可用、餘額不足或版本不合回 false。只在主執行緒呼叫。 */
+    /** Returns true on a successful withdrawal; false when Wallet is unavailable, the balance is insufficient, or the version mismatches. Call only on the main thread. */
     public boolean withdraw(UUID player, long amount, String note) {
         if (!available()) return false;
         try {
@@ -258,36 +258,36 @@ public final class WalletHook {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
-wallet/                                   ← 提供端
+wallet/                                   <- provider
 └── src/main/java/com/example/wallet/
     ├── WalletPlugin.java
     ├── WalletApiImpl.java
-    └── api/                              ← 不可 relocate、只加不改
+    └── api/                              <- do not relocate, add-only
         ├── WalletApi.java
         └── ApiResult.java
-shop/                                     ← 使用端（compileOnly project(':wallet')）
+shop/                                     <- consumer (compileOnly project(':wallet'))
 └── src/main/java/com/example/shop/
     └── integration/
         └── WalletHook.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- 提供端方法預設**只允許主執行緒**（`requireMainThread()`），在 Javadoc 寫明
-- 使用端若在非同步階段需要資料，先在主執行緒取值再傳入非同步工作；不要在非同步執行緒呼叫 API
-- 若某方法確實要支援任意執行緒（例如 PlaceholderAPI 讀取），實作必須讀不可變快照，並在 Javadoc 標明
-- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
+- Provider methods are **main-thread only** by default (`requireMainThread()`); state this in the Javadoc
+- If the consumer needs data during an async phase, fetch the value on the main thread first and pass it into the async task; do not call the API from an async thread
+- If a method must really support any thread (for example PlaceholderAPI reads), the implementation must read an immutable snapshot and say so in the Javadoc
+- See [`references/paper-threading.md`](references/paper-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| `NoSuchMethodError` / `AbstractMethodError` | 使用端比提供端新，呼叫了對方沒有的方法 | Hook 接 `LinkageError` 降級；部署時兩個 jar 一起更新 |
-| `NoClassDefFoundError: .../WalletApi` | 提供端未安裝，且 `WalletApi` 出現在欄位或方法簽名 | 讓 API 型別只出現在方法本體的 `try` 內 |
-| `ClassCastException`（同名不同類） | API package 被 shade/relocate 進使用端 jar | API 以 `compileOnly` 依賴，不打包；shadow 設定排除該 package |
-| `load()` 回 null | 提供端未啟用、啟動順序較晚 | `softdepend`／`depend` 宣告提供端；每次呼叫時才 `load` |
-| 拿到停用前的舊實作 | 使用端快取了 API 實例 | 不快取，每次 `load` |
-| 改了既有方法簽名後舊使用端壞掉 | 違反只加不改 | 新增方法取代修改；舊方法保留並標 `@Deprecated` |
+| `NoSuchMethodError` / `AbstractMethodError` | The consumer is newer than the provider and called a method the provider lacks | The hook catches `LinkageError` and degrades; update both jars together when deploying |
+| `NoClassDefFoundError: .../WalletApi` | The provider is not installed, and `WalletApi` appears in a field or method signature | Keep the API type only inside the `try` of a method body |
+| `ClassCastException` (same name, different class) | The API package was shaded/relocated into the consumer jar | Depend on the API with `compileOnly` and do not package it; exclude that package in the shadow config |
+| `load()` returns null | The provider is not enabled or starts later | Declare the provider in `softdepend` / `depend`; call `load` at call time |
+| Got a stale implementation from before disable | The consumer cached the API instance | Do not cache; `load` every time |
+| Old consumers break after an existing method signature was changed | Violates add-only | Add a new method instead of modifying; keep the old method and mark it `@Deprecated` |

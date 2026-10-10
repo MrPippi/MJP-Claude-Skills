@@ -1,6 +1,6 @@
 # examples — nms-custom-entity
 
-## 範例 1：繼承 Zombie 並加強屬性
+## Example 1: Extend Zombie and Boost Attributes
 
 **Input:**
 ```
@@ -11,9 +11,9 @@ entity_id: my_boss_zombie
 goal_class_name: BossChargeGoal
 ```
 
-**Output — BossZombie.java (關鍵段):**
+**Output — BossZombie.java (key section):**
 ```java
-import net.minecraft.world.entity.monster.zombie.Zombie; // 26.x 起位於 monster.zombie 子套件
+import net.minecraft.world.entity.monster.zombie.Zombie; // Located in the monster.zombie subpackage since 26.x
 
 public class BossZombie extends Zombie {
     public BossZombie(EntityType<? extends Zombie> type, Level level) {
@@ -38,16 +38,16 @@ public class BossZombie extends Zombie {
 }
 ```
 
-**使用端:**
+**Usage:**
 ```java
 Location spawnLoc = player.getLocation();
 Entity boss = EntitySpawner.spawnBoss(spawnLoc);
-boss.setCustomName("§4§l血腥領主");
+boss.setCustomName("§4§lBlood Lord");
 ```
 
 ---
 
-## 範例 2：圍繞玩家巡邏的 Goal
+## Example 2: Goal That Patrols Around a Player
 
 **Input:**
 ```
@@ -91,7 +91,7 @@ public class CirclePatrolGoal extends Goal {
 
 ---
 
-## 範例 3：替換 vanilla 生成的 Zombie（用自定義版本）
+## Example 3: Replace Vanilla-Spawned Zombies (With a Custom Version)
 
 **Input:**
 ```
@@ -109,14 +109,14 @@ public class EntityListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent event) {
-        // 僅攔截自然生成
+        // Only intercept natural spawns
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL) return;
         if (!(event.getEntity() instanceof org.bukkit.entity.Zombie zombie)) return;
 
         Location loc = zombie.getLocation();
-        event.setCancelled(true); // 取消 vanilla 生成
+        event.setCancelled(true); // Cancel the vanilla spawn
 
-        // 用自定義版本取代
+        // Replace with the custom version
         ServerLevel nmsLevel = ((CraftWorld) loc.getWorld()).getHandle();
         StrongerZombie custom = new StrongerZombie(EntityTypes.ZOMBIE, nmsLevel); // @1.21.11: StrongerZombie custom = new StrongerZombie(EntityType.ZOMBIE, nmsLevel);
         custom.snapTo(loc.getX(), loc.getY(), loc.getZ());
@@ -127,7 +127,7 @@ public class EntityListener implements Listener {
 
 ---
 
-## 範例 4：帶自訂血量條的 Boss（結合 Bukkit BossBar）
+## Example 4: Boss With a Custom Health Bar (Using Bukkit BossBar)
 
 **Input:**
 ```
@@ -136,7 +136,7 @@ entity_class_name: AncientGuardian
 base_entity: Zombie
 ```
 
-**使用端：生成 + 關聯 BossBar:**
+**Usage: spawn + attach a BossBar:**
 ```java
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
@@ -146,19 +146,19 @@ public void summonBoss(Location loc) {
     UUID bossId = boss.getUniqueId();
 
     BossBar bar = BossBar.bossBar(
-        Component.text("§4遠古守護者"),
+        Component.text("§4Ancient Guardian"),
         1.0f,
         BossBar.Color.RED,
         BossBar.Overlay.PROGRESS);
 
-    // 每 tick 更新血量條
+    // Update the health bar every tick
     Bukkit.getScheduler().runTaskTimer(plugin, () -> {
         Entity entity = Bukkit.getEntity(bossId);
         if (!(entity instanceof LivingEntity living) || living.isDead()) return;
         double percent = living.getHealth() / living.getMaxHealth();
         bar.progress((float) percent);
 
-        // 廣播給附近玩家
+        // Broadcast to nearby players
         living.getWorld().getNearbyPlayers(living.getLocation(), 50)
             .forEach(p -> p.showBossBar(bar));
     }, 0L, 1L);

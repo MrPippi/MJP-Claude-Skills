@@ -3,58 +3,58 @@ name: nms-version-adapter
 description: "多版本 NMS 相容性 Adapter 模式：抽象介面 + 版本特定實作 + runtime dispatch，讓同一 plugin 支援多個 MC 版本 / Multi-version NMS compatibility adapter pattern"
 ---
 
-# NMS Version Adapter / NMS 多版本適配器
+# NMS Version Adapter
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-version-adapter`
 
-## 目的 / Purpose
+## Purpose
 
-建立抽象 Adapter 介面定義共通 NMS 操作，再為每個支援的 MC 版本提供具體實作，runtime 時根據伺服器版本自動選擇正確 adapter。適合需支援多版本發佈的商業/大型 plugin。
+Define an abstract Adapter interface for common NMS operations, provide a concrete implementation for each supported MC version, and automatically pick the correct adapter at runtime based on the server version. Suited to commercial or large plugins that must ship for multiple versions.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- 支援範圍：Paper 1.21.11 / 26.x（範例以 26.2 / 26.3 兩個 adapter 示範；1.21.11 adapter 寫法相同，dev bundle 改為 `1.21.11-R0.1-SNAPSHOT`、Java 21）
-- 建議搭配 `nms-reflection-bridge` 或 multi-module Gradle build
-- Adapter 實作可選 Paperweight（需 multi-module）或純反射
+- Supported range: Paper 1.21.11 / 26.x (the examples show two adapters, 26.2 and 26.3; a 1.21.11 adapter is written the same way, with the dev bundle changed to `1.21.11-R0.1-SNAPSHOT` and Java 21)
+- Recommended together with `nms-reflection-bridge` or a multi-module Gradle build
+- Adapter implementations may use Paperweight (requires multi-module) or pure reflection
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「version adapter」「版本適配器」「multi-version」
-- 「多版本相容」「跨版本 NMS」「backwards compatibility」
-- 「adapter pattern NMS」
+- "version adapter", "版本適配器", "multi-version"
+- "多版本相容", "跨版本 NMS", "backwards compatibility"
+- "adapter pattern NMS"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.nms` | 產出類別所在 package |
-| `adapter_interface` | `NmsAdapter` | 抽象介面名稱 |
-| `supported_versions` | `26.2, 26.3` | 需支援的 MC 版本列表 |
+| `package_name` | `com.example.nms` | Package of the generated classes |
+| `adapter_interface` | `NmsAdapter` | Abstract interface name |
+| `supported_versions` | `26.2, 26.3` | List of MC versions to support |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `NmsAdapter.java` — 共通抽象介面
-- `AdapterRegistry.java` — 版本偵測與 adapter 選擇器
-- `V26_2_Adapter.java` — Paper 26.2 實作
-- `V26_3_Adapter.java` — Paper 26.3 實作
-- `NmsVersion.java` — 版本列舉
+- `NmsAdapter.java` — common abstract interface
+- `AdapterRegistry.java` — version detection and adapter selector
+- `V26_2_Adapter.java` — Paper 26.2 implementation
+- `V26_3_Adapter.java` — Paper 26.3 implementation
+- `NmsVersion.java` — version enum
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-建議採用 **multi-module Gradle build**，每個版本各自 module 編譯：
+Use a **multi-module Gradle build**, with each version compiled in its own module:
 
 ```
 my-plugin/
 ├── build.gradle
-├── core/                  # 版本無關邏輯 + NmsAdapter 介面
-├── adapter-v26_2/         # 使用 26.2 dev bundle 編譯
-├── adapter-v26_3/       # 使用 26.3 dev bundle 編譯
-└── plugin/                # 整合所有 adapter 並打包
+├── core/                  # version-independent logic + NmsAdapter interface
+├── adapter-v26_2/         # compiled against the 26.2 dev bundle
+├── adapter-v26_3/       # compiled against the 26.3 dev bundle
+└── plugin/                # integrates and packages all adapters
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `NmsVersion.java`
 
@@ -70,7 +70,7 @@ public enum NmsVersion {
     UNSUPPORTED;
 
     public static NmsVersion detect() {
-        // 26.x 起版本號為「年份.drop[.hotfix]」，例如 "26.2"、"26.1.2"；以前兩段比對
+        // From 26.x the version is "year.drop[.hotfix]", e.g. "26.2", "26.1.2"; match on the first two segments
         String[] parts = Bukkit.getMinecraftVersion().split("\\.");
         String majorMinor = parts.length >= 2 ? parts[0] + "." + parts[1] : parts[0];
         return switch (majorMinor) {
@@ -93,23 +93,23 @@ import org.bukkit.Location;
 import net.kyori.adventure.text.Component;
 
 /**
- * 跨版本 NMS 操作介面。所有方法必須對所有支援版本給出等效結果。
+ * Cross-version NMS operation interface. Every method must give equivalent results on all supported versions.
  */
 public interface NmsAdapter {
 
-    /** 回傳此 adapter 支援的 MC 版本。 */
+    /** Returns the MC version this adapter supports. */
     NmsVersion version();
 
-    /** 發送 action bar 文字。 */
+    /** Sends action bar text. */
     void sendActionBar(Player player, Component message);
 
-    /** 取得玩家網路延遲（ms）。 */
+    /** Gets the player's network latency (ms). */
     int getLatency(Player player);
 
-    /** 在指定座標生成粒子（純客戶端，不觸發 event）。 */
+    /** Spawns a particle at the given location (client-only, fires no event). */
     void spawnParticleClient(Location loc, String particleKey, int count);
 
-    /** 直接 tick 實體（用於強制更新）。 */
+    /** Ticks an entity directly (for forced updates). */
     void forceTickEntity(org.bukkit.entity.Entity entity);
 }
 ```
@@ -133,7 +133,7 @@ public final class AdapterRegistry {
         ADAPTERS.put(adapter.version(), adapter);
     }
 
-    /** 在 plugin onEnable 呼叫，自動選擇當前版本的 adapter。 */
+    /** Called in the plugin's onEnable; automatically selects the adapter for the current version. */
     public static void initialize() {
         NmsVersion detected = NmsVersion.detect();
         if (detected == NmsVersion.UNSUPPORTED) {
@@ -147,7 +147,7 @@ public final class AdapterRegistry {
         }
     }
 
-    /** 取得當前執行環境的 adapter。 */
+    /** Gets the adapter for the current runtime environment. */
     public static NmsAdapter get() {
         if (active == null) throw new IllegalStateException("AdapterRegistry not initialized");
         return active;
@@ -155,7 +155,7 @@ public final class AdapterRegistry {
 }
 ```
 
-### `V26_2_Adapter.java`（範例實作）
+### `V26_2_Adapter.java` (example implementation)
 
 ```java
 package com.example.nms.v26_2;
@@ -193,19 +193,19 @@ public class V26_2_Adapter implements NmsAdapter {
 
     @Override
     public void spawnParticleClient(Location loc, String particleKey, int count) {
-        // 26.2 版本實作：使用 ClientboundLevelParticlesPacket
+        // 26.2 implementation: uses ClientboundLevelParticlesPacket
         // ...
     }
 
     @Override
     public void forceTickEntity(org.bukkit.entity.Entity entity) {
-        // 26.2 版本實作
+        // 26.2 implementation
         // ...
     }
 }
 ```
 
-### 初始化（`MyNmsPlugin.onEnable`）
+### Initialization (`MyNmsPlugin.onEnable`)
 
 ```java
 @Override
@@ -218,16 +218,16 @@ public void onEnable() {
 }
 ```
 
-### 使用端
+### Usage
 
 ```java
-// 版本無關的業務邏輯
+// Version-independent business logic
 public void sendWelcome(Player player) {
-    AdapterRegistry.get().sendActionBar(player, Component.text("歡迎！"));
+    AdapterRegistry.get().sendActionBar(player, Component.text("Welcome!"));
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -242,19 +242,19 @@ src/main/java/com/example/
         └── V26_3_Adapter.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `AdapterRegistry` 單次初始化後為 immutable，讀取執行緒安全
-- ⚠️ Adapter 的具體方法仍遵守 NMS 執行緒規則（參見 [`references/nms-threading.md`](references/nms-threading.md)）
-- ⚠️ `AdapterRegistry.register()` 只應在 `onEnable()` 執行一次，避免 race condition
-- ⚠️ 若使用 multi-module build，各 adapter module 不可互相引用
+- ✅ `AdapterRegistry` is immutable after a single initialization, so reads are thread-safe
+- ⚠️ Concrete adapter methods still follow the NMS threading rules (see [`references/nms-threading.md`](references/nms-threading.md))
+- ⚠️ `AdapterRegistry.register()` should be called only once in `onEnable()` to avoid race conditions
+- ⚠️ With a multi-module build, adapter modules must not reference each other
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `IllegalStateException: Unsupported MC version` | 在未支援版本上啟動 | 在 `NmsVersion.detect()` 加 fallback 分支（嘗試最接近的版本） |
-| `ClassNotFoundException` / `NoClassDefFoundError` | adapter 引用的 NMS 類別在目前版本不存在 | 在 `register()` 外層用 try-catch，若失敗則不註冊該 adapter |
-| `AbstractMethodError` | adapter 介面新增方法但舊 adapter 未實作 | 為介面方法加 `default` 實作 |
-| Multi-module 打包遺漏 | shadowJar 未包含 adapter module | 在 `plugin/build.gradle` 加 `shadow project(':adapter-v26_2')` |
-| 不同版本 NMS 簽名差異 | 新版本方法移除或改名 | 用 reflection 在 adapter 內做版本分支（結合 `nms-reflection-bridge`） |
+| `IllegalStateException: Unsupported MC version` | Started on an unsupported version | Add a fallback branch in `NmsVersion.detect()` (try the closest version) |
+| `ClassNotFoundException` / `NoClassDefFoundError` | A NMS class referenced by the adapter does not exist in the current version | Wrap `register()` in try-catch and skip registering that adapter on failure |
+| `AbstractMethodError` | A method was added to the adapter interface but an old adapter does not implement it | Give the interface method a `default` implementation |
+| Multi-module packaging omission | shadowJar does not include the adapter module | Add to `plugin/build.gradle`: `shadow project(':adapter-v26_2')` |
+| NMS signature differences between versions | A method was removed or renamed in the newer version | Branch by version inside the adapter using reflection (combine with `nms-reflection-bridge`) |

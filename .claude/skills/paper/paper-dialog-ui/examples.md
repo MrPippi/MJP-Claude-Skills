@@ -1,15 +1,15 @@
 # examples — paper-dialog-ui
 
-## 範例 1：刪除家的確認頁（確認後非同步刪除，再回主執行緒通知）
+## Example 1: Delete-Home Confirmation (async delete after confirming, then back to the main thread to notify)
 
 **Input:**
 ```
 dialog_kind: confirm
 after_action: CLOSE
-情境: /home delete base → 先確認；刪除要寫資料庫，所以不能在主執行緒做
+Scenario: /home delete base -> confirm first; the delete writes to the database, so it must not run on the main thread
 ```
 
-**Output — 確認鍵在右；點確認後離開主執行緒做 IO，完成後回主執行緒重新驗證玩家:**
+**Output — confirm is on the right; after confirming, leave the main thread for IO, then return to the main thread and re-validate the player:**
 ```java
 import com.example.menu.gui.ConfirmDialog;
 import net.kyori.adventure.text.Component;
@@ -21,7 +21,7 @@ import java.util.UUID;
 
 public final class HomeDeleteFlow {
 
-    /** 範例用的資料層介面；實務上換成 Repository。 */
+    /** Data-layer interface for the example; use a Repository in practice. */
     public interface HomeRepository {
         boolean delete(UUID owner, String name);
     }
@@ -36,19 +36,19 @@ public final class HomeDeleteFlow {
         this.homes = homes;
     }
 
-    /** 在主執行緒呼叫（指令或 GUI 點擊）。 */
+    /** Call on the main thread (command or GUI click). */
     public void ask(Player player, String homeName) {
         confirm.open(player, "<red>Delete home",
             "Delete home <yellow>" + homeName + "</yellow>? This cannot be undone.",
             clicker -> delete(clicker.getUniqueId(), homeName));
     }
 
-    /** 確認鍵的回呼已在主執行緒；資料庫工作丟到非同步，結果再回主執行緒。 */
+    /** The confirm callback is already on the main thread; push the database work to async, then return to the main thread with the result. */
     private void delete(UUID playerId, String homeName) {
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             boolean deleted = homes.delete(playerId, homeName);
             Bukkit.getScheduler().runTask(plugin, () -> {
-                Player player = Bukkit.getPlayer(playerId);   // 重新取得：玩家可能已離線
+                Player player = Bukkit.getPlayer(playerId);   // Re-fetch: the player may have gone offline
                 if (player == null || !player.isOnline()) {
                     return;
                 }
@@ -61,22 +61,22 @@ public final class HomeDeleteFlow {
 }
 ```
 
-重點：
-- `ConfirmDialog` 內部已經處理「回呼切主執行緒＋玩家在線」；`delete` 之後的非同步部分仍要自己回主執行緒並重新 `getPlayer`
-- 取消鍵沒有回呼，Esc 也是純關閉，不會誤觸確認
+Key points:
+- `ConfirmDialog` already handles "hop to the main thread + player is online" in the callback; the async part after `delete` must still return to the main thread and call `getPlayer` again
+- The cancel button has no callback, and Esc just closes, so confirm is never triggered by accident
 
 ---
 
-## 範例 2：原地切換的設定頁（`afterAction = NONE`，不閃動）
+## Example 2: In-Place Toggle Settings Page (`afterAction = NONE`, no flicker)
 
 **Input:**
 ```
 dialog_kind: multi
 after_action: NONE
-情境: /settings 一頁多個開關；點一個切換一個，頁面原地更新，footer 只有「Close」
+Scenario: /settings shows several toggles on one page; clicking one toggles it and the page updates in place, with only "Close" in the footer
 ```
 
-**Output — 每次點擊都重建整頁（舊的 callback 已用完 uses），用 `NONE` 讓畫面不關閉:**
+**Output — rebuild the whole page on every click (the old callback's uses are spent), and use `NONE` so the screen does not close:**
 ```java
 import com.example.menu.gui.Dialogs;
 import io.papermc.paper.registry.data.dialog.DialogBase.DialogAfterAction;
@@ -94,7 +94,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class SettingsDialog {
 
     private final Dialogs dialogs;
-    /** 玩家設定的記憶體快取；實務上換成 service。 */
+    /** In-memory cache of player settings; use a service in practice. */
     private final Map<UUID, Map<String, Boolean>> state = new ConcurrentHashMap<>();
     private final List<String> keys = List.of("Join messages", "Sound effects", "Action bar hints");
 
@@ -111,10 +111,10 @@ public final class SettingsDialog {
                 .append(Component.text(on ? "ON" : "OFF", on ? NamedTextColor.GREEN : NamedTextColor.RED));
             buttons.add(dialogs.button(label, p -> {
                 toggle(p.getUniqueId(), key);
-                open(p);   // 原地重繪：afterAction 是 NONE，畫面不會先關再開
+                open(p);   // Redraw in place: afterAction is NONE, so the screen does not close and reopen
             }));
         }
-        // NONE 不會自動關閉，所以 Close 要明確 closeDialog()
+        // NONE never closes automatically, so Close must call closeDialog() explicitly
         buttons.add(dialogs.button(Component.text("Close"), Player::closeDialog));
 
         Dialogs.Page page = Dialogs.Page.of(Component.text("Settings"), buttons)
@@ -134,22 +134,22 @@ public final class SettingsDialog {
 }
 ```
 
-重點：
-- `uses(1)` 的 callback 點一次就失效，所以重繪必須走 `open(p)` 重新建 Dialog，不能重複使用舊按鍵
-- 需要非同步載入資料才能畫頁面時，點擊那頁改用 `DialogAfterAction.WAIT_FOR_RESPONSE`：玩家看到等待畫面，直到你 `showDialog` 新頁或 `closeDialog()`
+Key points:
+- A `uses(1)` callback is spent after one click, so redrawing must go through `open(p)` and build a new Dialog; old buttons cannot be reused
+- When the page needs async-loaded data, use `DialogAfterAction.WAIT_FOR_RESPONSE` on the clicked page: the player sees a waiting screen until you `showDialog` a new page or call `closeDialog()`
 
 ---
 
-## 範例 3：輸入表單開啟與結果處理（含驗證）
+## Example 3: Opening an Input Form and Handling the Result (with validation)
 
 **Input:**
 ```
 dialog_kind: input
 inputs: text, boolean, number, option
-情境: /prefs 開表單，儲存時驗證暱稱，成功才關閉
+Scenario: /prefs opens the form, validates the nickname on save, and closes only on success
 ```
 
-**Output — 開表單與儲存回呼:**
+**Output — opening the form and the save callback:**
 ```java
 import com.example.menu.gui.PreferencesDialog;
 import com.example.menu.gui.PreferencesDialog.Preferences;
@@ -186,7 +186,7 @@ public final class PrefsCommand implements CommandExecutor {
         return true;
     }
 
-    /** onSave 在主執行緒、玩家在線時被呼叫；此時暱稱已確認非空。 */
+    /** onSave is called on the main thread while the player is online; the nickname is already confirmed non-empty. */
     private void save(Player player, Preferences value) {
         saved.put(player.getUniqueId(), value);
         player.sendMessage(Component.text("Saved. Radius " + value.radius() + ", mode " + value.mode() + "."));
@@ -196,7 +196,7 @@ public final class PrefsCommand implements CommandExecutor {
 
 ---
 
-## 範例 4：把靜態 Dialog 掛進暫停選單的 `paper-plugin.yml`
+## Example 4: `paper-plugin.yml` for Attaching a Static Dialog to the Pause Menu
 
 **Input:**
 ```
@@ -204,7 +204,7 @@ dialog_kind: pause-screen
 pause_screen: true
 ```
 
-**Output — `paper-plugin.yml`（`PauseMenuBootstrap` 見 SKILL.md）:**
+**Output — `paper-plugin.yml` (see SKILL.md for `PauseMenuBootstrap`):**
 ```yaml
 name: PauseMenu
 version: '${version}'
@@ -213,7 +213,7 @@ bootstrapper: com.example.menu.PauseMenuBootstrap
 api-version: '26.2'
 ```
 
-部署檢查：
-- 伺服器啟動日誌沒有 `Failed to register the pause menu dialog`；若有，`PauseMenuPlugin#onEnable` 也會再印一行 WARNING
-- 進入遊戲按 ESC，暫停選單應出現新入口；沒有的話確認 `bootstrapper` 路徑與 `api-version`
-- bootstrap 階段註冊的 Dialog 是靜態的：按鍵用 `staticAction(ClickEvent.runCommand(...))`；要帶玩家資料的動態頁面，改在插件啟動後用 `Dialogs` 開啟
+Deployment checks:
+- The server startup log has no `Failed to register the pause menu dialog`; if it does, `PauseMenuPlugin#onEnable` also prints a WARNING line
+- In game, press ESC; the pause menu should show the new entry. If not, check the `bootstrapper` path and `api-version`
+- A Dialog registered during bootstrap is static: buttons use `staticAction(ClickEvent.runCommand(...))`; for dynamic pages that carry player data, open them with `Dialogs` after the plugin starts

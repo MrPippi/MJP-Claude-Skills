@@ -3,53 +3,53 @@ name: nms-packet-interceptor
 description: "透過 Netty ChannelDuplexHandler 注入玩家連線管線，攔截/修改 Clientbound 與 Serverbound 封包 / Intercept and modify packets via Netty pipeline injection"
 ---
 
-# NMS Packet Interceptor / NMS 封包攔截器
+# NMS Packet Interceptor
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-packet-interceptor`
 
-## 目的 / Purpose
+## Purpose
 
-在玩家的 Netty 連線管線中注入自訂 `ChannelDuplexHandler`，於封包進入/離開伺服器時進行讀取、修改或取消。常用於反外掛、封包記錄、自訂通訊協議、偽造資訊等場景。
+Inject a custom `ChannelDuplexHandler` into the player's Netty connection pipeline to read, modify, or cancel packets as they enter or leave the server. Commonly used for anti-cheat, packet logging, custom protocols, and spoofing information.
 
-### 替代方案 / Alternatives
+### Alternatives
 
-- **不想碰 NMS／Netty**：用 PacketEvents（或 ProtocolLib）當軟依賴，見 [`paper-packetevents-filter`](../../paper/paper-packetevents-filter/SKILL.md)。BlockoSMP、Bydsmp 都採這條路。
-- 不論哪條路，都遵守 **fail-open**：攔截器出錯時讓封包照常通過、停用自己並只記錄一次，不能讓玩家斷線或卡住。
+- **Prefer to avoid NMS/Netty**: use PacketEvents (or ProtocolLib) as a soft dependency, see [`paper-packetevents-filter`](../../paper/paper-packetevents-filter/SKILL.md). BlockoSMP and Bydsmp both take this route.
+- Either way, follow **fail-open**: when the interceptor errors, let the packet pass through as usual, disable itself, and log only once. Never disconnect or stall the player.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2(both versions compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Netty 4.x（Paper 內建）
+- Netty 4.x(bundled with Paper)
 
-## 觸發條件 / Triggers
+## Triggers
 
-- 「封包攔截」「packet intercept」「netty pipeline」
-- 「channel handler」「封包監聽」「修改封包」
-- 「packet listener」「anti-cheat packet」
+- "封包攔截", "packet intercept", "netty pipeline"
+- "channel handler", "封包監聽", "修改封包"
+- "packet listener", "anti-cheat packet"
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.network` | 產出類別所在 package |
-| `handler_name` | `PacketInterceptor` | Handler 類別名稱 |
-| `manager_name` | `InterceptorManager` | 管理器類別名稱 |
-| `handler_id` | `myplugin_interceptor` | Netty pipeline 中的 handler 名稱（須唯一） |
+| `package_name` | `com.example.network` | Package of the generated classes |
+| `handler_name` | `PacketInterceptor` | Handler class name |
+| `manager_name` | `InterceptorManager` | Manager class name |
+| `handler_id` | `myplugin_interceptor` | Handler name in the Netty pipeline (must be unique) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `PacketInterceptor.java` — `ChannelDuplexHandler` 實作
-- `InterceptorManager.java` — 監聽 Join/Quit 事件管理注入/移除
-- `InterceptorListener.java` — Bukkit 事件監聽器
+- `PacketInterceptor.java` — `ChannelDuplexHandler` implementation
+- `InterceptorManager.java` — handles injection/removal on Join/Quit events
+- `InterceptorListener.java` — Bukkit event listener
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。Netty 隨 Paper 提供，無需額外依賴。
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Netty ships with Paper, so no extra dependency is needed.
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `PacketInterceptor.java`
 
@@ -82,28 +82,28 @@ public final class PacketInterceptor extends ChannelDuplexHandler {
         this.outboundFilter = outboundFilter;
     }
 
-    /** Serverbound：客戶端 → 伺服器。 */
+    /** Serverbound: client -> server. */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof Packet<?> packet) {
             Player player = org.bukkit.Bukkit.getPlayer(playerId);
             if (player != null && inboundFilter != null) {
                 Packet<?> modified = inboundFilter.apply(player, packet);
-                if (modified == null) return; // 取消封包
+                if (modified == null) return; // cancel the packet
                 msg = modified;
             }
         }
         super.channelRead(ctx, msg);
     }
 
-    /** Clientbound：伺服器 → 客戶端。 */
+    /** Clientbound: server -> client. */
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         if (msg instanceof Packet<?> packet) {
             Player player = org.bukkit.Bukkit.getPlayer(playerId);
             if (player != null && outboundFilter != null) {
                 Packet<?> modified = outboundFilter.apply(player, packet);
-                if (modified == null) return; // 取消封包
+                if (modified == null) return; // cancel the packet
                 msg = modified;
             }
         }
@@ -142,17 +142,17 @@ public final class InterceptorManager {
         this.outboundFilter = outboundFilter;
     }
 
-    /** 在玩家 join 時注入 handler 至 pipeline。 */
+    /** Injects the handler into the pipeline when a player joins. */
     public void inject(Player player) {
         Channel channel = getChannel(player);
         if (channel == null || channel.pipeline().get(HANDLER_ID) != null) return;
 
         PacketInterceptor interceptor = new PacketInterceptor(player, inboundFilter, outboundFilter);
-        // 放在 vanilla "packet_handler" 前面（即我們先看到封包）
+        // Place before vanilla "packet_handler" (so we see packets first)
         channel.pipeline().addBefore("packet_handler", HANDLER_ID, interceptor);
     }
 
-    /** 在玩家 quit 時移除 handler。 */
+    /** Removes the handler when a player quits. */
     public void uninject(Player player) {
         Channel channel = getChannel(player);
         if (channel == null || channel.pipeline().get(HANDLER_ID) == null) return;
@@ -203,7 +203,7 @@ public final class InterceptorListener implements Listener {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -214,20 +214,20 @@ src/main/java/com/example/
     └── InterceptorListener.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ⚠️ `channelRead` 與 `write` 皆在 **Netty IO 執行緒**執行，禁止存取 `Level`/`Entity`/呼叫阻塞 IO
-- ⚠️ 需存取世界狀態 → `Bukkit.getScheduler().runTask(plugin, () -> { ... })`
-- ⚠️ Filter function 中不可呼叫 `player.teleport()` 等 Bukkit 同步 API
-- ✅ 移除 handler 時必須透過 `channel.eventLoop().execute()`，避免 pipeline race condition
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ⚠️ `channelRead` and `write` both run on the **Netty IO thread**; do not access `Level`/`Entity` or call blocking IO
+- ⚠️ To access world state, use `Bukkit.getScheduler().runTask(plugin, () -> { ... })`
+- ⚠️ Do not call synchronous Bukkit APIs such as `player.teleport()` inside filter functions
+- ✅ Always remove the handler via `channel.eventLoop().execute()` to avoid pipeline race conditions
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Solution |
 |------|------|------|
-| `NoSuchElementException: packet_handler` | Netty pipeline handler 名稱變更 | 檢查 Paper 對應版本的 `Connection.java` |
-| Handler 未觸發 | 注入時機太晚（封包已流經） | 用 `PlayerJoinEvent` 的 `LOWEST` 優先級 |
-| Handler 造成延遲 | Filter function 內有阻塞操作 | 將阻塞操作丟至 async task，filter 僅做輕量判斷 |
-| `IllegalStateException: Handler already added` | 重複注入 | 每次 inject 前檢查 `pipeline().get(HANDLER_ID)` |
-| Server 關閉時 `ClosedChannelException` | 關服流程中 pipeline 已關閉 | 忽略此錯誤，或在 `onDisable` 先 uninject 所有玩家 |
+| `NoSuchElementException: packet_handler` | The Netty pipeline handler name changed | Check `Connection.java` for the matching Paper version |
+| Handler not triggered | Injected too late (packets already flowed through) | Use the `LOWEST` priority on `PlayerJoinEvent` |
+| Handler causes lag | Blocking operations inside the filter function | Move blocking work to an async task; keep the filter to lightweight checks |
+| `IllegalStateException: Handler already added` | Duplicate injection | Check before every inject: `pipeline().get(HANDLER_ID)` |
+| `ClosedChannelException` on server shutdown | The pipeline is already closed during shutdown | Ignore the error, or uninject all players first in `onDisable` |

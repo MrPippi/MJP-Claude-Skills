@@ -1,15 +1,15 @@
 # examples — paper-packetevents-filter
 
-## 範例 1：改寫（而不是隱藏）特定玩家看到的系統聊天
+## Example 1: Rewrite (rather than hide) the system chat a specific player sees
 
 **Input:**
 ```
 backend: packetevents
 recipes: chat
-需求: 「兒童模式」玩家看到的系統訊息裡，把指定詞彙換成 ***；其他玩家不受影響
+requirement: In system messages seen by "kid mode" players, replace the listed words with ***; other players are unaffected
 ```
 
-**Output — 沿用 `FilterState` 的 `chatHidden` 集合當作「兒童模式」名單；詞彙表是建構時就固定的不可變 `Pattern`:**
+**Output: reuse the `chatHidden` set in `FilterState` as the "kid mode" list; the word list is an immutable `Pattern` fixed at construction time:**
 ```java
 import com.example.filter.state.FailOpenGuard;
 import com.example.filter.state.FilterState;
@@ -63,22 +63,22 @@ public final class ChatRewriteFilter extends PacketListenerAbstract {
 }
 ```
 
-註冊方式同 `ChatPacketFilter`：在 `PacketEventsBridge.register` 內多加一行
-`registered.add(events.registerListener(new ChatRewriteFilter(state, new FailOpenGuard(log, "rewrite"), pattern)));`。
-若同時啟用 `ChatPacketFilter`（取消）與改寫，取消的過濾器用較低優先權或先註冊，避免對已取消的封包做白工。
+Register it the same way as `ChatPacketFilter`: add one line inside `PacketEventsBridge.register`:
+`registered.add(events.registerListener(new ChatRewriteFilter(state, new FailOpenGuard(log, "rewrite"), pattern)));`.
+If both `ChatPacketFilter` (cancel) and the rewrite are enabled, give the cancelling filter a lower priority or register it first, so no work is wasted on packets that are already cancelled.
 
 ---
 
-## 範例 2：重送單一格子，讓 lore 立即更新
+## Example 2: Resend a single slot so the lore updates immediately
 
 **Input:**
 ```
 backend: packetevents
 recipes: lore
-需求: 玩家開關「顯示價值」或物品價格改變後，立刻讓用戶端重畫某一格，不用 updateInventory() 整個重送
+requirement: After a player toggles "show value" or an item price changes, make the client redraw one slot immediately instead of resending everything with updateInventory()
 ```
 
-**Output — 背包 index 對照 window 0 的容器格子（`toContainerSlot`），並在主執行緒送 SET_SLOT（`stateId=0` 代表伺服器主動，用戶端不動游標與預測佇列）:**
+**Output: map the inventory index to the window 0 container slot (`toContainerSlot`) and send SET_SLOT on the main thread (`stateId=0` means server-initiated, so the client leaves the cursor and prediction queue alone):**
 
 ```java
 import com.github.retrooper.packetevents.PacketEvents;
@@ -147,20 +147,20 @@ public final class SlotResender {
 }
 ```
 
-ProtocolLib 對應寫法：以 `ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.SET_SLOT)` 建立封包，
-用 `getIntegers().write(0, 0)`、`write(1, 0)`、`write(2, container)` 與 `getItemModifier().write(0, item)` 填欄位，
-再 `sendServerPacket(player, packet, true)`（第三個參數 `true` = 讓封包走監聽鏈）。
+ProtocolLib equivalent: create the packet with `ProtocolLibrary.getProtocolManager().createPacket(PacketType.Play.Server.SET_SLOT)`,
+fill the fields with `getIntegers().write(0, 0)`, `write(1, 0)`, `write(2, container)` and `getItemModifier().write(0, item)`,
+then call `sendServerPacket(player, packet, true)` (the third argument `true` sends the packet through the listener chain).
 
 ---
 
-## 範例 3：沒裝 packetevents 時的邊界測試
+## Example 3: Boundary test when packetevents is not installed
 
 **Input:**
 ```
-需求: 確認 packetevents 不在 classpath 時，「一定會被載入」的類別不會因反射而炸掉
+requirement: Make sure classes that are always loaded do not blow up through reflection when packetevents is not on the classpath
 ```
 
-**Output — 測試 classpath 刻意不含 packetevents（`compileOnly` 不會進測試 runtime，所以這和伺服器缺插件時看到的一樣）。`Bukkit.registerEvents` 會對 Listener 呼叫 `getDeclaredMethods()`，任何成員簽名引用封包型別都會丟 `NoClassDefFoundError`:**
+**Output: the test classpath deliberately excludes packetevents (`compileOnly` does not reach the test runtime, so this matches what a server without the plugin sees). `Bukkit.registerEvents` calls `getDeclaredMethods()` on a Listener, and any member signature that references a packet type throws `NoClassDefFoundError`:**
 ```java
 import java.util.List;
 
@@ -202,4 +202,4 @@ public final class PacketBoundaryCheck {
 }
 ```
 
-另一個值得寫的測試是 `FailOpenGuard`：呼叫兩次 `trip(...)`，驗證 `active()` 變成 `false` 且只記錄一筆 WARNING。
+Another test worth writing is for `FailOpenGuard`: call `trip(...)` twice and verify that `active()` becomes `false` and only one WARNING is logged.

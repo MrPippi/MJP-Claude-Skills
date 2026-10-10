@@ -3,45 +3,45 @@ name: nms-particle-effect
 description: "透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效果：客戶端專屬、大量粒子、自定義參數（Paper NMS + Mojang-mapped）/ Advanced NMS particle effects via ClientboundLevelParticlesPacket with per-client and bulk support"
 ---
 
-# NMS Particle Effect / NMS 進階粒子效果
+# NMS Particle Effect
 
-## 技能名稱 / Skill Name
+## Skill Name
 
 `nms-particle-effect`
 
-## 目的 / Purpose
+## Purpose
 
-透過 `ClientboundLevelParticlesPacket` 直接發送 NMS 粒子封包，實現 Bukkit `World.spawnParticle()` 無法達到的效果：客戶端專屬粒子（只對特定玩家顯示）、超大量粒子、精確的速度/偏移控制、Item/Block 參數粒子。
+Send NMS particle packets directly via `ClientboundLevelParticlesPacket` to achieve effects Bukkit `World.spawnParticle()` cannot: client-specific particles (shown only to selected players), very large particle counts, precise speed/offset control, and Item/Block parameterized particles.
 
-## NMS 版本需求 / NMS Version Requirements
+## NMS Version Requirements
 
-- Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
+- Paper 1.21.11 / 26.2 (both compile-verified; version differences are marked with a trailing `// @1.21.11:`)
 - Paperweight userdev 2.0.0-beta.24+
-- Mojang 官方名稱（Minecraft 26.1 起不再混淆）
+- Mojang official names (Minecraft is no longer obfuscated since 26.1)
 
-## 觸發條件 / Triggers
+## Triggers
 
 - 「粒子效果」「particle effect」「LevelParticles」「NMS 粒子」「custom particle」
 - 「客戶端粒子」「client particle」「per-player particle」「私有粒子」
 - 「大量粒子」「bulk particle」「particle packet」
 
-## 輸入參數 / Inputs
+## Inputs
 
-| 參數 | 範例 | 說明 |
+| Parameter | Example | Description |
 |------|------|------|
-| `package_name` | `com.example.effect` | 產出類別所在 package |
-| `class_name` | `ParticleEffect` | 效果工具類名稱 |
-| `include_shapes` | `true` | 是否產生預設形狀（圓形、線段、螺旋） |
+| `package_name` | `com.example.effect` | Package of the generated classes |
+| `class_name` | `ParticleEffect` | Effect utility class name |
+| `include_shapes` | `true` | Whether to generate default shapes (circle, line, helix) |
 
-## 輸出產物 / Outputs
+## Outputs
 
-- `ParticleEffect.java` — 粒子封包發送工具
-- `ParticleBuilder.java` — 粒子封包 Builder 模式封裝
-- `ParticleShapes.java`（選）— 預設形狀（circle、line、helix）
+- `ParticleEffect.java` — particle packet sending utility
+- `ParticleBuilder.java` — Builder-pattern wrapper for particle packets
+- `ParticleShapes.java`(optional) — default shapes (circle, line, helix)
 
-## Paperweight 建置設定 / Build Setup
+## Build Setup
 
-參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
+See [`references/paper-nms-platform.md`](references/paper-nms-platform.md). Key dependency:
 
 ```groovy
 dependencies {
@@ -49,7 +49,7 @@ dependencies {
 }
 ```
 
-## 代碼範本 / Code Template
+## Code Template
 
 ### `ParticleEffect.java`
 
@@ -73,20 +73,20 @@ public final class ParticleEffect {
     private ParticleEffect() {}
 
     /**
-     * 發送粒子封包給單一玩家（客戶端專屬）。
+     * Sends a particle packet to a single player (client-specific).
      *
-     * @param particle  NMS ParticleOptions（如 ParticleTypes.FLAME）
-     * @param loc       粒子位置
-     * @param count     粒子數量
-     * @param offsetX/Y/Z 隨機偏移範圍
-     * @param speed     粒子速度（0 = 不移動）
-     * @param override  true = 強制顯示：overrideLimiter（遠距離也渲染）+ alwaysShow（無視客戶端「粒子：減少」設定）
+     * @param particle  NMS ParticleOptions (e.g. ParticleTypes.FLAME)
+     * @param loc       particle location
+     * @param count     particle count
+     * @param offsetX/Y/Z random offset range
+     * @param speed     particle speed (0 = no movement)
+     * @param override  true = force display: overrideLimiter (render at long range) + alwaysShow (ignore the client's "Particles: Decreased" setting)
      */
     public static void send(Player player, ParticleOptions particle, Location loc,
                             int count, double offsetX, double offsetY, double offsetZ,
                             double speed, boolean override) {
         ServerPlayer nms = ((CraftPlayer) player).getHandle();
-        // 1.21.4+ 建構子：(particle, overrideLimiter, alwaysShow, x, y, z, dx, dy, dz, speed, count)
+        // 1.21.4+ constructor: (particle, overrideLimiter, alwaysShow, x, y, z, dx, dy, dz, speed, count)
         ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
             particle, override, override,
             loc.getX(), loc.getY(), loc.getZ(),
@@ -96,7 +96,7 @@ public final class ParticleEffect {
         nms.connection.send(packet);
     }
 
-    /** 對一組玩家發送同一粒子封包。 */
+    /** Sends the same particle packet to a group of players. */
     public static void sendAll(Collection<? extends Player> players, ParticleOptions particle,
                                Location loc, int count, double offsetX, double offsetY,
                                double offsetZ, double speed) {
@@ -111,24 +111,24 @@ public final class ParticleEffect {
         }
     }
 
-    /** 常用快捷方法：在指定位置爆炸粒子。 */
+    /** Common shortcut: explosion particle at the given location. */
     public static void explosion(Player player, Location loc) {
         send(player, ParticleTypes.EXPLOSION, loc, 1, 0, 0, 0, 0, true);
     }
 
-    /** 常用快捷方法：心形粒子。 */
+    /** Common shortcut: heart particles. */
     public static void hearts(Player player, Location loc, int count) {
         send(player, ParticleTypes.HEART, loc, count, 0.5, 0.5, 0.5, 0, false);
     }
 
-    /** 常用快捷方法：火焰粒子向上噴。 */
+    /** Common shortcut: flame particles shooting upward. */
     public static void flame(Player player, Location loc, int count) {
         send(player, ParticleTypes.FLAME, loc, count, 0.1, 0.3, 0.1, 0.05f, false);
     }
 }
 ```
 
-### `ParticleBuilder.java`（Builder 模式）
+### `ParticleBuilder.java` (Builder pattern)
 
 ```java
 package com.example.effect;
@@ -202,7 +202,7 @@ public class ParticleBuilder {
 }
 ```
 
-### `ParticleShapes.java`（預設形狀）
+### `ParticleShapes.java` (default shapes)
 
 ```java
 package com.example.effect;
@@ -216,7 +216,7 @@ public final class ParticleShapes {
 
     private ParticleShapes() {}
 
-    /** 在指定位置畫一個水平圓（count 點均分）。 */
+    /** Draws a horizontal circle at the given location (points evenly spaced). */
     public static void circle(Player player, Location center, double radius,
                               int points, ParticleOptions particle) {
         for (int i = 0; i < points; i++) {
@@ -227,7 +227,7 @@ public final class ParticleShapes {
         }
     }
 
-    /** 從 start 到 end 畫一條粒子線段（density 控制點密度）。 */
+    /** Draws a particle line from start to end (density controls point spacing). */
     public static void line(Player player, Location start, Location end,
                             double density, ParticleOptions particle) {
         double distance = start.distance(end);
@@ -241,7 +241,7 @@ public final class ParticleShapes {
         }
     }
 
-    /** 往上螺旋粒子（height 高度、loops 圈數、points 每圈點數）。 */
+    /** Upward spiral particles (height = total height, loops = number of turns, pointsPerLoop = points per turn). */
     public static void helix(Player player, Location base, double radius,
                              double height, int loops, int pointsPerLoop,
                              ParticleOptions particle) {
@@ -257,7 +257,7 @@ public final class ParticleShapes {
 }
 ```
 
-## 推薦目錄結構 / Recommended Directory Structure
+## Recommended Directory Structure
 
 ```
 src/main/java/com/example/
@@ -268,18 +268,18 @@ src/main/java/com/example/
     └── ParticleShapes.java
 ```
 
-## 執行緒安全注意事項 / Thread Safety
+## Thread Safety
 
-- ✅ `ParticleEffect.send()` 內部呼叫 `connection.send()`，**可在任何執行緒呼叫**
-- ⚠️ Location 若依賴世界狀態（如跟隨實體），封包建構須在主執行緒完成
-- ⚠️ `ParticleShapes` 中的 `start.distance(end)` 需要兩個 Location 同屬一個世界
-- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
+- ✅ `ParticleEffect.send()` calls `connection.send()` internally, so it **can be called from any thread**
+- ⚠️ If the Location depends on world state (e.g. following an entity), build the packet on the main thread
+- ⚠️ `start.distance(end)` in `ParticleShapes` requires both Locations to be in the same world
+- See [`references/nms-threading.md`](references/nms-threading.md)
 
-## 失敗回退 / Fallback
+## Fallback
 
-| 錯誤 | 原因 | 解法 |
+| Error | Cause | Fix |
 |------|------|------|
-| 粒子不顯示 | 客戶端粒子設定為「最少」 | 設 `override = true` 強制顯示 |
-| 粒子只顯示在遠端 | offset 過大 | 減小 offsetX/Y/Z |
-| Item 粒子不顯示 | 需使用 `ItemParticleOption` 而非 `SimpleParticleType` | 改用 `new ItemParticleOption(ParticleTypes.ITEM, nmsItemStack)` |
-| Block 粒子不顯示 | 需使用 `BlockParticleOption` | 改用 `new BlockParticleOption(ParticleTypes.BLOCK, blockState)` |
+| Particles not shown | Client particle setting is "Minimal" | Set `override = true` to force display |
+| Particles only appear far away | Offset too large | Reduce offsetX/Y/Z |
+| Item particles not shown | Must use `ItemParticleOption` instead of `SimpleParticleType` | Use `new ItemParticleOption(ParticleTypes.ITEM, nmsItemStack)` |
+| Block particles not shown | Must use `BlockParticleOption` | Use `new BlockParticleOption(ParticleTypes.BLOCK, blockState)` |

@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+### Changed — 技能內文改為英文
+
+- 30 個技能的 `SKILL.md`、`examples.md` 內文、程式碼註解與字串改為英文；frontmatter `description` 與觸發關鍵字（Triggers 段落）維持中英並陳，中文提問仍可觸發。逐檔比對確認程式碼未變動（只改註解與字串），並通過 26.2／1.21.11 編譯
+- `Skills/paper-*/PLATFORM.md` 與 `Skills/_shared/*.md` 改為英文（`references/` 隨之更新）；原中文版移至 `web/data/docs/zh/`，網站繁中頁面不變
+- 網站文件載入改為依 `registry.ts` 的 `sourceLang` 選擇來源或翻譯（`docs/paper-nms/` 仍以中文為來源）
+
 ### Added — 範本編譯 CI
 
 - `scripts/extract-skill-java.mjs`：從 SKILL.md／examples.md 抽出完整 Java 檔（含 `package`），依目標版本套用 `// @1.21.11:` 與 `// @only`；Paper API 技能若 import NMS 直接失敗

@@ -40,8 +40,10 @@ describe('English docs content', () => {
   it('has a CJK-free English body for every docs page', async () => {
     for (const page of await getAllDocPages()) {
       const id = `${page.section}/${page.slug}`;
-      assert.ok(page.english, `missing data/docs/en/${id}.md`);
-      assert.equal(cjkSnippet(page.english.html), null, `${id} English body contains CJK`);
+      const english = page.sourceLang === 'en' ? page : page.translation;
+      assert.ok(english, `missing data/docs/en/${id}.md`);
+      assert.equal(cjkSnippet(english.html), null, `${id} English body contains CJK`);
+      if (page.sourceLang === 'en') assert.equal(page.translation?.lang, 'zh', `missing data/docs/zh/${id}.md`);
       assert.equal(cjkSnippet(page.title.en), null, `${id} English title contains CJK`);
     }
   });

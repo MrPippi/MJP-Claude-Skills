@@ -1,15 +1,15 @@
-# examples — paper-combat-tag
+# examples - paper-combat-tag
 
-## 範例 1：用 JUnit 測純邏輯核心（不需要 Bukkit）
+## Example 1: Test the pure-logic core with JUnit (no Bukkit needed)
 
 **Input:**
 ```
 base_package: com.example.combat
 duration_seconds: 20
-需求: 驗證 hit / 重置 / 到期 / bypass / 登出判死 / 被踢免死
+requirements: verify hit / refresh / expiry / bypass / logout punishment / kick exemption
 ```
 
-**Output — `CombatTagServiceTest.java`（時間由測試傳入，不用 sleep）:**
+**Output - `CombatTagServiceTest.java` (time is passed in by the test, no sleep):**
 ```java
 package com.example.combat.core;
 
@@ -134,14 +134,14 @@ class CombatTagServiceTest {
 
 ---
 
-## 範例 2：指令白名單、傳送原因與歸因視窗的規則測試
+## Example 2: Rule tests for the command whitelist, teleport causes and attribution window
 
 **Input:**
 ```
-需求: 別名／命名空間／大小寫／參數 不能繞過白名單；珍珠不被擋；水晶歸因只在視窗內有效
+requirements: aliases / namespaces / case / arguments must not bypass the whitelist; pearls are not blocked; crystal attribution is valid only inside the window
 ```
 
-**Output — `RulesTest.java`（`CommandPolicy` + `TeleportRule` + `ActionLedger`，皆無 Bukkit）:**
+**Output - `RulesTest.java` (`CommandPolicy` + `TeleportRule` + `ActionLedger`, all Bukkit-free):**
 ```java
 package com.example.combat.core;
 
@@ -212,17 +212,17 @@ class RulesTest {
 
 ---
 
-## 範例 3：決鬥插件透過 `CombatTagApi` 在開局時解標
+## Example 3: A duel plugin untags players at match start through `CombatTagApi`
 
 **Input:**
 ```
 provider_plugin: CombatTag
 api_package: com.example.combat.api
 consumer_package: com.example.duel.integration
-需求: 決鬥開始時解除雙方標記，避免戰鬥標記擋住進場傳送
+requirements: untag both sides when a duel starts, so the combat tag does not block the arena-entry teleport
 ```
 
-**Output — 使用端 Hook（API 型別只出現在方法本體的 `try` 內，CombatTag 未安裝時照常載入；做法見 `paper-service-api`）:**
+**Output - consumer hook (the API type appears only inside the `try` of a method body, so the class loads normally when CombatTag is not installed; see `paper-service-api` for the approach):**
 ```java
 package com.example.duel.integration;
 
@@ -244,7 +244,7 @@ public final class CombatTagHook {
         this.plugin = plugin;
     }
 
-    /** 只在主執行緒呼叫。CombatTag 不可用或版本不合時什麼都不做。 */
+    /** Call on the main thread only. Does nothing when CombatTag is unavailable or the version mismatches. */
     public void untagAll(Collection<UUID> players) {
         if (!plugin.getServer().getPluginManager().isPluginEnabled(PLUGIN_NAME)) {
             return;
@@ -268,7 +268,7 @@ public final class CombatTagHook {
 }
 ```
 
-**使用端 plugin.yml:**
+**Consumer plugin.yml:**
 ```yaml
 name: Duel
 main: com.example.duel.DuelPlugin
@@ -278,14 +278,14 @@ softdepend: [CombatTag]
 
 ---
 
-## 範例 4：自訂指令別名與戰鬥登出處罰模式
+## Example 4: Custom command aliases and the combat-logout punishment mode
 
 **Input:**
 ```
-需求: 戰鬥中只能用 /msg、/r；登出改成掉落物品而非處決
+requirements: only /msg and /r in combat; logging out drops items instead of executing the player
 ```
 
-**Output — `config.yml`（別名 `/w`、`/tell`、`/minecraft:msg` 都會被 CommandMap 解析成正式名稱後比對）:**
+**Output - `config.yml` (the aliases `/w`, `/tell` and `/minecraft:msg` are all resolved by CommandMap to the canonical name before comparing):**
 ```yaml
 duration-seconds: 30
 logout-mode: DROP_ITEMS
@@ -297,5 +297,5 @@ blocked-teleport-causes:
   - PLUGIN
 ```
 
-注意：白名單填的是**正式指令名**。若 `/w` 是 `msg` 的別名，玩家輸入 `/w Bob hi` 會被 `CommandMap` 解析成 `msg` 而放行；
-命名空間寫法 `/minecraft:msg` 同理。
+Note: the whitelist takes the **canonical command name**. If `/w` is an alias of `msg`, a player typing `/w Bob hi` is resolved by `CommandMap` to `msg` and allowed;
+the namespaced form `/minecraft:msg` works the same way.
