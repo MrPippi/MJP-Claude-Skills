@@ -3,7 +3,7 @@ id: nms-scoreboard
 title: NMS Scoreboard
 titleZh: NMS 計分板操作
 description: Operate sidebar, tablist, and scoreboard via NMS Scoreboard/Objective/Team API on Paper 26.x with official Mojang names.
-descriptionZh: 透過 NMS Scoreboard/Objective/Team API 操作 sidebar、tablist 顯示名稱與計分板（Paper NMS + Mojang mappings）。
+descriptionZh: 透過 NMS Scoreboard/Objective/Team API 操作 sidebar、tablist 顯示名稱與計分板。
 version: "1.0.0"
 status: active
 category: nms-display

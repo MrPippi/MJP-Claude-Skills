@@ -3,7 +3,7 @@ id: nms-chunk-access
 title: NMS Chunk Access
 titleZh: NMS 區塊直接存取
 description: Direct LevelChunk block state, heightmap, and ChunkSection access for high-performance bulk operations on Paper 26.x with official Mojang names.
-descriptionZh: 透過 NMS LevelChunk 直接讀寫方塊狀態、高度圖與 ChunkSection，實現高效能大範圍方塊操作（Paper NMS + Mojang mappings）。
+descriptionZh: 透過 NMS LevelChunk 直接讀寫方塊狀態、高度圖與 ChunkSection，實現高效能大範圍方塊操作。
 version: "1.0.0"
 status: active
 category: nms-world

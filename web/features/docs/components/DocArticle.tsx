@@ -40,7 +40,7 @@ export function DocArticle({ eyebrow, title, icon, description, meta, html, head
         <div className="mx-auto max-w-3xl">
           <header className="mb-8">
             <p className="eyebrow">{eyebrow}</p>
-            <h1 className="mt-2 flex items-center gap-3 font-serif text-3xl font-semibold leading-tight text-fg sm:text-4xl">
+            <h1 className="mt-2 flex items-center gap-3 font-display text-3xl font-semibold leading-tight text-fg sm:text-4xl">
               {icon && <PixelIcon name={icon} className="h-8 w-8 shrink-0" />}
               {title}
             </h1>

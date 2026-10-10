@@ -3,7 +3,7 @@ id: nms-particle-effect
 title: NMS Particle Effect
 titleZh: NMS 進階粒子效果
 description: Advanced NMS particle effects via ClientboundLevelParticlesPacket with per-client and bulk support on Paper 26.x with official Mojang names.
-descriptionZh: 透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效果：客戶端專屬、大量粒子、自定義參數（Paper NMS + Mojang mappings）。
+descriptionZh: 透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效果：客戶端專屬、大量粒子、自定義參數。
 version: "1.0.0"
 status: active
 category: nms-world

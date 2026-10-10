@@ -42,7 +42,7 @@ export function DocsIndex({ docLinks, skillCount }: DocsIndexProps) {
             <section key={key} data-reveal style={revealDelay(i)} className="card p-5">
               <div className="flex items-center gap-3">
                 <PixelIcon name={icon} className="h-8 w-8" />
-                <h2 className="font-serif text-lg font-semibold text-fg">{t.docs.sections[key]}</h2>
+                <h2 className="font-display text-lg font-semibold text-fg">{t.docs.sections[key]}</h2>
                 {links.length > 1 && <span className="ml-auto font-pixel text-[12px] text-fg-3">{format(t.docs.pagesCount, { count: links.length })}</span>}
               </div>
               <p className="mt-2 text-sm text-fg-2">{t.docs.sectionDescriptions[key]}</p>

@@ -27,7 +27,7 @@
 
 @theme inline {
   --font-sans: var(--font-inter), "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
-  --font-serif: var(--font-serif-src), "Songti TC", "Noto Serif TC", Georgia, serif;
+  --font-display: var(--font-inter), var(--font-goround), "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, "Cascadia Code", Consolas, monospace;
   --font-pixel: var(--font-cubic), "PingFang TC", "Microsoft JhengHei", monospace;
 }
@@ -253,7 +253,7 @@
 .doc-prose h3,
 .doc-prose h4 {
   color: var(--color-fg);
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.3;
   scroll-margin-top: 5rem;

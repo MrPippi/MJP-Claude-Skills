@@ -3,7 +3,7 @@ id: nms-custom-menu
 title: NMS Custom Menu
 titleZh: NMS 自定義容器 GUI
 description: Build custom container GUIs by extending AbstractContainerMenu with slot event handling on Paper 26.x with official Mojang names.
-descriptionZh: 繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 slot 事件攔截與資料同步（Paper NMS + Mojang mappings）。
+descriptionZh: 繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 slot 事件攔截與資料同步。
 version: "1.0.0"
 status: active
 category: nms-ui
