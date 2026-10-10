@@ -1,8 +1,8 @@
 export const GITHUB_REPO_URL = 'https://github.com/MrPippi/MJP-Paper-Skills';
-/** 貢獻指南：各語言 README 的「新增技能」段落 */
+/** 貢獻指南：各語言 README 的「貢獻指南」／Contributing 段落 */
 export const GITHUB_CONTRIBUTE_URLS = {
-  'zh-TW': `${GITHUB_REPO_URL}/blob/main/README.zh-TW.md#新增技能`,
-  en: `${GITHUB_REPO_URL}/blob/main/README.md#adding-new-skills`,
+  'zh-TW': `${GITHUB_REPO_URL}/blob/main/README.zh-TW.md#貢獻指南`,
+  en: `${GITHUB_REPO_URL}/blob/main/README.md#contributing`,
 } as const;
 /** Short name appended to page titles (matches the metadata title template). */
 export const SITE_SHORT_NAME = 'MJP-Paper-Skills';
