@@ -57,7 +57,7 @@ description: "Paper 插件的 SQLite 持久化：單一連線（WAL、busy_timeo
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。驅動只用 `compileOnly`，不打包：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。驅動只用 `compileOnly`，不打包：
 
 ```groovy
 dependencies {
@@ -762,7 +762,7 @@ src/test/java/com/example/homes/persistence/
 - **dirty map 存最新意圖**：同一個 key 被連續修改只會寫最後一次；排空用 `remove(key, value)`，不會蓋掉寫入期間的新值
 - **`onDisable` 不能排任務**：排程器已關閉，`close()` 先停 executor、等待、再同步排空，最後才 `database.close()`
 - Repository 與 Flusher 不持有 Bukkit 物件（`Player`、`Location`、`World`），只傳 UUID／世界名稱等純資料
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

@@ -46,7 +46,7 @@ description: "操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -221,7 +221,7 @@ src/main/java/com/example/
 - ✅ `ProfileBuilder` 方法為純資料操作，可在任意執行緒呼叫
 - ✅ `SkinFetcher.fetchByName()` 在 async 執行緒抓取，**不可**在回呼中直接操作 Bukkit/NMS 世界
 - ⚠️ 抓取完 skin 後需切回主執行緒再套用到 NPC 實體
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

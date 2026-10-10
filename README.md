@@ -47,9 +47,30 @@ AI coding tools often get Paper plugins subtly wrong: outdated or obfuscated NMS
 
 ### 1. Install the skills
 
-```bash
-git clone https://github.com/MrPippi/MJP-Paper-Skills.git
-```
+The [skills CLI](https://github.com/vercel-labs/skills) installs straight from this repository. You only need [Node.js](https://nodejs.org) for `npx`; there is no account or registration.
+
+1. In your plugin project's root folder, run:
+
+   ```bash
+   npx skills add MrPippi/MJP-Paper-Skills
+   ```
+
+2. Choose the skills you want. The CLI detects your AI tools (Claude Code, Codex, Cursor, …) and asks which ones to install for, and whether to symlink (recommended) or copy.
+3. Confirm the result with `npx skills list`.
+
+Each skill bundles the build setup and threading rules it needs in its own `references/` folder, so installing a single skill works on its own.
+
+| Goal | Command |
+|------|---------|
+| List the available skills | `npx skills add MrPippi/MJP-Paper-Skills --list` |
+| Install one skill | `npx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui` |
+| Install everything for specific tools, no prompts | `npx skills add MrPippi/MJP-Paper-Skills --skill '*' -a claude-code codex -y` |
+| Install for all your projects (e.g. `~/.claude/skills/`) | add `-g` to any `add` command |
+| Update installed skills | `npx skills update` |
+| Remove a skill | `npx skills remove paper-dialog-ui` |
+
+<details>
+<summary>Manual install</summary>
 
 Copy `MJP-Paper-Skills/.claude/skills/` into the folder your AI tool loads skills from:
 
@@ -61,8 +82,11 @@ Copy `MJP-Paper-Skills/.claude/skills/` into the folder your AI tool loads skill
 | GitHub Copilot | `.github/skills/` |
 
 ```bash
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
 ```
+
+</details>
 
 > [!NOTE]
 > Skill paths vary between tools and versions; check your tool's documentation. Many tools also read `.agents/skills/` as a shared location.
@@ -71,7 +95,7 @@ cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for y
 
 ```markdown
 Before writing Paper plugin code, find the matching skill in <skills-folder>/skills-registry.yml
-(by trigger_keywords) and follow its SKILL.md, plus the PLATFORM.md and _shared/ notes it references.
+(by trigger_keywords) and follow its SKILL.md, plus the files in its references/ folder.
 ```
 
 ### 2. Ask for what you need
@@ -136,16 +160,16 @@ Describe the feature in plain language. The tool matches your request against ea
 ## How It Works
 
 ```text
-Your request ──▶ skills-registry.yml ──▶ SKILL.md ──▶ PLATFORM.md + _shared/ ──▶ Generated code
-                 (trigger keywords)      (template,     (build.gradle,
-                                         inputs,        paper-plugin.yml,
-                                         fallbacks)     threading, naming)
+Your request ──▶ skill description ──▶ SKILL.md ──▶ references/ ──▶ Generated code
+                 (trigger keywords)     (template,     (build.gradle,
+                                        inputs,        paper-plugin.yml,
+                                        fallbacks)     threading, naming)
 ```
 
 1. The agent matches your request to a skill through its description and trigger keywords.
 2. It reads the skill's `SKILL.md` (template, inputs, outputs, thread-safety notes, fallback) and `examples.md`.
-3. It applies the platform build setup from [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) or [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
-4. It follows the shared rules in [`Skills/_shared/`](Skills/_shared) for threading and Mojang naming.
+3. It applies the platform build setup bundled in `references/`, generated from [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) or [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
+4. It follows the threading and Mojang naming rules bundled in `references/`, generated from [`Skills/_shared/`](Skills/_shared).
 
 For APIs beyond the templates, the [NMS quick reference](docs/paper-nms) covers packets, entities, the Netty pipeline and Bukkit ↔ NMS bridging.
 
@@ -177,8 +201,9 @@ MJP-Paper-Skills/
 │   ├── _shared/              # Threading and naming rules shared by all skills
 │   ├── paper-nms/PLATFORM.md # NMS build.gradle / paper-plugin.yml templates, version table
 │   ├── paper-api/PLATFORM.md # Paper API build setup, soft-dependency coordinates
-│   ├── nms/<skill-id>/       # SKILL.md + examples.md (16 NMS skills)
-│   └── paper/<skill-id>/     # SKILL.md + examples.md (14 Paper API skills)
+│   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (16 NMS skills)
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (14 Paper API skills)
+├── scripts/                  # sync-skill-references.mjs: regenerates each skill's references/
 ├── docs/paper-nms/           # NMS API quick reference
 ├── web/                      # Next.js documentation site (static export to GitHub Pages)
 ├── CHANGELOG.md
@@ -192,7 +217,7 @@ MJP-Paper-Skills/
 Contributions are welcome. To add a skill:
 
 1. Create `Skills/nms/<slug>/` or `Skills/paper/<slug>/` with `SKILL.md` and `examples.md` (at least two examples).
-2. Mirror it to the same path under `.claude/skills/`.
+2. Mirror it to the same path under `.claude/skills/`, then run `node scripts/sync-skill-references.mjs` to generate its `references/` folder (re-run it whenever a `PLATFORM.md` or `_shared/` file changes).
 3. Add the entry to both `skills-registry.yml` files.
 4. Add the site page `web/data/skills/<slug>.md` and its English body `web/data/skills/en/<slug>.md`, then update the expected list in `web/tests/skills-api.data.test.ts`.
 5. Compile the template classes against Paper 1.21.11 and 26.2 before opening a pull request.

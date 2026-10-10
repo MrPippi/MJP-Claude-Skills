@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useLanguage } from '@/shared/i18n';
 
-const INSTALL = 'cp -r MJP-Paper-Skills/.claude/skills .agents/skills';
+const INSTALL = 'npx skills add MrPippi/MJP-Paper-Skills';
 const FILES = ['ClientBorderService.java', 'BorderCommand.java', 'paper-plugin.yml'];
 /** Seconds between lines of the one-shot typing animation (see .type-line in motion.css). */
 const LINE_STEP = 0.32;

@@ -245,7 +245,7 @@ src/main/java/com/example/
 ## 執行緒安全注意事項 / Thread Safety
 
 - ✅ `AdapterRegistry` 單次初始化後為 immutable，讀取執行緒安全
-- ⚠️ Adapter 的具體方法仍遵守 NMS 執行緒規則（參見 `_shared/nms-threading.md`）
+- ⚠️ Adapter 的具體方法仍遵守 NMS 執行緒規則（參見 [`references/nms-threading.md`](references/nms-threading.md)）
 - ⚠️ `AdapterRegistry.register()` 只應在 `onEnable()` 執行一次，避免 race condition
 - ⚠️ 若使用 multi-module build，各 adapter module 不可互相引用
 

@@ -62,7 +62,7 @@ description: "在 Paper 插件內以 JDK HttpServer 提供唯讀 JSON／靜態�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。不需要新增任何依賴；Gson 由 `paper-api` 傳遞提供（伺服器端也已內建，不要 shade）。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。不需要新增任何依賴；Gson 由 `paper-api` 傳遞提供（伺服器端也已內建，不要 shade）。
 
 `config.yml`：
 
@@ -771,7 +771,7 @@ src/main/
 - 設定在啟動時解析成不可變 record；`bind`／`port`／`enabled` 變更需重啟，reload 不重新綁定。
 - `onDisable` 先 `cancelTasks(this)` 再 `web.stop()`；`server.stop(0)` 立即關閉、`shutdownNow()` 中斷執行緒，daemon 執行緒不會拖住 JVM 結束。
 - 快照任務若丟例外，該次不發布、舊快照繼續服務；在任務內接住並記錄比讓 scheduler 印堆疊更好。
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)。
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)。
 
 ## 安全性 / Security
 

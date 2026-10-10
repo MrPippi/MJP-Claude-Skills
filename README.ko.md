@@ -47,9 +47,30 @@ AI 코딩 도구는 Paper 플러그인에서 미묘한 실수를 자주 합니�
 
 ### 1. 스킬 설치
 
-```bash
-git clone https://github.com/MrPippi/MJP-Paper-Skills.git
-```
+[skills CLI](https://github.com/vercel-labs/skills)로 이 저장소에서 바로 설치합니다. `npx`를 위한 [Node.js](https://nodejs.org)만 있으면 되며, 계정이나 가입은 필요 없습니다.
+
+1. 플러그인 프로젝트의 루트 폴더에서 다음을 실행합니다.
+
+   ```bash
+   npx skills add MrPippi/MJP-Paper-Skills
+   ```
+
+2. 설치할 스킬을 고릅니다. CLI가 AI 도구(Claude Code, Codex, Cursor 등)를 감지하고, 어떤 도구용으로 설치할지와 심볼릭 링크(권장) 또는 복사 중 무엇을 쓸지 묻습니다.
+3. `npx skills list`로 결과를 확인합니다.
+
+각 스킬은 필요한 빌드 설정과 스레딩 규칙을 자체 `references/` 폴더에 포함하므로, 스킬 하나만 설치해도 동작합니다.
+
+| 목표 | 명령 |
+|------|---------|
+| 사용 가능한 스킬 목록 보기 | `npx skills add MrPippi/MJP-Paper-Skills --list` |
+| 스킬 하나 설치 | `npx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui` |
+| 지정한 도구용으로 전체를 프롬프트 없이 설치 | `npx skills add MrPippi/MJP-Paper-Skills --skill '*' -a claude-code codex -y` |
+| 모든 프로젝트용으로 설치 (예: `~/.claude/skills/`) | 어떤 `add` 명령에든 `-g`를 추가 |
+| 설치된 스킬 업데이트 | `npx skills update` |
+| 스킬 제거 | `npx skills remove paper-dialog-ui` |
+
+<details>
+<summary>수동 설치</summary>
 
 `MJP-Paper-Skills/.claude/skills/`를 AI 도구가 스킬을 불러오는 폴더로 복사합니다.
 
@@ -61,8 +82,11 @@ git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 | GitHub Copilot | `.github/skills/` |
 
 ```bash
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
 ```
+
+</details>
 
 > [!NOTE]
 > 스킬 경로는 도구와 버전에 따라 다릅니다. 사용하는 도구의 문서를 확인하십시오. 많은 도구는 공유 위치로 `.agents/skills/`도 읽습니다.
@@ -71,7 +95,7 @@ cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for y
 
 ```markdown
 Before writing Paper plugin code, find the matching skill in <skills-folder>/skills-registry.yml
-(by trigger_keywords) and follow its SKILL.md, plus the PLATFORM.md and _shared/ notes it references.
+(by trigger_keywords) and follow its SKILL.md, plus the files in its references/ folder.
 ```
 
 ### 2. 필요한 내용 요청하기
@@ -136,16 +160,16 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 ## 동작 방식
 
 ```text
-Your request ──▶ skills-registry.yml ──▶ SKILL.md ──▶ PLATFORM.md + _shared/ ──▶ Generated code
-                 (trigger keywords)      (template,     (build.gradle,
-                                         inputs,        paper-plugin.yml,
-                                         fallbacks)     threading, naming)
+Your request ──▶ skill description ──▶ SKILL.md ──▶ references/ ──▶ Generated code
+                 (trigger keywords)     (template,     (build.gradle,
+                                        inputs,        paper-plugin.yml,
+                                        fallbacks)     threading, naming)
 ```
 
 1. 에이전트는 설명과 트리거 키워드를 통해 요청에 맞는 스킬을 찾습니다.
 2. 해당 스킬의 `SKILL.md`(템플릿, 입력, 출력, 스레드 안전 노트, 폴백)와 `examples.md`를 읽습니다.
-3. [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 또는 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md)의 플랫폼 빌드 설정을 적용합니다.
-4. 스레딩과 Mojang 명명에 관한 [`Skills/_shared/`](Skills/_shared)의 공통 규칙을 따릅니다.
+3. `references/`에 포함된 플랫폼 빌드 설정을 적용합니다. 이는 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 또는 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md)에서 생성됩니다.
+4. `references/`에 포함된 스레딩과 Mojang 명명 규칙을 따릅니다. 이는 [`Skills/_shared/`](Skills/_shared)에서 생성됩니다.
 
 템플릿에서 다루지 않는 API는 [NMS 빠른 참조](docs/paper-nms)에서 패킷, 엔티티, Netty 파이프라인, Bukkit ↔ NMS 브리징을 다룹니다.
 
@@ -177,8 +201,9 @@ MJP-Paper-Skills/
 │   ├── _shared/              # 모든 스킬이 공유하는 스레딩 및 명명 규칙
 │   ├── paper-nms/PLATFORM.md # NMS build.gradle / paper-plugin.yml 템플릿, 버전 표
 │   ├── paper-api/PLATFORM.md # Paper API 빌드 설정, 소프트 의존성 좌표
-│   ├── nms/<skill-id>/       # SKILL.md + examples.md (NMS 스킬 16개)
-│   └── paper/<skill-id>/     # SKILL.md + examples.md (Paper API 스킬 14개)
+│   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (NMS 스킬 16개)
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (Paper API 스킬 14개)
+├── scripts/                  # sync-skill-references.mjs: 각 스킬의 references/ 재생성
 ├── docs/paper-nms/           # NMS API 빠른 참조
 ├── web/                      # Next.js 문서 사이트 (GitHub Pages로 정적 내보내기)
 ├── CHANGELOG.md
@@ -192,7 +217,7 @@ MJP-Paper-Skills/
 기여를 환영합니다. 스킬을 추가하려면 다음 절차를 따르십시오.
 
 1. `Skills/nms/<slug>/` 또는 `Skills/paper/<slug>/`에 `SKILL.md`와 `examples.md`(예제 2개 이상)를 생성합니다.
-2. `.claude/skills/` 아래 동일한 경로에 미러링합니다.
+2. `.claude/skills/` 아래 동일한 경로에 미러링한 다음, `node scripts/sync-skill-references.mjs`를 실행하여 `references/` 폴더를 생성합니다(`PLATFORM.md` 또는 `_shared/` 파일이 변경될 때마다 다시 실행).
 3. 두 `skills-registry.yml` 파일 모두에 항목을 추가합니다.
 4. 사이트 페이지 `web/data/skills/<slug>.md`와 영어 본문 `web/data/skills/en/<slug>.md`를 추가한 다음, `web/tests/skills-api.data.test.ts`의 기대 목록을 업데이트합니다.
 5. 풀 리퀘스트를 열기 전에 Paper 1.21.11과 26.2를 대상으로 템플릿 클래스를 컴파일합니다.

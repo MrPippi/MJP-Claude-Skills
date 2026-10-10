@@ -53,7 +53,7 @@ description: "以 Paper Brigadier API 註冊指令：LifecycleEvents.COMMANDS、
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`，不需額外依賴。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`，不需額外依賴。
 
 ### `plugin.yml`（預設做法，指令走 Brigadier 時**不要**寫 `commands:`）
 
@@ -518,7 +518,7 @@ src/main/resources/
 - `executes` 在**主執行緒**執行，可呼叫 Bukkit API；耗時工作（資料庫、HTTP）請自行丟到非同步，完成後回主執行緒回覆並重新驗證玩家仍在線
 - `suggests` / `listSuggestions` **不保證在主執行緒**：只讀不可變快照，不呼叫 Bukkit 世界／實體 API
 - `requires` 會在建立客戶端指令樹時被呼叫，也要保持輕量、無副作用
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 何時不要用 Brigadier / When NOT to Use
 

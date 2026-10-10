@@ -58,7 +58,7 @@ description: "安全隨機傳送（RTP）與安全落點傳送：getChunkAtAsync
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`（`compileOnly`）。戰鬥標記由 [`paper-combat-tag`](../paper-combat-tag/SKILL.md) 提供，本技能只透過 `TeleportGuard` 介面接入，不在編譯期依賴它。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。戰鬥標記由 [`paper-combat-tag`](../paper-combat-tag/SKILL.md) 提供，本技能只透過 `TeleportGuard` 介面接入，不在編譯期依賴它。
 
 ## 安全落點規則 / Safe Location Rules
 
@@ -746,7 +746,7 @@ src/main/java/com/example/teleport/
 - 非同步階段之間只攜帶 `UUID`，回來後重新 `getPlayer` / `getWorld`，不持有 `Player` 引用
 - 讀方塊（`SafeLocationRules`）、`WorldBorder`、`addPluginChunkTicket` 一律在主執行緒
 - 池與暖機表只在主執行緒存取，不需要鎖；冷卻表用 `ConcurrentHashMap`，因為持久化可能在其他執行緒讀快照
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 - 戰鬥中禁止傳送：以 `TeleportGuard.blockWhileTagged` 接入 [`paper-combat-tag`](../paper-combat-tag/SKILL.md)
 
 ## 失敗回退 / Fallback

@@ -40,7 +40,7 @@ description: "透過 NMS ServerBossEvent 操作 Boss Bar 進度條、顏色、�
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -241,7 +241,7 @@ src/main/java/com/example/
 
 - ⚠️ `addPlayer()`、`removePlayer()`、`setProgress()` 等 `ServerBossEvent` 操作**必須在主執行緒呼叫**
 - ✅ `BossBarManager` 的事件回呼（PlayerQuitEvent）已在主執行緒觸發，安全
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

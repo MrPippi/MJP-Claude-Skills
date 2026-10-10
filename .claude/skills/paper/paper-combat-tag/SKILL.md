@@ -52,7 +52,7 @@ description: "PvP 戰鬥標記：純邏輯 CombatTagService（UUID + 時間戳�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。測試使用 JUnit（核心不含 Bukkit，不需要 MockBukkit）：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。測試使用 JUnit（核心不含 Bukkit，不需要 MockBukkit）：
 
 ```groovy
 dependencies {
@@ -1278,7 +1278,7 @@ src/main/resources/{config.yml,plugin.yml}
 - 非同步階段需要資料時，先在主執行緒取快照（例如 `remainingSeconds`），把值傳進去
 - `CombatTicker` 用 `runTaskTimer`（主執行緒），全伺服器只有一個 timer，不要每位玩家一個
 - `onDisable` 取消任務並 `clear()`；API 實作若要支援他執行緒，須改讀不可變快照
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

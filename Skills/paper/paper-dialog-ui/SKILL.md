@@ -55,7 +55,7 @@ description: "Paper Dialog API 介面模式：薄 Dialogs 包裝、通知／確�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`（`compileOnly`）。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。
 
 `plugin.yml` 或 `paper-plugin.yml` 的 `api-version` 至少 `'1.21.7'`；只有用到 bootstrapper 的插件需要 `paper-plugin.yml`：
 
@@ -565,7 +565,7 @@ src/main/resources/
 - 回呼 lambda 只攜帶 `UUID`、字串、數字與不可變值，不攜帶 `Player`
 - 需要資料庫或 HTTP 時：點擊 → 切主執行緒讀輸入值 → 非同步工作 → 再切回主執行緒重新驗證後 `showDialog`；等待期間用 `afterAction = WAIT_FOR_RESPONSE`
 - bootstrap 階段沒有 Bukkit 伺服器可用，只做 registry／tag 註冊
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ### 設計重點
 

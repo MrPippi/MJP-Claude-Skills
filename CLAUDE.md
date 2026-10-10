@@ -46,8 +46,10 @@ MJP-Paper-Skills/
 │   │   └── PLATFORM.md                  ← Paperweight + Mojang 建置設定（NMS 技能）
 │   ├── paper-api/
 │   │   └── PLATFORM.md                  ← paper-api compileOnly 建置設定（Paper API 技能）
-│   ├── nms/                             ← NMS 技能（每個含 SKILL.md + examples.md）
-│   └── paper/                           ← Paper API 技能（每個含 SKILL.md + examples.md）
+│   ├── nms/                             ← NMS 技能（每個含 SKILL.md + examples.md + references/）
+│   └── paper/                           ← Paper API 技能（每個含 SKILL.md + examples.md + references/）
+├── scripts/
+│   └── sync-skill-references.mjs        ← 產生各技能 references/（PLATFORM.md、_shared 副本）
 ├── .cursor/                             ← 歷史殘留，不再維護
 ├── docs/
 │   └── paper-nms/                       ← NMS API 速查表（深度參考資料）
@@ -248,7 +250,7 @@ Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-
 1. 在 `Skills/nms/<slug>/`（NMS）或 `Skills/paper/<slug>/`（Paper API）建立目錄
 2. 撰寫 `SKILL.md`（含 YAML frontmatter：`name`, `description`）
 3. 撰寫 `examples.md`（**至少 2 個範例**，涵蓋不同使用情境）
-4. 同步至 `.claude/skills/nms/<slug>/` 或 `.claude/skills/paper/<slug>/`
+4. 同步至 `.claude/skills/nms/<slug>/` 或 `.claude/skills/paper/<slug>/`，再執行 `node scripts/sync-skill-references.mjs` 產生 `references/`（技能內引用共用文件一律寫 `references/<檔名>`，不可用 `../../` 指到技能資料夾外）
 5. 將新條目加入 `Skills/skills-registry.yml` 與 `.claude/skills/skills-registry.yml`
 6. 若涉及新平台，建立 `Skills/<platform>/PLATFORM.md`
 7. 驗證觸發關鍵字無與既有技能衝突
@@ -345,18 +347,20 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 1. **雙路徑同步**：`Skills/nms/`、`Skills/paper/`、`Skills/_shared/` 與 `.claude/skills/` 下對應目錄內容必須相同（`diff -rq Skills .claude/skills` 只應顯示 `Only in Skills: paper-api` 與 `Only in Skills: paper-nms`）。`skills-registry.yml` 兩份同理。
 
-2. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
+2. **技能自給自足**：使用者可用 `npx skills add MrPippi/MJP-Paper-Skills --skill <id>` 單獨安裝技能，只會複製該技能資料夾。各技能需要的 `PLATFORM.md` 與 `_shared/*.md` 由 `scripts/sync-skill-references.mjs` 複製到 `<skill>/references/`（產生檔，不可手改）。修改 `Skills/paper-*/PLATFORM.md` 或 `Skills/_shared/` 後必須重跑腳本；`web/tests/skill-references.test.ts` 會以 `--check` 檢查。
 
-3. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
+3. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 
-4. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
+4. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
 
-5. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
+5. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
 
-6. **雙語要求**：技能標題、描述、觸發關鍵字皆須中英並陳。
+6. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
 
-7. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
+7. **雙語要求**：技能標題、描述、觸發關鍵字皆須中英並陳。
 
-8. **Paperweight 依賴預設**：全部 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。Paper API 技能不使用 Paperweight，也不得 import NMS。
+8. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
 
-9. **NMS 隔離**：NMS 程式碼只放在單一 `nms/` 套件、公開簽名只用 Bukkit 型別、版本不符時只停用該功能（見 `Skills/paper-nms/PLATFORM.md` 第 8 節）。
+9. **Paperweight 依賴預設**：全部 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。Paper API 技能不使用 Paperweight，也不得 import NMS。
+
+10. **NMS 隔離**：NMS 程式碼只放在單一 `nms/` 套件、公開簽名只用 Bukkit 型別、版本不符時只停用該功能（見 `Skills/paper-nms/PLATFORM.md` 第 8 節）。

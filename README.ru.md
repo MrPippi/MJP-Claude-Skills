@@ -47,9 +47,30 @@
 
 ### 1. Установите навыки
 
-```bash
-git clone https://github.com/MrPippi/MJP-Paper-Skills.git
-```
+[CLI skills](https://github.com/vercel-labs/skills) устанавливает навыки прямо из этого репозитория. Вам нужен только [Node.js](https://nodejs.org) для `npx`; аккаунт и регистрация не требуются.
+
+1. В корневой папке вашего проекта плагина выполните:
+
+   ```bash
+   npx skills add MrPippi/MJP-Paper-Skills
+   ```
+
+2. Выберите нужные навыки. CLI определяет ваши ИИ-инструменты (Claude Code, Codex, Cursor, …) и спрашивает, для каких из них установить, а также использовать ли символические ссылки (рекомендуется) или копирование.
+3. Проверьте результат командой `npx skills list`.
+
+Каждый навык включает нужные ему настройки сборки и правила работы с потоками в собственной папке `references/`, поэтому установка одного навыка отдельно работает.
+
+| Цель | Команда |
+|------|---------|
+| Показать доступные навыки | `npx skills add MrPippi/MJP-Paper-Skills --list` |
+| Установить один навык | `npx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui` |
+| Установить всё для выбранных инструментов, без запросов | `npx skills add MrPippi/MJP-Paper-Skills --skill '*' -a claude-code codex -y` |
+| Установить для всех ваших проектов (напр. `~/.claude/skills/`) | добавьте `-g` к любой команде `add` |
+| Обновить установленные навыки | `npx skills update` |
+| Удалить навык | `npx skills remove paper-dialog-ui` |
+
+<details>
+<summary>Ручная установка</summary>
 
 Скопируйте `MJP-Paper-Skills/.claude/skills/` в папку, из которой ваш ИИ-инструмент загружает навыки:
 
@@ -61,8 +82,11 @@ git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 | GitHub Copilot | `.github/skills/` |
 
 ```bash
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
 ```
+
+</details>
 
 > [!NOTE]
 > Пути к навыкам различаются в зависимости от инструмента и версии; сверьтесь с документацией вашего инструмента. Многие инструменты также читают `.agents/skills/` как общее расположение.
@@ -71,7 +95,7 @@ cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for y
 
 ```markdown
 Before writing Paper plugin code, find the matching skill in <skills-folder>/skills-registry.yml
-(by trigger_keywords) and follow its SKILL.md, plus the PLATFORM.md and _shared/ notes it references.
+(by trigger_keywords) and follow its SKILL.md, plus the files in its references/ folder.
 ```
 
 ### 2. Попросите то, что вам нужно
@@ -136,16 +160,16 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 ## Как это работает
 
 ```text
-Your request ──▶ skills-registry.yml ──▶ SKILL.md ──▶ PLATFORM.md + _shared/ ──▶ Generated code
-                 (trigger keywords)      (template,     (build.gradle,
-                                         inputs,        paper-plugin.yml,
-                                         fallbacks)     threading, naming)
+Your request ──▶ skill description ──▶ SKILL.md ──▶ references/ ──▶ Generated code
+                 (trigger keywords)     (template,     (build.gradle,
+                                        inputs,        paper-plugin.yml,
+                                        fallbacks)     threading, naming)
 ```
 
 1. Агент сопоставляет ваш запрос с навыком по его описанию и ключевым словам-триггерам.
 2. Он читает `SKILL.md` навыка (шаблон, входные и выходные данные, заметки о потокобезопасности, запасной вариант) и `examples.md`.
-3. Он применяет настройку сборки платформы из [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) или [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
-4. Он следует общим правилам из [`Skills/_shared/`](Skills/_shared) по работе с потоками и именованию Mojang.
+3. Он применяет настройку сборки платформы, включённую в `references/` и сгенерированную из [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) или [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
+4. Он следует правилам работы с потоками и именования Mojang, включённым в `references/` и сгенерированным из [`Skills/_shared/`](Skills/_shared).
 
 Для API, не охваченных шаблонами, [краткий справочник по NMS](docs/paper-nms) описывает пакеты, сущности, конвейер Netty и мост Bukkit ↔ NMS.
 
@@ -177,8 +201,9 @@ MJP-Paper-Skills/
 │   ├── _shared/              # Правила работы с потоками и именования, общие для всех навыков
 │   ├── paper-nms/PLATFORM.md # Шаблоны build.gradle / paper-plugin.yml для NMS, таблица версий
 │   ├── paper-api/PLATFORM.md # Настройка сборки Paper API, координаты мягких зависимостей
-│   ├── nms/<skill-id>/       # SKILL.md + examples.md (16 навыков NMS)
-│   └── paper/<skill-id>/     # SKILL.md + examples.md (14 навыков Paper API)
+│   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (16 навыков NMS)
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (14 навыков Paper API)
+├── scripts/                  # sync-skill-references.mjs: заново генерирует папку references/ каждого навыка
 ├── docs/paper-nms/           # Краткий справочник по API NMS
 ├── web/                      # Сайт документации на Next.js (статический экспорт на GitHub Pages)
 ├── CHANGELOG.md
@@ -192,7 +217,7 @@ MJP-Paper-Skills/
 Вклад приветствуется. Чтобы добавить навык:
 
 1. Создайте `Skills/nms/<slug>/` или `Skills/paper/<slug>/` с файлами `SKILL.md` и `examples.md` (не менее двух примеров).
-2. Продублируйте его по тому же пути в `.claude/skills/`.
+2. Продублируйте его по тому же пути в `.claude/skills/`, затем выполните `node scripts/sync-skill-references.mjs`, чтобы сгенерировать его папку `references/` (запускайте заново при изменении `PLATFORM.md` или файла из `_shared/`).
 3. Добавьте запись в оба файла `skills-registry.yml`.
 4. Добавьте страницу сайта `web/data/skills/<slug>.md` и её английский текст `web/data/skills/en/<slug>.md`, затем обновите ожидаемый список в `web/tests/skills-api.data.test.ts`.
 5. Скомпилируйте классы шаблона под Paper 1.21.11 и 26.2, прежде чем открывать pull request.

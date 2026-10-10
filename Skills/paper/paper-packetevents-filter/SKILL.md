@@ -59,7 +59,7 @@ description: "不碰 NMS 的封包過濾：以 PacketEvents（主）或 Protocol
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。兩個封包函式庫都只是 `compileOnly`：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。兩個封包函式庫都只是 `compileOnly`：
 
 ```groovy
 repositories {
@@ -1040,7 +1040,7 @@ src/main/java/com/example/filter/
 | 重送封包 | 狀態先改、再重送（`player.updateInventory()` 或 PacketEvents `PlayerManager#sendPacket`，後者會再經過監聽鏈）；重送在主執行緒呼叫 |
 | 例外 | 一律 fail-open：`catch (RuntimeException \| LinkageError)` → `guard.trip(e)`；`setCancelled(true)` / `markForReEncode(true)` 放在 try 的最後一行 |
 
-詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)。
+詳見 [`references/paper-threading.md`](references/paper-threading.md)。
 
 ## 失敗回退 / Fallback
 

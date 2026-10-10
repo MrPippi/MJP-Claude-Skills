@@ -108,9 +108,9 @@ export const en: Translations = {
       {
         number: '01',
         title: 'Install the skills',
-        description: 'Copy the skills from this repo into the folder your AI tool reads skills from. The tool loads them on start.',
-        code: 'git clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .claude/skills   # Claude Code\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills   # Codex, Gemini CLI …',
-        note: 'Cursor commonly uses .cursor/skills/ and GitHub Copilot .github/skills/; check each tool\'s docs for the exact path. For tools without Agent Skills support, reference the SKILL.md files you need from AGENTS.md or your rules file.',
+        description: 'Install with the skills CLI: it detects your AI tools (Claude Code, Codex, Cursor, Copilot, Gemini CLI …) and copies the skills into the folder each one reads. You can also copy them by hand.',
+        code: 'npx skills add MrPippi/MJP-Paper-Skills                             # choose skills and tools\nnpx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui   # one skill\n\n# Manual install\ngit clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills',
+        note: 'Each skill bundles its build setup and threading rules in references/, so installing a single skill works. Manual paths: Claude Code .claude/skills/, Codex and Gemini CLI .agents/skills/, Cursor .cursor/skills/, GitHub Copilot .github/skills/. For tools without Agent Skills support, reference the SKILL.md files you need from AGENTS.md or your rules file.',
       },
       {
         number: '02',

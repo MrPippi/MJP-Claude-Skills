@@ -56,7 +56,7 @@ description: "插件內建經濟核心：long 最小單位金額（不用 double
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。Vault 為 `compileOnly`，不可打包；測試另加 JUnit：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。Vault 為 `compileOnly`，不可打包；測試另加 JUnit：
 
 ```groovy
 dependencies {
@@ -1438,7 +1438,7 @@ economy/
 - 持久化只在 `WriteBehindQueue` 的單一寫入執行緒；佇列中只傳不可變的 `Transaction`（record），不傳 Bukkit 物件
 - 非同步工作（HTTP、資料庫）需要金額時，先在主執行緒讀值再傳入；寫回時用 `runTask` 回主執行緒再呼叫 API
 - `onDisable` 時排程器已關閉：同步 `queue.close(...)` 排空，不要再丟 `runTaskAsynchronously`
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

@@ -49,7 +49,7 @@ description: "建立自定義 NMS 實體：繼承現有 Mob 類別、自訂 Path
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。
 
 ## 代碼範本 / Code Template
 
@@ -219,7 +219,7 @@ src/main/java/com/example/
 - ⚠️ `PathfinderGoal.tick()` 由 NMS 在主執行緒的 tick 迴圈呼叫，勿做耗時操作
 - ⚠️ 存取 `mob.level()` 時確認 chunk 已載入
 - ✅ 可在 async 預計算路徑資料，但 `Navigation.moveTo()` 必須在主執行緒呼叫
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

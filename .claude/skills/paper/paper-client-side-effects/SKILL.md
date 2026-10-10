@@ -61,7 +61,7 @@ description: "只用 Paper API 做每位玩家各自看到的錯覺：虛擬世�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`：
 
 ```groovy
 dependencies {
@@ -810,7 +810,7 @@ src/main/java/com/example/effects/
 
 - 所有方法**只在主執行緒**呼叫：`Player#setWorldBorder`、`addPotionEffect`、`hidePlayer` 都碰到實體與追蹤狀態
 - `EffectState`、`LowHealthBorderEffect`、`PlayerVisibilityService` 內的 `HashMap` 不是執行緒安全的，原因同上：不要從非同步執行緒碰
-- 偏好來源（`EffectPreferences`）必須讀記憶體快取；資料庫載入完成後才呼叫 `refresh`，載入在非同步、套用回主執行緒（見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)）
+- 偏好來源（`EffectPreferences`）必須讀記憶體快取；資料庫載入完成後才呼叫 `refresh`，載入在非同步、套用回主執行緒（見 [`references/paper-threading.md`](references/paper-threading.md)）
 - 事件裡用 `runTask` 排到下一 tick 後，**重新用 UUID 取 `Player`**，因為玩家可能已離線
 
 ## 失敗回退 / Fallback

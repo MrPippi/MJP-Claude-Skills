@@ -56,7 +56,7 @@ description: "安全使用第三方軟依賴（Vault、PlaceholderAPI、packetev
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。軟依賴一律 `compileOnly`，**不可打包進 jar**：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。軟依賴一律 `compileOnly`，**不可打包進 jar**：
 
 ```groovy
 dependencies {
@@ -941,7 +941,7 @@ Bridge、Expansion 設為 package-private：integration package 以外不可能�
 - PlaceholderAPI 的 `onRequest` / `onPlaceholderRequest` **可能在任何執行緒**執行：只讀 `SnapshotPublisher.current()`，禁止呼叫 Bukkit API 或 Vault
 - 快照由主執行緒（`runTaskTimer`）整份重建後以 `volatile` 引用交換；快照物件建構後永不變動（`Map.copyOf`）
 - packetevents listener 在 Netty IO 執行緒：同樣只讀不可變快照，修改封包只改 clone
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

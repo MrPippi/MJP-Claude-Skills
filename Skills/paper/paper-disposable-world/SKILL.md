@@ -63,7 +63,7 @@ description: "拋棄式世界與可重置競技場：VoidChunkGenerator、WorldC
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`：
 
 ```groovy
 dependencies {
@@ -1181,7 +1181,7 @@ plugins/Arena/templates/duel_map/   ← 模板世界（含 level.dat、region/�
 - 非同步 lambda 只攜帶 `Path` / `String`，不攜帶 `World`、`Player`
 - 回傳的 future 一律在主執行緒完成，呼叫端可直接碰 Bukkit 物件
 - `onDisable` 時 scheduler 不再接受新任務：用 `closeAllSync()` 同步收尾，不要再 `runTask`
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 
