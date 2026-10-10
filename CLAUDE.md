@@ -50,7 +50,6 @@ MJP-Paper-Skills/
 │   └── paper/                           ← Paper API 技能（每個含 SKILL.md + examples.md + references/）
 ├── scripts/
 │   └── sync-skill-references.mjs        ← 產生各技能 references/（PLATFORM.md、_shared 副本）
-├── .cursor/                             ← 歷史殘留，不再維護
 ├── docs/
 │   └── paper-nms/                       ← NMS API 速查表（深度參考資料）
 │       ├── packets.md                   ← Clientbound/Serverbound 封包目錄
@@ -349,18 +348,16 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 2. **技能自給自足**：使用者可用 `npx skills add MrPippi/MJP-Paper-Skills --skill <id>` 單獨安裝技能，只會複製該技能資料夾。各技能需要的 `PLATFORM.md` 與 `_shared/*.md` 由 `scripts/sync-skill-references.mjs` 複製到 `<skill>/references/`（產生檔，不可手改）。修改 `Skills/paper-*/PLATFORM.md` 或 `Skills/_shared/` 後必須重跑腳本；`web/tests/skill-references.test.ts` 會以 `--check` 檢查。
 
-3. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
+3. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
 
-4. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
+4. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
 
-5. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
+5. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
 
-6. **執行緒安全**：所有產生的 Java 代碼必須遵守平台執行緒規則（見 Workflow Rules）。
+6. **雙語要求**：技能標題、描述、觸發關鍵字皆須中英並陳。
 
-7. **雙語要求**：技能標題、描述、觸發關鍵字皆須中英並陳。
+7. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
 
-8. **無資料庫**：Web app 直讀檔案系統，不引入 DB。
+8. **Paperweight 依賴預設**：全部 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。Paper API 技能不使用 Paperweight，也不得 import NMS。
 
-9. **Paperweight 依賴預設**：全部 NMS 技能皆預設使用 Paperweight；若需避免，使用 `nms-reflection-bridge`。Paper API 技能不使用 Paperweight，也不得 import NMS。
-
-10. **NMS 隔離**：NMS 程式碼只放在單一 `nms/` 套件、公開簽名只用 Bukkit 型別、版本不符時只停用該功能（見 `Skills/paper-nms/PLATFORM.md` 第 8 節）。
+9. **NMS 隔離**：NMS 程式碼只放在單一 `nms/` 套件、公開簽名只用 Bukkit 型別、版本不符時只停用該功能（見 `Skills/paper-nms/PLATFORM.md` 第 8 節）。

@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### Removed — 歷史殘留
+
+- 刪除不再維護的 `.cursor/`（舊版 Cursor 規則與 8 個早期技能）
+- 刪除 `docs/` 下舊的四平台文件（`paper/`、`purpur/`、`velocity/`、`waterfall/`、`CONVENTIONS.md`、`README.md`）；內容過時（如已棄用的 `com.github.johnrengelman.shadow`），且未被網站或技能引用。NMS 速查表 `docs/paper-nms/` 保留
+
 ### Added — `npx skills add` 安裝
 
 - 支援 [skills CLI](https://github.com/vercel-labs/skills)：`npx skills add MrPippi/MJP-Paper-Skills`（可用 `--skill <id>` 只裝單一技能）
