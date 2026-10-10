@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Gradle wrapper scripts must keep their native line endings
+verify/gradlew text eol=lf
+verify/gradlew.bat text eol=crlf

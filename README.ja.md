@@ -10,6 +10,7 @@ Mojang 公式名称を使う低レベルな NMS と純粋な Paper API に対応
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-orange)](https://adoptium.net)
 [![Skills](https://img.shields.io/badge/skills-30-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-8a63d2)](https://agentskills.io)
+[![Skills compile](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml/badge.svg)](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml)
 [![License: MIT](https://img.shields.io/github/license/MrPippi/MJP-Paper-Skills)](LICENSE)
 
 [**ドキュメント**](https://mrpippi.github.io/MJP-Paper-Skills) · [**スキルカタログ**](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills) · [**変更履歴**](CHANGELOG.md)
@@ -24,7 +25,7 @@ AI コーディングツールは、Paper プラグインで細かな間違い�
 
 ## 特長
 
-- **コンパイル検証済み**：すべてのテンプレートが Paper **1.21.11** と **26.2** の両方でビルドできます。バージョン固有の行はインラインで明示されています。
+- **コンパイル検証済み**：CI が変更のたびに、完成したすべてのテンプレートを Paper **1.21.11** と **26.2** の両方でコンパイルします。バージョン固有の行はインラインで明示されています。
 - **Mojang 公式名称**：NMS コードは Paperweight userdev と、26.1 以降 Minecraft が難読化せずに提供している名称を使います。
 - **スレッドセーフな設計**：各スキルは、すべての呼び出しがどのスレッド（メイン、Netty IO、非同期）で実行されるかを明記しています。
 - **ツールに依存しない**：オープンな [Agent Skills](https://agentskills.io) 形式は、Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI などで動作します。
@@ -203,7 +204,8 @@ MJP-Paper-Skills/
 │   ├── paper-api/PLATFORM.md # Paper API のビルド設定、ソフト依存関係の座標
 │   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/（NMS スキル 16 個）
 │   └── paper/<skill-id>/     # SKILL.md + examples.md + references/（Paper API スキル 14 個）
-├── scripts/                  # sync-skill-references.mjs：各スキルの references/ を再生成
+├── scripts/                  # sync-skill-references.mjs（references/）、extract-skill-java.mjs（コンパイルチェック）
+├── verify/                   # 抽出したテンプレートをバージョンごとにコンパイルする Gradle プロジェクト
 ├── docs/paper-nms/           # NMS API クイックリファレンス
 ├── web/                      # Next.js ドキュメントサイト（GitHub Pages への静的エクスポート）
 ├── CHANGELOG.md
@@ -220,7 +222,12 @@ MJP-Paper-Skills/
 2. `.claude/skills/` 配下の同じパスにミラーリングし、`node scripts/sync-skill-references.mjs` を実行して `references/` フォルダを生成する（`PLATFORM.md` や `_shared/` のファイルを変更するたびに再実行する）。
 3. 両方の `skills-registry.yml` にエントリを追加する。
 4. サイトページ `web/data/skills/<slug>.md` と、その英語本文 `web/data/skills/en/<slug>.md` を追加し、`web/tests/skills-api.data.test.ts` の期待リストを更新する。
-5. プルリクエストを作成する前に、Paper 1.21.11 と 26.2 に対してテンプレートクラスをコンパイルする。
+5. テンプレートが Paper 1.21.11 と 26.2 でコンパイルできることを確認する。`Skills/` に触れるすべてのプルリクエストで CI がこれを実行する。ローカルで実行する場合は（26.2 は JDK 25、1.21.11 は JDK 21）：
+
+   ```bash
+   node scripts/extract-skill-java.mjs 26.2
+   cd verify && ./gradlew compileSkills -Pmc=26.2
+   ```
 
 [`CLAUDE.md`](CLAUDE.md) に、完全な手順とリポジトリの不変条件が記載されています。ドキュメントサイトの開発は次のとおりです。
 

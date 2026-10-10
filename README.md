@@ -10,6 +10,7 @@ Low-level NMS with official Mojang names and pure Paper API, for any AI coding t
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-orange)](https://adoptium.net)
 [![Skills](https://img.shields.io/badge/skills-30-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-8a63d2)](https://agentskills.io)
+[![Skills compile](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml/badge.svg)](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml)
 [![License: MIT](https://img.shields.io/github/license/MrPippi/MJP-Paper-Skills)](LICENSE)
 
 [**Documentation**](https://mrpippi.github.io/MJP-Paper-Skills) · [**Skill catalog**](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills) · [**Changelog**](CHANGELOG.md)
@@ -24,7 +25,7 @@ AI coding tools often get Paper plugins subtly wrong: outdated or obfuscated NMS
 
 ## Highlights
 
-- **Compile-verified**: every template builds against both Paper **1.21.11** and **26.2**; version-specific lines are marked inline.
+- **Compile-verified**: CI compiles every complete template against both Paper **1.21.11** and **26.2** on each change; version-specific lines are marked inline.
 - **Official Mojang names**: NMS code uses Paperweight userdev and the names Minecraft ships unobfuscated since 26.1.
 - **Thread-safe by design**: each skill states which thread every call runs on (main, Netty IO or async).
 - **Tool-agnostic**: the open [Agent Skills](https://agentskills.io) format works with Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI and more.
@@ -203,7 +204,8 @@ MJP-Paper-Skills/
 │   ├── paper-api/PLATFORM.md # Paper API build setup, soft-dependency coordinates
 │   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (16 NMS skills)
 │   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (14 Paper API skills)
-├── scripts/                  # sync-skill-references.mjs: regenerates each skill's references/
+├── scripts/                  # sync-skill-references.mjs (references/), extract-skill-java.mjs (compile check)
+├── verify/                   # Gradle project that compiles the extracted templates for each version
 ├── docs/paper-nms/           # NMS API quick reference
 ├── web/                      # Next.js documentation site (static export to GitHub Pages)
 ├── CHANGELOG.md
@@ -220,7 +222,12 @@ Contributions are welcome. To add a skill:
 2. Mirror it to the same path under `.claude/skills/`, then run `node scripts/sync-skill-references.mjs` to generate its `references/` folder (re-run it whenever a `PLATFORM.md` or `_shared/` file changes).
 3. Add the entry to both `skills-registry.yml` files.
 4. Add the site page `web/data/skills/<slug>.md` and its English body `web/data/skills/en/<slug>.md`, then update the expected list in `web/tests/skills-api.data.test.ts`.
-5. Compile the template classes against Paper 1.21.11 and 26.2 before opening a pull request.
+5. Make sure the templates compile against Paper 1.21.11 and 26.2. CI runs this on every pull request that touches `Skills/`; to run it locally (JDK 25 for 26.2, JDK 21 for 1.21.11):
+
+   ```bash
+   node scripts/extract-skill-java.mjs 26.2
+   cd verify && ./gradlew compileSkills -Pmc=26.2
+   ```
 
 [`CLAUDE.md`](CLAUDE.md) documents the full process and repository invariants. To work on the documentation site:
 
