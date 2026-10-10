@@ -1,0 +1,88 @@
+// Compiles every skill template against one Minecraft version's Paper dev bundle.
+//
+//   node ../scripts/extract-skill-java.mjs 26.2 && ./gradlew compileSkills -Pmc=26.2
+//   node ../scripts/extract-skill-java.mjs 1.21.11 && ./gradlew compileSkills -Pmc=1.21.11
+//
+// Each skill gets one source set per compile set written by the extractor
+// (build/extracted/<mc>/<group>/<skill>/<skill|examples>/), compiled in isolation
+// against the dev bundle plus the soft dependencies listed in Skills/paper-api/PLATFORM.md.
+// Paper API skills are also compiled against the dev bundle (a superset of paper-api);
+// the extractor rejects NMS imports in them separately.
+
+plugins {
+    id 'java'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.24'
+}
+
+def targets = [
+    '26.2'   : [bundle: '26.2.build.132-stable', java: 25],
+    '1.21.11': [bundle: '1.21.11-R0.1-SNAPSHOT', java: 21],
+]
+def mc = providers.gradleProperty('mc').getOrElse('26.2')
+def target = targets[mc]
+if (target == null) {
+    throw new GradleException("Unknown -Pmc=${mc}; expected one of ${targets.keySet()}")
+}
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    maven { url = 'https://jitpack.io' }                                  // VaultAPI
+    maven { url = 'https://repo.extendedclip.com/releases/' }             // PlaceholderAPI
+    maven { url = 'https://repo.codemc.io/repository/maven-releases/' }   // PacketEvents
+    maven { url = 'https://repo.dmulloy2.net/repository/public/' }        // ProtocolLib
+}
+
+dependencies {
+    paperweight.paperDevBundle(target.bundle)
+
+    // Soft dependencies (versions from Skills/paper-api/PLATFORM.md)
+    compileOnly('com.github.MilkBowl:VaultAPI:1.7.1') { transitive = false }
+    compileOnly 'me.clip:placeholderapi:2.11.6'
+    compileOnly 'com.github.retrooper:packetevents-spigot:2.13.0'
+    compileOnly 'com.comphenix.protocol:ProtocolLib:5.3.0'
+    compileOnly 'org.xerial:sqlite-jdbc:3.49.1.0'
+
+    // Skills ship JUnit tests next to their templates
+    compileOnly platform('org.junit:junit-bom:5.12.2')
+    compileOnly 'org.junit.jupiter:junit-jupiter-api'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(target.java)
+}
+
+def extracted = layout.projectDirectory.dir("build/extracted/${mc}").asFile
+def skillTasks = []
+
+if (extracted.isDirectory()) {
+    extracted.eachDir { group ->
+        group.eachDir { skill ->
+            skill.eachDir { set ->
+                def name = "${skill.name}-${set.name}".replaceAll(/-(\w)/) { all, c -> c.toUpperCase() }
+                def sourceSet = sourceSets.create(name) {
+                    java.srcDirs = [set]
+                    resources.srcDirs = []
+                    compileClasspath += sourceSets.main.compileClasspath
+                }
+                tasks.named(sourceSet.compileJavaTaskName) {
+                    options.encoding = 'UTF-8'
+                    options.release.set(target.java)
+                    options.compilerArgs += ['-Xlint:none', '-nowarn']
+                }
+                skillTasks << sourceSet.compileJavaTaskName
+            }
+        }
+    }
+}
+
+tasks.register('compileSkills') {
+    group = 'verification'
+    description = "Compiles all extracted skill templates for Minecraft ${mc}."
+    dependsOn skillTasks
+    doFirst {
+        if (skillTasks.isEmpty()) {
+            throw new GradleException("Nothing extracted for ${mc}. Run: node ../scripts/extract-skill-java.mjs ${mc}")
+        }
+    }
+}

@@ -10,6 +10,7 @@
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-orange)](https://adoptium.net)
 [![Skills](https://img.shields.io/badge/skills-30-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-8a63d2)](https://agentskills.io)
+[![Skills compile](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml/badge.svg)](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml)
 [![License: MIT](https://img.shields.io/github/license/MrPippi/MJP-Paper-Skills)](LICENSE)
 
 [**文件網站**](https://mrpippi.github.io/MJP-Paper-Skills) · [**技能目錄**](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills) · [**版本變更紀錄**](CHANGELOG.md)
@@ -24,7 +25,7 @@ AI 程式設計工具常在 Paper 插件上出現細微錯誤：過時或已混�
 
 ## 亮點
 
-- **經編譯驗證**：每個範本皆針對 Paper **1.21.11** 與 **26.2** 編譯通過；版本專屬的行會在行內標註。
+- **經編譯驗證**：CI 會在每次變更時，針對 Paper **1.21.11** 與 **26.2** 編譯每個完整範本；版本專屬的行會在行內標註。
 - **Mojang 官方名稱**：NMS 程式碼使用 Paperweight userdev，以及 Minecraft 自 26.1 起以未混淆形式發行的名稱。
 - **執行緒安全的設計**：每個技能都會說明每次呼叫是在哪個執行緒執行（主執行緒、Netty IO 或非同步）。
 - **不限工具**：開放的 [Agent Skills](https://agentskills.io) 格式可搭配 Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI 等工具。
@@ -203,7 +204,8 @@ MJP-Paper-Skills/
 │   ├── paper-api/PLATFORM.md # Paper API 建置設定、軟依賴座標
 │   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/（16 個 NMS 技能）
 │   └── paper/<skill-id>/     # SKILL.md + examples.md + references/（14 個 Paper API 技能）
-├── scripts/                  # sync-skill-references.mjs：重新產生各技能的 references/
+├── scripts/                  # sync-skill-references.mjs（references/）、extract-skill-java.mjs（編譯檢查）
+├── verify/                   # 為各版本編譯所擷取範本的 Gradle 專案
 ├── docs/paper-nms/           # NMS API 速查表
 ├── web/                      # Next.js 文件網站（靜態匯出至 GitHub Pages）
 ├── CHANGELOG.md
@@ -220,7 +222,12 @@ MJP-Paper-Skills/
 2. 同步至 `.claude/skills/` 下的相同路徑，然後執行 `node scripts/sync-skill-references.mjs` 產生其 `references/` 資料夾（每當 `PLATFORM.md` 或 `_shared/` 檔案變更時重新執行）。
 3. 在兩份 `skills-registry.yml` 中加入該條目。
 4. 新增網站頁面 `web/data/skills/<slug>.md` 及其英文內文 `web/data/skills/en/<slug>.md`，然後更新 `web/tests/skills-api.data.test.ts` 中的預期清單。
-5. 開啟 Pull Request 之前，先以 Paper 1.21.11 與 26.2 編譯範本 class。
+5. 確認範本可針對 Paper 1.21.11 與 26.2 編譯。每個涉及 `Skills/` 的 Pull Request，CI 都會執行此檢查；若要在本機執行（26.2 用 JDK 25，1.21.11 用 JDK 21）：
+
+   ```bash
+   node scripts/extract-skill-java.mjs 26.2
+   cd verify && ./gradlew compileSkills -Pmc=26.2
+   ```
 
 完整流程與倉庫不變式記載於 [`CLAUDE.md`](CLAUDE.md)。若要開發文件網站：
 

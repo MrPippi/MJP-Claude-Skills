@@ -10,6 +10,7 @@
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-orange)](https://adoptium.net)
 [![Skills](https://img.shields.io/badge/skills-30-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-8a63d2)](https://agentskills.io)
+[![Skills compile](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml/badge.svg)](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml)
 [![License: MIT](https://img.shields.io/github/license/MrPippi/MJP-Paper-Skills)](LICENSE)
 
 [**Документация**](https://mrpippi.github.io/MJP-Paper-Skills) · [**Каталог навыков**](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills) · [**Журнал изменений**](CHANGELOG.md)
@@ -24,7 +25,7 @@
 
 ## Основные возможности
 
-- **Проверенная компиляция**: каждый шаблон собирается как под Paper **1.21.11**, так и под **26.2**; строки, зависящие от версии, помечены прямо в коде.
+- **Проверенная компиляция**: CI при каждом изменении компилирует каждый полный шаблон под Paper **1.21.11** и **26.2**; строки, зависящие от версии, помечены прямо в коде.
 - **Официальные названия Mojang**: код NMS использует Paperweight userdev и названия, с которыми Minecraft поставляется без обфускации начиная с 26.1.
 - **Потокобезопасность по умолчанию**: каждый навык указывает, в каком потоке выполняется каждый вызов (основной, Netty IO или асинхронный).
 - **Не привязано к инструменту**: открытый формат [Agent Skills](https://agentskills.io) работает с Claude Code, OpenAI Codex, Cursor, GitHub Copilot, Gemini CLI и другими.
@@ -203,7 +204,8 @@ MJP-Paper-Skills/
 │   ├── paper-api/PLATFORM.md # Настройка сборки Paper API, координаты мягких зависимостей
 │   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (16 навыков NMS)
 │   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (14 навыков Paper API)
-├── scripts/                  # sync-skill-references.mjs: заново генерирует папку references/ каждого навыка
+├── scripts/                  # sync-skill-references.mjs (references/), extract-skill-java.mjs (проверка компиляции)
+├── verify/                   # Gradle-проект, компилирующий извлечённые шаблоны для каждой версии
 ├── docs/paper-nms/           # Краткий справочник по API NMS
 ├── web/                      # Сайт документации на Next.js (статический экспорт на GitHub Pages)
 ├── CHANGELOG.md
@@ -220,7 +222,12 @@ MJP-Paper-Skills/
 2. Продублируйте его по тому же пути в `.claude/skills/`, затем выполните `node scripts/sync-skill-references.mjs`, чтобы сгенерировать его папку `references/` (запускайте заново при изменении `PLATFORM.md` или файла из `_shared/`).
 3. Добавьте запись в оба файла `skills-registry.yml`.
 4. Добавьте страницу сайта `web/data/skills/<slug>.md` и её английский текст `web/data/skills/en/<slug>.md`, затем обновите ожидаемый список в `web/tests/skills-api.data.test.ts`.
-5. Скомпилируйте классы шаблона под Paper 1.21.11 и 26.2, прежде чем открывать pull request.
+5. Убедитесь, что шаблоны компилируются под Paper 1.21.11 и 26.2. CI запускает это для каждого pull request, затрагивающего `Skills/`; чтобы запустить локально (JDK 25 для 26.2, JDK 21 для 1.21.11):
+
+   ```bash
+   node scripts/extract-skill-java.mjs 26.2
+   cd verify && ./gradlew compileSkills -Pmc=26.2
+   ```
 
 [`CLAUDE.md`](CLAUDE.md) описывает полный процесс и инварианты репозитория. Чтобы работать над сайтом документации:
 

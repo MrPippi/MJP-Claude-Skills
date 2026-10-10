@@ -5,6 +5,13 @@
 
 ## [Unreleased]
 
+### Added — 範本編譯 CI
+
+- `scripts/extract-skill-java.mjs`：從 SKILL.md／examples.md 抽出完整 Java 檔（含 `package`），依目標版本套用 `// @1.21.11:` 與 `// @only`；Paper API 技能若 import NMS 直接失敗
+- `verify/`：Gradle 9.8.1 + Paperweight 專案，每個技能（與其 examples）各自一個 source set，對 26.2（JDK 25）與 1.21.11（JDK 21）dev bundle 加上軟依賴、JUnit API 編譯
+- `.github/workflows/skills-compile.yml`：改到 `Skills/`、`verify/` 時於 PR 與 main 執行雙版本編譯；README 加上狀態徽章
+- 提交 `web/AGENTS.md`（`next dev` 產生的 Next.js 16 代理提示）
+
 ### Removed — 歷史殘留
 
 - 刪除不再維護的 `.cursor/`（舊版 Cursor 規則與 8 個早期技能）
