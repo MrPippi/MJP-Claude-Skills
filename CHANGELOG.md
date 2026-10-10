@@ -5,6 +5,13 @@
 
 ## [Unreleased]
 
+### Added — paper-discord-bridge（registry 7.1.0，共 31 個技能）
+
+- 新技能 `paper-discord-bridge`（paper-integration）：只用 JDK `HttpClient`／`WebSocket` 的 Discord 雙向聊天橋接，不需 JDA 或 DiscordSRV。遊戲 → Discord 以 webhook 佇列送出（daemon 執行緒、429 照 `Retry-After` 重送一次、`allowed_mentions` 為空、Markdown／提及跳脫）；Discord → 遊戲以純邏輯 Gateway 狀態機（HELLO、抖動心跳、IDENTIFY／RESUME、op 7／9、致命關閉碼、退避）在單一執行緒運作，入站回主執行緒、經 `AccountLinks` 檢查後送進聊天；token 與 webhook 網址不進 log
+- 兩種用法：只送出（webhook，無 bot）與雙向（bot token + Message Content Intent）；examples 含死亡／成就公告、僅限已連結帳號發言、管理員頻道
+- 改寫自 Bydsmp 的 DiscordBridge 插件，Bydsmp 專屬依賴改為可替換介面
+- registry、`.claude/skills/`、網站頁（繁中＋英文）、README 目錄（8 種語言）與技能數量同步更新；像素字型子集重新產生
+
 ### Changed — 技能內文改為英文
 
 - 30 個技能的 `SKILL.md`、`examples.md` 內文、程式碼註解與字串改為英文；frontmatter `description` 與觸發關鍵字（Triggers 段落）維持中英並陳，中文提問仍可觸發。逐檔比對確認程式碼未變動（只改註解與字串），並通過 26.2／1.21.11 編譯

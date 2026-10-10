@@ -27,7 +27,7 @@ export const zhTW: Translations = {
     titleLead: '一句話，',
     titleAccent: '寫出 Paper 插件。',
     heroDescription:
-      '30 個專為 Paper 插件開發打造的 AI Agent Skills，Claude Code、Codex、Cursor、Copilot 都能用 —— 從 NMS 封包、Netty 攔截、自定義實體，到 Dialog、SQLite、跨插件 API 與 PvP 玩法。每個範本都對 1.21.11 與 26.2 實際編譯驗證。',
+      '31 個專為 Paper 插件開發打造的 AI Agent Skills，Claude Code、Codex、Cursor、Copilot 都能用 —— 從 NMS 封包、Netty 攔截、自定義實體，到 Dialog、SQLite、跨插件 API 與 PvP 玩法。每個範本都對 1.21.11 與 26.2 實際編譯驗證。',
     ctaPrimary: '開始使用',
     ctaSecondary: '瀏覽 Skills',
     statsSkills: 'Skills',
@@ -64,7 +64,7 @@ export const zhTW: Translations = {
   docs: {
     overviewLabel: '文件',
     overviewTitle: 'MJP Paper Skills 文件',
-    overviewDescription: '安裝、平台建置設定、執行緒與命名概念、30 個 Skills，以及 NMS API 速查表。',
+    overviewDescription: '安裝、平台建置設定、執行緒與命名概念、31 個 Skills，以及 NMS API 速查表。',
     sections: { start: '開始使用', platforms: '平台', concepts: '核心概念', skills: 'Skills', reference: '速查表' },
     sectionDescriptions: {
       start: '安裝 Skills、觸發方式與常見問題。',

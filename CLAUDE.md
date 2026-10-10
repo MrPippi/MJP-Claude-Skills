@@ -18,7 +18,7 @@ MJP-Paper-Skills (Minecraft Paper Agent Skills) 是一套 Paper 插件開發的 
 執行時目錄：**`.claude/skills/`**（Claude Code 專用）
 規範來源：**`Skills/`**（authoritative source，與 `.claude/skills/` 內容相同）
 
-Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 含全部 30 個技能頁面。
+Web app（`web/`）保留供文件瀏覽；`web/data/skills/` 含全部 31 個技能頁面。
 
 ### Repository Layout
 
@@ -33,12 +33,12 @@ MJP-Paper-Skills/
 │   ├── ci.yml                           ← PR：tsc + test + build（不部署）
 │   └── skills-compile.yml               ← 範本對 26.2／1.21.11 編譯（改到 Skills/、verify/ 時）
 ├── .claude/
-│   └── skills/                          ← Claude Code 執行時（30 個技能，與 Skills/ 同步）
+│   └── skills/                          ← Claude Code 執行時（31 個技能，與 Skills/ 同步）
 │       ├── skills-registry.yml          ← 與 Skills/ 相同
 │       ├── _shared/
 │       └── nms/
 ├── Skills/                              ← Canonical source
-│   ├── skills-registry.yml              ← v7.0.0，30 個技能（paper-nms + paper-api）
+│   ├── skills-registry.yml              ← v7.1.0，31 個技能（paper-nms + paper-api）
 │   ├── _shared/
 │   │   ├── nms-threading.md
 │   │   ├── nms-obfuscation.md
@@ -60,7 +60,7 @@ MJP-Paper-Skills/
 │       ├── network.md                   ← Netty pipeline 結構與執行緒模型
 │       └── bukkit-nms-bridge.md         ← Bukkit ↔ NMS 橋接轉換表
 └── web/                                 ← Next.js 文件站
-    └── data/skills/                     ← 30 個技能 .md（已完整）
+    └── data/skills/                     ← 31 個技能 .md（已完整）
 ```
 
 ---
@@ -102,7 +102,7 @@ MJP-Paper-Skills/
 
 ## Skills Index
 
-所有技能以 `Skills/skills-registry.yml`（v7.0.0）為準（共 30 個：NMS 16 個、Paper API 14 個）。✅ = 已同步至 `.claude/skills/`。
+所有技能以 `Skills/skills-registry.yml`（v7.1.0）為準（共 31 個：NMS 16 個、Paper API 15 個）。✅ = 已同步至 `.claude/skills/`。
 
 **NMS 技能**（`platform: paper-nms`，`Skills/nms/`）
 
@@ -136,6 +136,7 @@ MJP-Paper-Skills/
 | `paper-service-api` | paper-integration | ServicesManager 跨插件 API（只加不改、容忍版本落差） | ✅ |
 | `paper-softdepend-hook` | paper-integration | 軟依賴 Hook／Bridge、Vault、PlaceholderAPI expansion | ✅ |
 | `paper-embedded-http` | paper-integration | 內嵌 JDK HttpServer JSON API（127.0.0.1、限流、快照） | ✅ |
+| `paper-discord-bridge` | paper-integration | 只用 JDK 的 Discord 雙向聊天橋接（webhook 送出、Gateway 收訊、不用 JDA／DiscordSRV） | ✅ |
 | `paper-packetevents-filter` | paper-network | PacketEvents／ProtocolLib 封包過濾（Netty 執行緒、fail-open） | ✅ |
 | `paper-client-side-effects` | paper-network | 只對單一玩家顯示的邊界／時間／天氣／隱藏玩家 | ✅ |
 | `paper-combat-tag` | paper-gameplay | PvP 戰鬥標記（傷害歸屬、指令白名單、離線處理） | ✅ |
@@ -265,7 +266,7 @@ Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-
 
 ## Web App (`web/`)
 
-Next.js 16 靜態匯出至 `web/out/`。`web/data/skills/` 含全部 30 個技能（每個一個 `.md`）。
+Next.js 16 靜態匯出至 `web/out/`。`web/data/skills/` 含全部 31 個技能（每個一個 `.md`）。
 
 ```bash
 cd web
