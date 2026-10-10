@@ -8,7 +8,7 @@ import { getPlatform, PLATFORMS } from '@/features/skills/lib/platform';
 import { HeroBackdrop, HeroLandscape } from './HeroScene';
 import { HeroTerminal } from './HeroTerminal';
 import { ROUTES } from '@/config/routes';
-import { GITHUB_CONTRIBUTE_URL } from '@/config/site';
+import { GITHUB_CONTRIBUTE_URLS } from '@/config/site';
 import { PixelIcon } from '@/shared/ui/PixelIcon';
 import type { PixelIconName } from '@/shared/ui/pixel-icons';
 import { ArrowRightIcon } from '@/shared/ui/icons';
@@ -184,7 +184,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
             <h2 className="font-display text-2xl font-semibold text-fg">{h.ctaTitle}</h2>
             <p className="mt-1 text-sm text-fg-2">{h.ctaDescription}</p>
           </div>
-          <a href={GITHUB_CONTRIBUTE_URL} target="_blank" rel="noopener noreferrer" className="btn-pixel btn-primary">
+          <a href={GITHUB_CONTRIBUTE_URLS[lang]} target="_blank" rel="noopener noreferrer" className="btn-pixel btn-primary">
             {h.ctaButton} ↗
           </a>
         </div>

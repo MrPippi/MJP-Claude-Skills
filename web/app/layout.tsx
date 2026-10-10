@@ -7,7 +7,7 @@ import { AppShell } from '@/layout';
 import { THEME_INIT_SCRIPT } from '@/layout/theme-script';
 import { getSearchIndex } from '@/features/skills';
 import { getDocLinks } from '@/features/docs';
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from '@/config/site';
+import { SITE_NAME, SITE_SHORT_NAME, SITE_DESCRIPTION, SITE_URL } from '@/config/site';
 
 const inter = Inter({ variable: '--font-inter', subsets: ['latin'], display: 'swap' });
 /** Heading CJK glyphs; Google slices it by unicode-range, so only characters on the page download. */
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_NAME,
-    template: `%s | MJP-Paper-Skills`,
+    template: `%s | ${SITE_SHORT_NAME}`,
   },
   description: SITE_DESCRIPTION,
   openGraph: {

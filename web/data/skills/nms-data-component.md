@@ -2,7 +2,7 @@
 id: nms-data-component
 title: NMS Data Component
 titleZh: NMS 物品組件系統
-description: Read and write Minecraft DataComponentType（1.20.5+） item components including CustomData, MaxStackSize, and Enchantments on Paper 26.x with official Mojang names.
+description: Read and write Minecraft DataComponentType (1.20.5+) item components including CustomData, MaxStackSize, and Enchantments on Paper 26.x with official Mojang names.
 descriptionZh: 操作 Minecraft DataComponentType（1.20.5+） 物品組件系統，讀寫 CustomData、MaxStackSize、Enchantments 等組件。
 version: "1.0.0"
 status: active

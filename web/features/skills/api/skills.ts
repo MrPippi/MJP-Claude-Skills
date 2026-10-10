@@ -5,6 +5,8 @@ import { renderMarkdown } from '@/shared/markdown/render';
 import type { SkillMeta, SkillFull, Category, SearchIndex } from '@/shared/types/skill';
 
 const SKILLS_DIR = path.join(process.cwd(), 'data', 'skills');
+/** English bodies (no frontmatter) mirroring SKILLS_DIR filenames. */
+const SKILLS_EN_DIR = path.join(SKILLS_DIR, 'en');
 /** Slugs map 1:1 to filenames in SKILLS_DIR; anything else (e.g. `../x`) is rejected. */
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -61,8 +63,16 @@ export async function getSkillBySlug(slug: string): Promise<SkillFull | null> {
   if (!meta) return null;
 
   const { html: contentHtml, headings } = await renderMarkdown(content);
+  const english = await renderEnglishBody(slug);
 
-  return { ...meta, content, contentHtml, headings };
+  return { ...meta, content, contentHtml, headings, english };
+}
+
+async function renderEnglishBody(slug: string): Promise<SkillFull['english']> {
+  const enPath = path.join(SKILLS_EN_DIR, `${slug}.md`);
+  if (!fs.existsSync(enPath)) return null;
+  const { html, headings } = await renderMarkdown(fs.readFileSync(enPath, 'utf8'));
+  return { contentHtml: html, headings };
 }
 
 export function getSkillsByCategory(categoryId: string): SkillMeta[] {
