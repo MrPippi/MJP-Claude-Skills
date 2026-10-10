@@ -5,6 +5,13 @@
 
 ## [Unreleased]
 
+### Added — `npx skills add` 安裝
+
+- 支援 [skills CLI](https://github.com/vercel-labs/skills)：`npx skills add MrPippi/MJP-Paper-Skills`（可用 `--skill <id>` 只裝單一技能）
+- 每個技能新增 `references/`，內附該技能需要的 `PLATFORM.md` 與執行緒／命名規則副本，單獨安裝也完整可用；由 `scripts/sync-skill-references.mjs` 產生，`web/tests/skill-references.test.ts` 檢查是否同步
+- `SKILL.md`／`examples.md` 中指向技能資料夾外的連結（`../../_shared/…`、`Skills/paper-*/PLATFORM.md`）改為 `references/<檔名>`
+- README（8 種語言）與網站「開始使用」、首頁終端機改以 `npx skills add` 為主要安裝方式，手動複製收合為備選
+
 ### Changed — 專案改名與定位
 
 - 專案更名 **MJP-Claude-Skills → MJP-Paper-Skills**；目標使用者擴大到任何支援 Agent Skills（`SKILL.md`）的 AI 編碼工具（Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI…），不再限定 Claude Code

@@ -47,7 +47,7 @@ description: "透過 Bukkit ServicesManager 發布與取用跨插件 API：只�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。多模組專案中，使用端以 `compileOnly` 依賴提供端：
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。多模組專案中，使用端以 `compileOnly` 依賴提供端：
 
 ```groovy
 // shop/build.gradle
@@ -279,7 +279,7 @@ shop/                                     ← 使用端（compileOnly project(':
 - 提供端方法預設**只允許主執行緒**（`requireMainThread()`），在 Javadoc 寫明
 - 使用端若在非同步階段需要資料，先在主執行緒取值再傳入非同步工作；不要在非同步執行緒呼叫 API
 - 若某方法確實要支援任意執行緒（例如 PlaceholderAPI 讀取），實作必須讀不可變快照，並在 Javadoc 標明
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

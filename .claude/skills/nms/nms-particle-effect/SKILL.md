@@ -41,7 +41,7 @@ description: "透過 ClientboundLevelParticlesPacket 實現進階 NMS 粒子效�
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -273,7 +273,7 @@ src/main/java/com/example/
 - ✅ `ParticleEffect.send()` 內部呼叫 `connection.send()`，**可在任何執行緒呼叫**
 - ⚠️ Location 若依賴世界狀態（如跟隨實體），封包建構須在主執行緒完成
 - ⚠️ `ParticleShapes` 中的 `start.distance(end)` 需要兩個 Location 同屬一個世界
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

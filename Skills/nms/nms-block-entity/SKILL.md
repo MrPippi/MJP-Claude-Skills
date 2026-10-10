@@ -42,7 +42,7 @@ description: "實作自定義 NMS BlockEntity（含 NBT 序列化、Tick 邏輯�
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -227,7 +227,7 @@ src/main/java/com/example/
 - ⚠️ 所有 BlockEntity 操作（讀取、修改、`markDirtyAndSync()`）**必須在主執行緒呼叫**
 - ⚠️ `tick()` 由 NMS 在主執行緒呼叫，內部不可進行阻塞 IO
 - ⚠️ `level.isClientSide()` 必須在 tick 內檢查，防止在客戶端 Tick 執行伺服器邏輯
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

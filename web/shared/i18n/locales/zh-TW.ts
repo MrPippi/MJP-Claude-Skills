@@ -108,9 +108,9 @@ export const zhTW: Translations = {
       {
         number: '01',
         title: '安裝 Skills 到專案',
-        description: '把本專案的 Skills 複製到你的 AI 工具讀取 Skills 的目錄，工具啟動時會自動載入。',
-        code: 'git clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .claude/skills   # Claude Code\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills   # Codex, Gemini CLI …',
-        note: 'Cursor 常用 .cursor/skills/、GitHub Copilot 常用 .github/skills/，實際路徑以各工具官方文件為準。不支援 Agent Skills 的工具，可在 AGENTS.md 或規則檔中引用需要的 SKILL.md。',
+        description: '用 skills CLI 安裝：它會找出你使用的 AI 工具（Claude Code、Codex、Cursor、Copilot、Gemini CLI…），把 Skills 複製到各工具讀取的目錄。也可以自行複製。',
+        code: 'npx skills add MrPippi/MJP-Paper-Skills                             # 選擇技能與工具\nnpx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui   # 只裝一個技能\n\n# 自行複製安裝\ngit clone https://github.com/MrPippi/MJP-Paper-Skills.git\ncp -r MJP-Paper-Skills/.claude/skills .agents/skills',
+        note: '每個技能的 references/ 都已放入建置設定與執行緒規則，只裝單一技能也能用。自行安裝路徑：Claude Code 用 .claude/skills/、Codex 與 Gemini CLI 用 .agents/skills/、Cursor 用 .cursor/skills/、GitHub Copilot 用 .github/skills/，實際路徑以各工具官方文件為準。不支援 Agent Skills 的工具，可在 AGENTS.md 或規則檔中引用需要的 SKILL.md。',
       },
       {
         number: '02',

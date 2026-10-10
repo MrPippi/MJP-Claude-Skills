@@ -47,7 +47,7 @@ description: "透過 Netty ChannelDuplexHandler 注入玩家連線管線，攔�
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。Netty 隨 Paper 提供，無需額外依賴。
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。Netty 隨 Paper 提供，無需額外依賴。
 
 ## 代碼範本 / Code Template
 
@@ -220,7 +220,7 @@ src/main/java/com/example/
 - ⚠️ 需存取世界狀態 → `Bukkit.getScheduler().runTask(plugin, () -> { ... })`
 - ⚠️ Filter function 中不可呼叫 `player.teleport()` 等 Bukkit 同步 API
 - ✅ 移除 handler 時必須透過 `channel.eventLoop().execute()`，避免 pipeline race condition
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

@@ -39,7 +39,7 @@ description: "透過 NMS LevelChunk 直接讀寫方塊、高度圖、ChunkSectio
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -216,7 +216,7 @@ src/main/java/com/example/
 - ⚠️ `BulkBlockEditor.commit()` 亦需在主執行緒呼叫
 - ✅ 唯讀操作（`getBlockState`、`getHeight`）在不修改世界的前提下可在 async 讀取，但 Paper 不保證一致性
 - ⚠️ 批次大量方塊修改可能造成 TPS 下降，建議每 tick 分批處理（每 tick ≤ 500 格）
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

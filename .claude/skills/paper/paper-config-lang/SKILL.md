@@ -56,7 +56,7 @@ description: "Paper 插件的設定與訊息：config.yml 只解析一次成不�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`（內含 SnakeYAML、Adventure、MiniMessage、JSpecify）。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（內含 SnakeYAML、Adventure、MiniMessage、JSpecify）。
 
 `src/main/resources/` 必須有 `config.yml` 與 `lang.yml`，並在 `plugin.yml` 宣告指令：
 
@@ -738,7 +738,7 @@ src/test/java/com/example/home/
 - 換入快照在主執行緒；`Settings` 整份不可變，所以任何執行緒讀 `current()` 都安全（PlaceholderAPI、封包 listener）
 - 非同步階段只收集警告到自己的 `ArrayList`，不與其他執行緒共用
 - 處理器若跨越非同步邊界，先在主執行緒取出需要的設定值再傳入，或每次呼叫都重新 `current()`；不要把某次的 `Settings` 存進長壽欄位（reload 後會過時）
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

@@ -21,7 +21,7 @@ description: "以真正的 NMS ServerPlayer 建立沒有客戶端的假玩家（
 ## NMS 版本需求 / NMS Version Requirements
 
 - Paper 1.21.11 / 26.2（兩版皆經編譯驗證；版本差異以行尾 `// @1.21.11:` 標註）
-- Paperweight userdev（見 [`Skills/paper-nms/PLATFORM.md`](../../paper-nms/PLATFORM.md)）
+- Paperweight userdev（見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)）
 - 依賴 Paper 修補過的建構子與方法（`ServerGamePacketListenerImpl`、`CommonListenerCookie.createInitial`、`addFreshEntity` 的 CraftBukkit 重載），**同一個 MC 版本換 Paper build 也可能改簽名** → 第一次呼叫必須接 `LinkageError`
 
 ## 觸發條件 / Triggers
@@ -48,7 +48,7 @@ description: "以真正的 NMS ServerPlayer 建立沒有客戶端的假玩家（
 
 ## Paperweight 建置設定 / Build Setup
 
-見 [`Skills/paper-nms/PLATFORM.md`](../../paper-nms/PLATFORM.md)。另外建議加一個檢查，確保 NMS／CraftBukkit 類別**沒有被打包**進 jar：
+見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。另外建議加一個檢查，確保 NMS／CraftBukkit 類別**沒有被打包**進 jar：
 
 ```groovy
 tasks.register('verifyNoServerClassesInJar') {
@@ -487,7 +487,7 @@ src/main/java/com/example/bot/
 - ⚠️ `FakePlayer` 的所有方法**只能在主執行緒呼叫**（生成、tick、攻擊、移除）
 - `tick()` 每個伺服器 tick 呼叫**一次**；呼叫兩次就是兩倍速
 - AI 決策可以在非同步預先計算路徑，但結果要回主執行緒才套用到 `input()` / `look()`
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

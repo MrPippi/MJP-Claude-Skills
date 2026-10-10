@@ -39,7 +39,7 @@ description: "操作 Minecraft DataComponentType（1.20.5+） 物品組件系統
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -232,7 +232,7 @@ src/main/java/com/example/
 
 - ✅ `ItemComponentUtil` / `CustomDataHelper` 操作 NMS Copy，**不直接修改世界狀態**，可在任意執行緒呼叫
 - ⚠️ 若需要在 Bukkit 物品欄中更新 ItemStack（如 `player.getInventory().setItem()`），**必須在主執行緒**
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

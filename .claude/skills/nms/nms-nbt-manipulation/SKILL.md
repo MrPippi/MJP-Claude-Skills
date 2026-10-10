@@ -41,7 +41,7 @@ description: "直接操作 CompoundTag 讀寫物品、實體、方塊實體的 N
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -218,7 +218,7 @@ src/main/java/com/example/
 - ✅ `ItemNbtHelper` 的方法操作 NMS Copy（不修改原物件），可在任何執行緒呼叫
 - ⚠️ `EntityNbtHelper.getTag()` / `mergeTag()` 存取實體狀態，**必須在主執行緒呼叫**
 - ⚠️ `nms.save()` / `nms.load()` 不執行緒安全，確保在 Bukkit scheduler 內呼叫
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

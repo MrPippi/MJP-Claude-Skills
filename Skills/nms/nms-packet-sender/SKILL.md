@@ -48,7 +48,7 @@ description: "產生封包發送工具類，透過 ServerPlayer.connection 將 C
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -173,7 +173,7 @@ src/main/java/com/example/
 - ✅ `PacketSender.send()` 內部呼叫 `connection.send()`，**可在任何執行緒呼叫**（Netty 會自行排入 write queue）
 - ⚠️ **封包建構**若依賴世界狀態（Entity ID、Block position），必須在主執行緒完成
 - ⚠️ `connection` 欄位在玩家離線時為 `null`，send 前需檢查
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

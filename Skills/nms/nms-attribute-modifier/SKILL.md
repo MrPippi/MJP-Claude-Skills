@@ -39,7 +39,7 @@ description: "透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -192,7 +192,7 @@ src/main/java/com/example/
 
 - ⚠️ `AttributeInstance` 操作**必須在主執行緒呼叫**（NMS 實體狀態非執行緒安全）
 - ✅ `ModifierBuilder` 的方法為純資料建立，可在任意執行緒呼叫
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

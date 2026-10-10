@@ -60,7 +60,7 @@ description: "以 Bukkit API 建立箱子介面 GUI：InventoryHolder 標記介�
 
 ## 建置設定 / Build Setup
 
-見 [`Skills/paper-api/PLATFORM.md`](../../paper-api/PLATFORM.md)。只需要 `paper-api`（`compileOnly`）。
+見 [`references/paper-api-platform.md`](references/paper-api-platform.md)。只需要 `paper-api`（`compileOnly`）。
 
 `src/main/resources/gui.yml`（預設內容；`Icons.load` 第一次會寫到 `plugins/<name>/gui.yml`）：
 
@@ -769,7 +769,7 @@ src/main/resources/
 - 連點／連翻頁：同步重畫時每次點擊都以目前狀態計算；非同步載入用 `LatestOnly` 丟掉過期結果
 - 在 `InventoryClickEvent` 內要開別的選單或關閉視窗，用 `openNextTick` / `closeNextTick`
 - `InventoryCloseEvent` 處理器（`onClose`）內若要排程任務，先 `if (!plugin.isEnabled()) return;`；`onDisable` 的 `closeAll()` 會同步觸發它，此時排程會丟 `IllegalPluginAccessException`；退還物品等同步清理則照做
-- 詳見 [`Skills/_shared/paper-threading.md`](../../_shared/paper-threading.md)
+- 詳見 [`references/paper-threading.md`](references/paper-threading.md)
 
 ## 失敗回退 / Fallback
 

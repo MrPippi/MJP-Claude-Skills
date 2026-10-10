@@ -42,7 +42,7 @@ description: "透過 NMS Scoreboard/Objective/Team API 操作 sidebar、tablist 
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -279,7 +279,7 @@ src/main/java/com/example/
 
 - ⚠️ 所有 Scoreboard/Objective/Team 操作**必須在主執行緒呼叫**
 - ✅ `connection.send()` 可在任意執行緒呼叫，但封包建構需在主執行緒完成
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

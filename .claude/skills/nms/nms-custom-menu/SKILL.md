@@ -47,7 +47,7 @@ description: "繼承 AbstractContainerMenu 建立自定義容器 GUI，支援 sl
 
 ## Paperweight 建置設定 / Build Setup
 
-參見 `Skills/paper-nms/PLATFORM.md`。關鍵依賴：
+參見 [`references/paper-nms-platform.md`](references/paper-nms-platform.md)。關鍵依賴：
 
 ```groovy
 dependencies {
@@ -271,7 +271,7 @@ src/main/java/com/example/
 
 - ⚠️ `nms.openMenu()` 及所有 GUI 操作**必須在主執行緒呼叫**
 - ✅ Bukkit 事件回呼（InventoryClickEvent）已在主執行緒觸發，可安全操作 NMS
-- 詳見 `Skills/_shared/nms-threading.md`
+- 詳見 [`references/nms-threading.md`](references/nms-threading.md)
 
 ## 失敗回退 / Fallback
 

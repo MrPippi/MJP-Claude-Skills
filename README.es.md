@@ -47,9 +47,30 @@ Las herramientas de programación con IA suelen cometer errores sutiles en los p
 
 ### 1. Instalar los skills
 
-```bash
-git clone https://github.com/MrPippi/MJP-Paper-Skills.git
-```
+La [CLI de skills](https://github.com/vercel-labs/skills) instala directamente desde este repositorio. Solo necesitas [Node.js](https://nodejs.org) para `npx`; no hace falta cuenta ni registro.
+
+1. En la carpeta raíz de tu proyecto de plugin, ejecuta:
+
+   ```bash
+   npx skills add MrPippi/MJP-Paper-Skills
+   ```
+
+2. Elige los skills que quieras. La CLI detecta tus herramientas de IA (Claude Code, Codex, Cursor, …) y te pregunta para cuáles instalar, y si usar enlaces simbólicos (recomendado) o copiar.
+3. Confirma el resultado con `npx skills list`.
+
+Cada skill incluye la configuración de compilación y las reglas de hilos que necesita en su propia carpeta `references/`, así que instalar un único skill por sí solo funciona.
+
+| Objetivo | Comando |
+|------|---------|
+| Listar los skills disponibles | `npx skills add MrPippi/MJP-Paper-Skills --list` |
+| Instalar un skill | `npx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui` |
+| Instalar todo para herramientas concretas, sin preguntas | `npx skills add MrPippi/MJP-Paper-Skills --skill '*' -a claude-code codex -y` |
+| Instalar para todos tus proyectos (p. ej. `~/.claude/skills/`) | añade `-g` a cualquier comando `add` |
+| Actualizar los skills instalados | `npx skills update` |
+| Eliminar un skill | `npx skills remove paper-dialog-ui` |
+
+<details>
+<summary>Instalación manual</summary>
 
 Copia `MJP-Paper-Skills/.claude/skills/` en la carpeta desde la que tu herramienta de IA carga los skills:
 
@@ -61,8 +82,11 @@ Copia `MJP-Paper-Skills/.claude/skills/` en la carpeta desde la que tu herramien
 | GitHub Copilot | `.github/skills/` |
 
 ```bash
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
 ```
+
+</details>
 
 > [!NOTE]
 > Las rutas de los skills varían entre herramientas y versiones; consulta la documentación de tu herramienta. Muchas también leen `.agents/skills/` como ubicación compartida.
@@ -71,7 +95,7 @@ cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for y
 
 ```markdown
 Before writing Paper plugin code, find the matching skill in <skills-folder>/skills-registry.yml
-(by trigger_keywords) and follow its SKILL.md, plus the PLATFORM.md and _shared/ notes it references.
+(by trigger_keywords) and follow its SKILL.md, plus the files in its references/ folder.
 ```
 
 ### 2. Pide lo que necesitas
@@ -136,16 +160,16 @@ Describe la funcionalidad con lenguaje natural. La herramienta compara tu petici
 ## Cómo funciona
 
 ```text
-Your request ──▶ skills-registry.yml ──▶ SKILL.md ──▶ PLATFORM.md + _shared/ ──▶ Generated code
-                 (trigger keywords)      (template,     (build.gradle,
-                                         inputs,        paper-plugin.yml,
-                                         fallbacks)     threading, naming)
+Your request ──▶ skill description ──▶ SKILL.md ──▶ references/ ──▶ Generated code
+                 (trigger keywords)     (template,     (build.gradle,
+                                        inputs,        paper-plugin.yml,
+                                        fallbacks)     threading, naming)
 ```
 
 1. El agente asocia tu petición con un skill a través de su descripción y sus palabras clave de activación.
 2. Lee el `SKILL.md` del skill (plantilla, entradas, salidas, notas de seguridad entre hilos, alternativa de respaldo) y `examples.md`.
-3. Aplica la configuración de compilación de la plataforma desde [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) o [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
-4. Sigue las reglas compartidas de [`Skills/_shared/`](Skills/_shared) sobre hilos y nomenclatura de Mojang.
+3. Aplica la configuración de compilación de la plataforma incluida en `references/`, generada a partir de [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) o [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md).
+4. Sigue las reglas de hilos y de nomenclatura de Mojang incluidas en `references/`, generadas a partir de [`Skills/_shared/`](Skills/_shared).
 
 Para las APIs que las plantillas no cubren, la [referencia rápida de NMS](docs/paper-nms) abarca paquetes, entidades, el pipeline de Netty y el puente Bukkit ↔ NMS.
 
@@ -177,8 +201,9 @@ MJP-Paper-Skills/
 │   ├── _shared/              # Reglas de hilos y nomenclatura compartidas por todos los skills
 │   ├── paper-nms/PLATFORM.md # Plantillas de build.gradle / paper-plugin.yml para NMS, tabla de versiones
 │   ├── paper-api/PLATFORM.md # Configuración de compilación de Paper API, coordenadas de dependencias suaves
-│   ├── nms/<skill-id>/       # SKILL.md + examples.md (16 skills de NMS)
-│   └── paper/<skill-id>/     # SKILL.md + examples.md (14 skills de Paper API)
+│   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/ (16 skills de NMS)
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/ (14 skills de Paper API)
+├── scripts/                  # sync-skill-references.mjs: regenera la carpeta references/ de cada skill
 ├── docs/paper-nms/           # Referencia rápida de la API de NMS
 ├── web/                      # Sitio de documentación en Next.js (exportación estática a GitHub Pages)
 ├── CHANGELOG.md
@@ -192,7 +217,7 @@ MJP-Paper-Skills/
 Las contribuciones son bienvenidas. Para añadir un skill:
 
 1. Crea `Skills/nms/<slug>/` o `Skills/paper/<slug>/` con `SKILL.md` y `examples.md` (al menos dos ejemplos).
-2. Replícalo en la misma ruta bajo `.claude/skills/`.
+2. Replícalo en la misma ruta bajo `.claude/skills/` y luego ejecuta `node scripts/sync-skill-references.mjs` para generar su carpeta `references/` (vuelve a ejecutarlo cuando cambie un `PLATFORM.md` o un archivo de `_shared/`).
 3. Añade la entrada en ambos archivos `skills-registry.yml`.
 4. Añade la página del sitio `web/data/skills/<slug>.md` y su versión en inglés `web/data/skills/en/<slug>.md`, y luego actualiza la lista esperada en `web/tests/skills-api.data.test.ts`.
 5. Compila las clases de la plantilla contra Paper 1.21.11 y 26.2 antes de abrir un pull request.

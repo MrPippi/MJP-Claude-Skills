@@ -47,9 +47,30 @@ AI 编程工具经常在 Paper 插件上出现细微错误：过时或已混淆�
 
 ### 1. 安装技能
 
-```bash
-git clone https://github.com/MrPippi/MJP-Paper-Skills.git
-```
+使用 [skills CLI](https://github.com/vercel-labs/skills) 直接从本仓库安装。只需要 [Node.js](https://nodejs.org)（用于 `npx`），不需要账号或注册。
+
+1. 在你的插件项目根目录运行：
+
+   ```bash
+   npx skills add MrPippi/MJP-Paper-Skills
+   ```
+
+2. 选择要安装的技能。CLI 会检测你的 AI 工具（Claude Code、Codex、Cursor……），询问要为哪些工具安装，以及使用符号链接（推荐）还是复制。
+3. 使用 `npx skills list` 确认结果。
+
+每个技能都把所需的构建配置和线程规则打包在自己的 `references/` 文件夹中，因此单独安装一个技能也能工作。
+
+| 目标 | 命令 |
+|------|---------|
+| 列出可用的技能 | `npx skills add MrPippi/MJP-Paper-Skills --list` |
+| 安装单个技能 | `npx skills add MrPippi/MJP-Paper-Skills --skill paper-dialog-ui` |
+| 为指定工具安装全部技能，不再询问 | `npx skills add MrPippi/MJP-Paper-Skills --skill '*' -a claude-code codex -y` |
+| 安装到所有项目（例如 `~/.claude/skills/`） | 在任何 `add` 命令后加上 `-g` |
+| 更新已安装的技能 | `npx skills update` |
+| 移除技能 | `npx skills remove paper-dialog-ui` |
+
+<details>
+<summary>手动安装</summary>
 
 将 `MJP-Paper-Skills/.claude/skills/` 复制到你的 AI 工具加载技能的文件夹：
 
@@ -61,8 +82,11 @@ git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 | GitHub Copilot | `.github/skills/` |
 
 ```bash
+git clone https://github.com/MrPippi/MJP-Paper-Skills.git
 cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for your tool
 ```
+
+</details>
 
 > [!NOTE]
 > 技能路径因工具和版本而异，请查阅你所用工具的文档。许多工具也会将 `.agents/skills/` 当作共享位置读取。
@@ -71,7 +95,7 @@ cp -r MJP-Paper-Skills/.claude/skills .agents/skills   # adjust the target for y
 
 ```markdown
 Before writing Paper plugin code, find the matching skill in <skills-folder>/skills-registry.yml
-(by trigger_keywords) and follow its SKILL.md, plus the PLATFORM.md and _shared/ notes it references.
+(by trigger_keywords) and follow its SKILL.md, plus the files in its references/ folder.
 ```
 
 ### 2. 说出你的需求
@@ -136,16 +160,16 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 ## 工作原理
 
 ```text
-Your request ──▶ skills-registry.yml ──▶ SKILL.md ──▶ PLATFORM.md + _shared/ ──▶ Generated code
-                 (trigger keywords)      (template,     (build.gradle,
-                                         inputs,        paper-plugin.yml,
-                                         fallbacks)     threading, naming)
+Your request ──▶ skill description ──▶ SKILL.md ──▶ references/ ──▶ Generated code
+                 (trigger keywords)     (template,     (build.gradle,
+                                        inputs,        paper-plugin.yml,
+                                        fallbacks)     threading, naming)
 ```
 
 1. 代理通过技能的描述和触发关键词，将你的请求匹配到某个技能。
 2. 它会读取该技能的 `SKILL.md`（模板、输入、输出、线程安全说明、失败回退）和 `examples.md`。
-3. 它会应用 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 或 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md) 中的平台构建配置。
-4. 它会遵循 [`Skills/_shared/`](Skills/_shared) 中关于线程和 Mojang 命名的共享规则。
+3. 它会应用 `references/` 中打包的平台构建配置，内容由 [`Skills/paper-nms/PLATFORM.md`](Skills/paper-nms/PLATFORM.md) 或 [`Skills/paper-api/PLATFORM.md`](Skills/paper-api/PLATFORM.md) 生成。
+4. 它会遵循 `references/` 中打包的线程和 Mojang 命名规则，内容由 [`Skills/_shared/`](Skills/_shared) 生成。
 
 如需模板之外的 API，请参阅 [NMS 速查表](docs/paper-nms)，内容涵盖数据包、实体、Netty pipeline 以及 Bukkit ↔ NMS 桥接。
 
@@ -177,8 +201,9 @@ MJP-Paper-Skills/
 │   ├── _shared/              # 所有技能共用的线程与命名规则
 │   ├── paper-nms/PLATFORM.md # NMS build.gradle / paper-plugin.yml 模板、版本表
 │   ├── paper-api/PLATFORM.md # Paper API 构建配置、软依赖坐标
-│   ├── nms/<skill-id>/       # SKILL.md + examples.md（16 个 NMS 技能）
-│   └── paper/<skill-id>/     # SKILL.md + examples.md（14 个 Paper API 技能）
+│   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/（16 个 NMS 技能）
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/（14 个 Paper API 技能）
+├── scripts/                  # sync-skill-references.mjs：重新生成各技能的 references/
 ├── docs/paper-nms/           # NMS API 速查表
 ├── web/                      # Next.js 文档站（静态导出至 GitHub Pages）
 ├── CHANGELOG.md
@@ -192,7 +217,7 @@ MJP-Paper-Skills/
 欢迎贡献。添加新技能的步骤：
 
 1. 创建 `Skills/nms/<slug>/` 或 `Skills/paper/<slug>/`，包含 `SKILL.md` 和 `examples.md`（至少两个示例）。
-2. 镜像到 `.claude/skills/` 下的相同路径。
+2. 镜像到 `.claude/skills/` 下的相同路径，然后运行 `node scripts/sync-skill-references.mjs` 生成其 `references/` 文件夹（每当 `PLATFORM.md` 或 `_shared/` 文件变更时重新运行）。
 3. 将条目添加到两份 `skills-registry.yml` 中。
 4. 添加网站页面 `web/data/skills/<slug>.md` 及其英文正文 `web/data/skills/en/<slug>.md`，然后更新 `web/tests/skills-api.data.test.ts` 中的预期列表。
 5. 提交 Pull Request 之前，先针对 Paper 1.21.11 和 26.2 编译模板类。
