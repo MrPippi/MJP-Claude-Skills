@@ -3,7 +3,7 @@ id: nms-attribute-modifier
 title: NMS Attribute Modifier
 titleZh: NMS 屬性修改器
 description: Dynamically modify entity attributes via NMS AttributeMap/AttributeModifier for RPG buff/debuff systems on Paper 26.x with official Mojang names.
-descriptionZh: 透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性，實現 RPG 裝備加成與 Buff/Debuff 系統（Paper NMS + Mojang mappings）。
+descriptionZh: 透過 NMS AttributeMap/AttributeModifier 動態修改實體屬性，實現 RPG 裝備加成與 Buff/Debuff 系統。
 version: "1.0.0"
 status: active
 category: nms-entity

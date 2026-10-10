@@ -3,7 +3,7 @@ id: nms-player-profile
 title: NMS Player Profile
 titleZh: NMS 玩家 Profile 操作
 description: Manipulate GameProfile for skin injection used in NPC appearance and fake player entities on Paper 26.x with official Mojang names.
-descriptionZh: 操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與假玩家實體（Paper NMS + Mojang mappings）。
+descriptionZh: 操作 GameProfile 進行 skin 注入，用於 NPC 外觀設定與假玩家實體。
 version: "1.0.0"
 status: active
 category: nms-player

@@ -20,7 +20,7 @@ export const en: Translations = {
     githubProject: 'GitHub',
     contributeGuide: 'Contributing',
     license: 'License',
-    disclaimer: 'NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.',
+    disclaimer: 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.',
   },
   home: {
     eyebrow: 'AI Agent Skills · SKILL.md',

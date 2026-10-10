@@ -3,7 +3,7 @@ id: nms-block-entity
 title: NMS Block Entity
 titleZh: NMS 自定義方塊實體
 description: Implement custom NMS BlockEntity with NBT serialization, tick logic, and client sync via packets on Paper 26.x with official Mojang names.
-descriptionZh: 繼承 NMS BlockEntity 實作自定義方塊實體，支援 NBT 讀寫、伺服器端 Tick、封包同步（Paper NMS + Mojang mappings）。
+descriptionZh: 繼承 NMS BlockEntity 實作自定義方塊實體，支援 NBT 讀寫、伺服器端 Tick、封包同步。
 version: "1.0.0"
 status: active
 category: nms-world

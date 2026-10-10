@@ -277,7 +277,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 | Framework | Next.js 16.4.0（App Router） |
 | UI | React 19.3.0, TypeScript 6.0（strict） |
 | Styling | Tailwind CSS v4（`app/globals.css` 的 `@theme static` token；淺色 Claude 象牙白 + 陶土橘、深色暖炭；`data-theme` 手動切換） |
-| Fonts | 標題 Source Serif 4、內文 Inter + 系統中文字、程式碼 JetBrains Mono、像素點綴 **俐方體 11 號**（Cubic 11，自訂子集 `shared/fonts/`） |
+| Fonts | 標題 Inter + **昭源甜圓**（Chiron GoRound TC 700，Google Fonts unicode-range 分片）、內文 Inter + 系統中文字、程式碼 JetBrains Mono、像素點綴 **俐方體 11 號**（Cubic 11，自訂子集 `shared/fonts/`） |
 | Markdown | unified：remark-parse → remark-gfm → remark-rehype → rehype-sanitize → rehype-slug → Shiki（建置時雙主題高亮） |
 | Search | Fuse.js v7.5.0（Skills）+ 文件頁標題比對 |
 | Test | `node:test` + tsx |

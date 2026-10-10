@@ -3,7 +3,7 @@ id: nms-boss-event
 title: NMS Boss Event
 titleZh: NMS Boss Bar 操作
 description: Operate Boss Bar progress, color, style, and per-player visibility via NMS ServerBossEvent on Paper 26.x with official Mojang names.
-descriptionZh: 透過 NMS ServerBossEvent 操作 Boss Bar 進度、顏色、風格與每人獨立可見性（Paper NMS + Mojang mappings）。
+descriptionZh: 透過 NMS ServerBossEvent 操作 Boss Bar 進度、顏色、風格與每人獨立可見性。
 version: "1.0.0"
 status: active
 category: nms-display

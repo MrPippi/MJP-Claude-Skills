@@ -3,7 +3,7 @@ id: nms-nbt-manipulation
 title: NMS NBT Manipulation
 titleZh: NMS NBT 操作
 description: Read and write NBT data on items, entities, and block entities via CompoundTag on Paper 26.x with official Mojang names.
-descriptionZh: 直接操作 CompoundTag 讀寫物品、實體、方塊實體的 NBT 資料（Paper NMS + Mojang mappings）。
+descriptionZh: 直接操作 CompoundTag 讀寫物品、實體、方塊實體的 NBT 資料。
 version: "1.0.0"
 status: active
 category: nms-data

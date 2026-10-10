@@ -20,7 +20,7 @@ export const zhTW: Translations = {
     githubProject: 'GitHub 專案',
     contributeGuide: '貢獻指南',
     license: '授權條款',
-    disclaimer: 'NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.',
+    disclaimer: 'Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.',
   },
   home: {
     eyebrow: 'AI Agent Skills · SKILL.md',

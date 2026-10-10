@@ -47,7 +47,7 @@ export function Header({ onSearchOpen }: HeaderProps) {
             <PixelIcon name="pickaxe" className="h-8 w-8" />
           </span>
           <span className="flex items-baseline gap-1.5">
-            <span className="font-serif text-lg font-semibold tracking-tight text-fg">MJP</span>
+            <span className="font-display text-lg font-semibold tracking-tight text-fg">MJP</span>
             <span className="hidden text-sm text-fg-3 sm:inline">Paper Skills</span>
           </span>
         </Link>

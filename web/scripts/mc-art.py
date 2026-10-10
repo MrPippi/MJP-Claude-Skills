@@ -97,6 +97,20 @@ def favicons(icon: Image.Image) -> None:
     print("  app/icon.png, app/apple-icon.png")
 
 
+def optically_centered(img: Image.Image) -> Image.Image:
+    """Shift opaque pixels by whole texels so the drawing sits centered in its slot (e.g. the sign hangs 1 texel low)."""
+    box = img.getbbox()
+    if box is None:
+        return img
+    dx = int((img.width - box[0] - box[2]) / 2)
+    dy = int((img.height - box[1] - box[3]) / 2)
+    if dx == 0 and dy == 0:
+        return img
+    canvas = Image.new("RGBA", img.size, (0, 0, 0, 0))
+    canvas.alpha_composite(img.crop(box), (box[0] + dx, box[1] + dy))
+    return canvas
+
+
 def save(img: Image.Image, rel: str) -> None:
     path = OUTPUT / rel
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -109,7 +123,7 @@ def main() -> None:
         raise SystemExit(f"source folder not found: {SOURCE}")
     print(f"{SOURCE} -> {OUTPUT}")
     for key, rel in PLAIN_ITEMS.items():
-        save(load(rel), f"items/{key}.png")
+        save(optically_centered(load(rel)), f"items/{key}.png")
     save(first_frame(load("block/command_block_front.png")), "items/command.png")
     save(chest_front(), "items/chest.png")
     save(face("entity/creeper/creeper.png", (8, 8, 16, 16)), "items/creeper.png")

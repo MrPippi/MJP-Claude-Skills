@@ -11,7 +11,7 @@ export function NotFoundClient() {
     <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-24 text-center">
       <PixelIcon name="creeper" className="h-24 w-24" title="Creeper" />
       <p className="mt-8 font-pixel text-5xl text-accent">404</p>
-      <h1 className="mt-4 font-serif text-3xl font-semibold text-fg">{t.notFound.title}</h1>
+      <h1 className="mt-4 font-display text-3xl font-semibold text-fg">{t.notFound.title}</h1>
       <p className="mt-3 text-fg-2">{t.notFound.description}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link href={ROUTES.home} className="btn-pixel btn-primary">

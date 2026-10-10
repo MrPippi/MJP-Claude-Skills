@@ -30,7 +30,7 @@ function SectionHeading({ label, title, action }: { label: string; title: string
     <div data-reveal className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="eyebrow">{label}</p>
-        <h2 className="mt-2 font-serif text-3xl font-semibold text-fg">{title}</h2>
+        <h2 className="mt-2 font-display text-3xl font-semibold text-fg">{title}</h2>
       </div>
       {action}
     </div>
@@ -59,7 +59,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
               <span className="h-1.5 w-1.5 bg-api" />
               {skills.length} skills · {MC_VERSIONS.join(' · ')}
             </p>
-            <h1 className="mt-6 font-serif text-4xl font-semibold leading-[1.1] tracking-tight text-fg sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 font-display text-4xl font-semibold leading-[1.1] tracking-tight text-fg sm:text-5xl lg:text-6xl">
               {h.titleLead}
               <br />
               <span className="text-accent">{h.titleAccent}</span>
@@ -90,7 +90,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       </section>
 
       {/* Platforms */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <SectionHeading label={h.platformsLabel} title={h.platformsTitle} />
         <div className="grid gap-5 md:grid-cols-2">
           {PLATFORMS.map((p, i) => {
@@ -103,7 +103,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
                     <PixelIcon name={p.icon} className="h-8 w-8" />
                   </span>
                   <div>
-                    <h3 className="font-serif text-2xl font-semibold text-fg">{p.label}</h3>
+                    <h3 className="font-display text-2xl font-semibold text-fg">{p.label}</h3>
                     <p className={`font-pixel text-[12px] ${isNms ? 'text-nms' : 'text-api'}`}>{format(h.platformSkills, { count: countFor(p.id) })}</p>
                   </div>
                 </div>
@@ -125,7 +125,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
 
       {/* How it works */}
       <section className="border-y border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
           <SectionHeading label={h.stepsLabel} title={h.stepsTitle} />
           <ol className="grid gap-8 md:grid-cols-3">
             {h.steps.map((step, i) => (
@@ -135,7 +135,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
                 </span>
                 <div>
                   <p className="font-pixel text-[12px] text-accent">0{i + 1}</p>
-                  <h3 className="mt-1 font-serif text-xl font-semibold text-fg">{step.title}</h3>
+                  <h3 className="mt-1 font-display text-xl font-semibold text-fg">{step.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-fg-2">{step.body}</p>
                 </div>
               </li>
@@ -145,7 +145,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       </section>
 
       {/* Featured */}
-      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
         <SectionHeading
           label={h.featuredLabel}
           title={h.featuredTitle}
@@ -159,7 +159,7 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       </section>
 
       {/* Reference */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-6 sm:pb-20">
         <SectionHeading label={h.referenceLabel} title={h.referenceTitle} />
         <p data-reveal className="-mt-4 mb-8 max-w-2xl text-sm text-fg-2">{h.referenceSubtitle}</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -177,11 +177,11 @@ export function HomePageClient({ skills, featuredSkills, referenceDocs }: HomePa
       </section>
 
       {/* Contribute */}
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 sm:pb-24">
         <div data-reveal className="flex flex-col items-start gap-6 rounded-md border border-line bg-surface p-8 sm:flex-row sm:items-center">
           <PixelIcon name="creeper" className="h-16 w-16 shrink-0" />
           <div className="flex-1">
-            <h2 className="font-serif text-2xl font-semibold text-fg">{h.ctaTitle}</h2>
+            <h2 className="font-display text-2xl font-semibold text-fg">{h.ctaTitle}</h2>
             <p className="mt-1 text-sm text-fg-2">{h.ctaDescription}</p>
           </div>
           <a href={GITHUB_CONTRIBUTE_URL} target="_blank" rel="noopener noreferrer" className="btn-pixel btn-primary">

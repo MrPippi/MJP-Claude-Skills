@@ -3,7 +3,7 @@ id: nms-packet-sender
 title: NMS Packet Sender
 titleZh: NMS 封包發送器
 description: Generate a packet sender utility to push Clientbound NMS packets via ServerPlayer.connection on Paper 26.x with official Mojang names.
-descriptionZh: 產生封包發送工具類，透過 ServerPlayer.connection 將 Clientbound 封包推送至客戶端（Paper NMS + Mojang mappings）。
+descriptionZh: 產生封包發送工具類，透過 ServerPlayer.connection 將 Clientbound 封包推送至客戶端。
 version: "1.0.0"
 status: active
 category: nms-packet
