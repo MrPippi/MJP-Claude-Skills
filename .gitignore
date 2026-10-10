@@ -79,3 +79,10 @@ yarn-error.log*
 *.zip
 *.tar.gz
 *.rar
+
+# =============================================================================
+# Skill compile verification (verify/)
+# =============================================================================
+verify/build/
+verify/.gradle/
+!verify/gradle/wrapper/gradle-wrapper.jar

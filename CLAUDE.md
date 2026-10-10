@@ -30,7 +30,8 @@ MJP-Paper-Skills/
 ├── CHANGELOG.md
 ├── .github/workflows/
 │   ├── nextjs.yml                       ← main push：tsc + test + build + 部署 GitHub Pages
-│   └── ci.yml                           ← PR：tsc + test + build（不部署）
+│   ├── ci.yml                           ← PR：tsc + test + build（不部署）
+│   └── skills-compile.yml               ← 範本對 26.2／1.21.11 編譯（改到 Skills/、verify/ 時）
 ├── .claude/
 │   └── skills/                          ← Claude Code 執行時（30 個技能，與 Skills/ 同步）
 │       ├── skills-registry.yml          ← 與 Skills/ 相同
@@ -49,7 +50,9 @@ MJP-Paper-Skills/
 │   ├── nms/                             ← NMS 技能（每個含 SKILL.md + examples.md + references/）
 │   └── paper/                           ← Paper API 技能（每個含 SKILL.md + examples.md + references/）
 ├── scripts/
-│   └── sync-skill-references.mjs        ← 產生各技能 references/（PLATFORM.md、_shared 副本）
+│   ├── sync-skill-references.mjs        ← 產生各技能 references/（PLATFORM.md、_shared 副本）
+│   └── extract-skill-java.mjs           ← 抽出完整 Java 範本（套用 @1.21.11／@only）供 verify/ 編譯
+├── verify/                              ← Gradle 專案：對指定版本 dev bundle 編譯抽出的範本
 ├── .cursor/                             ← 歷史殘留，不再維護
 ├── docs/
 │   └── paper-nms/                       ← NMS API 速查表（深度參考資料）
@@ -255,7 +258,7 @@ Paper API 技能（`Skills/paper/`）使用相同結構，差異：`name: paper-
 6. 若涉及新平台，建立 `Skills/<platform>/PLATFORM.md`
 7. 驗證觸發關鍵字無與既有技能衝突
 8. 在 `web/data/skills/<slug>.md` 新增網站頁面、在 `web/data/skills/en/<slug>.md` 新增英文內文（只含內文、不含 frontmatter、不得有中文），並更新 `web/tests/skills-api.data.test.ts` 的預期清單
-9. 範本對 1.21.11 與 26.2 實際編譯驗證（NMS 技能用 dev bundle；Paper API 技能只用 `paper-api` 與 PLATFORM.md 列出的依賴）
+9. 範本對 1.21.11 與 26.2 實際編譯驗證：`node scripts/extract-skill-java.mjs <版本>` 後在 `verify/` 執行 `./gradlew compileSkills -Pmc=<版本>`（26.2 用 JDK 25、1.21.11 用 JDK 21；CI `skills-compile.yml` 也會跑）。只編譯含 `package` 的完整檔案；examples.md 的同名類別會覆蓋 SKILL.md 版本另成一組編譯。Paper API 技能不得 import NMS（抽取時檢查）
 
 ---
 
@@ -351,7 +354,7 @@ npm run build         # 靜態匯出至 web/out/（robots.txt / sitemap.xml 由 
 
 3. **`.cursor/` 不再維護**：歷史殘留，日後可能移除；Claude Code 工作一律以 `.claude/skills/` 為準。
 
-4. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
+4. **MC 版本**：所有技能範本必須同時對 Paper **1.21.11** 與 **26.2** 編譯驗證（CI `skills-compile.yml` 自動檢查）。預設寫 26.2 API；1.21.11 寫法不同的行在行尾加 `// @1.21.11: <替代程式碼>`，只適用單一版本的區塊第一行加 `// @only <版本>`（見 `Skills/paper-nms/PLATFORM.md`）。
 
 5. **Mojang 官方名稱強制**：不產生 Spigot/混淆映射的代碼。
 
