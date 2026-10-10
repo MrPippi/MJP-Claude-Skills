@@ -43,6 +43,7 @@ const EXPECTED_SLUGS = [
   'paper-combat-tag',
   'paper-config-lang',
   'paper-dialog-ui',
+  'paper-discord-bridge',
   'paper-disposable-world',
   'paper-economy-ledger',
   'paper-embedded-http',
@@ -59,7 +60,7 @@ describe('getAllSkills (real data)', () => {
     assert.equal(getAllSkills().length, mdCount);
   });
 
-  it('contains the 30 skills in title order', () => {
+  it('contains the 31 skills in title order', () => {
     assert.deepEqual(getAllSkills().map((s) => s.slug), EXPECTED_SLUGS);
   });
 
@@ -79,9 +80,9 @@ describe('getAllSkills (real data)', () => {
 describe('getCategories (real data)', () => {
   it('returns 15 categories sorted by count desc', () => {
     assert.deepEqual(getCategories(), [
+      { id: 'paper-integration', label: 'Paper 整合', labelEn: 'Paper Integration', count: 4 },
       { id: 'nms-world', label: 'NMS 世界', labelEn: 'NMS World', count: 3 },
       { id: 'paper-gameplay', label: 'Paper 玩法', labelEn: 'Paper Gameplay', count: 3 },
-      { id: 'paper-integration', label: 'Paper 整合', labelEn: 'Paper Integration', count: 3 },
       { id: 'nms-entity', label: 'NMS 實體', labelEn: 'NMS Entity', count: 2 },
       { id: 'nms-display', label: 'NMS 顯示', labelEn: 'NMS Display', count: 2 },
       { id: 'nms-data', label: 'NMS 資料', labelEn: 'NMS Data', count: 2 },

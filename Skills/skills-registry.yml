@@ -1,4 +1,4 @@
-version: "7.0.0"
+version: "7.1.0"
 updated: "2026-10-09"
 description: "MJP-Paper-Skills — Minecraft Paper Agent Skills / 技能索引：NMS（paper-nms）與純 Paper API（paper-api），Paper 1.21.11 / 26.x"
 
@@ -936,6 +936,48 @@ skills:
       - "JSON API"
       - "rate limit"
       - "反向代理"
+
+  - id: paper-discord-bridge
+    version: "1.0.0"
+    status: active
+    platform: paper-api
+    category: paper-integration
+    description: "只用 JDK 的 Discord 聊天橋接：webhook 佇列送出（429 照 Retry-After、禁止 @提及）、Gateway WebSocket 狀態機收訊（心跳、RESUME、退避），入站回主執行緒、祕密不進 log / JDK-only Discord chat bridge: webhook queue out (Retry-After, no mentions), Gateway WebSocket state machine in (heartbeat, RESUME, backoff), main-thread inbound, secrets never logged"
+    skill_file: paper/paper-discord-bridge/SKILL.md
+    examples_file: paper/paper-discord-bridge/examples.md
+    inputs:
+      - name: base_package
+        description: "根 package（純邏輯在 .core、Discord I/O 在 .discord）"
+        required: true
+      - name: tier
+        description: "webhook-only（只送出）或 two-way（需 bot token、channel id、Message Content Intent）"
+        required: true
+      - name: account_links
+        description: "誰能從 Discord 發言：everyone／nobody／自訂帳號連結查詢"
+        required: false
+      - name: inbound_format
+        description: "入站 MiniMessage 格式（<name>、<message> 以 unparsed 插入）"
+        required: false
+    outputs:
+      - name: "GatewaySession.java"
+        description: "純邏輯 Gateway 狀態機（HELLO、心跳、IDENTIFY／RESUME、op 7／9、致命關閉碼）"
+      - name: "GatewayClient.java"
+        description: "JDK WebSocket I/O，單一 scheduled executor 執行緒"
+      - name: "PostQueue.java"
+        description: "webhook 送出佇列（daemon 執行緒、429 照 Retry-After 重送一次）"
+      - name: "Payloads.java"
+        description: "送出 JSON（allowed_mentions 為空、Markdown／提及跳脫）"
+      - name: "InboundRelay.java"
+        description: "主執行緒：帳號連結檢查、送進遊戲或回覆原因（冷卻）"
+    tags: [paper-api, discord, webhook, gateway, websocket, chat-bridge]
+    trigger_keywords:
+      - "Discord 橋接"
+      - "Discord bridge"
+      - "Discord 聊天同步"
+      - "Discord chat sync"
+      - "Discord webhook"
+      - "Discord Gateway"
+      - "不用 DiscordSRV"
 
   - id: paper-packetevents-filter
     version: "1.0.0"

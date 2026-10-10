@@ -27,7 +27,7 @@ export const en: Translations = {
     titleLead: 'One prompt.',
     titleAccent: 'A working Paper plugin.',
     heroDescription:
-      '30 agent skills built for Paper plugin development, for Claude Code, Codex, Cursor, Copilot and more — from NMS packets, Netty interception and custom entities to Dialogs, SQLite, cross-plugin APIs and PvP gameplay. Every template is compile-verified against 1.21.11 and 26.2.',
+      '31 agent skills built for Paper plugin development, for Claude Code, Codex, Cursor, Copilot and more — from NMS packets, Netty interception and custom entities to Dialogs, SQLite, cross-plugin APIs and PvP gameplay. Every template is compile-verified against 1.21.11 and 26.2.',
     ctaPrimary: 'Get started',
     ctaSecondary: 'Browse skills',
     statsSkills: 'Skills',
@@ -64,7 +64,7 @@ export const en: Translations = {
   docs: {
     overviewLabel: 'Docs',
     overviewTitle: 'MJP Paper Skills docs',
-    overviewDescription: 'Installation, platform build setup, threading and naming concepts, all 30 skills, and the NMS API reference.',
+    overviewDescription: 'Installation, platform build setup, threading and naming concepts, all 31 skills, and the NMS API reference.',
     sections: { start: 'Get started', platforms: 'Platforms', concepts: 'Concepts', skills: 'Skills', reference: 'Reference' },
     sectionDescriptions: {
       start: 'Install the skills, trigger them, and FAQ.',

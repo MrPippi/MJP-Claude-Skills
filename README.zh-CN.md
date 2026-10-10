@@ -8,7 +8,7 @@
 
 [![Paper](https://img.shields.io/badge/Paper-1.21.11%20%7C%2026.2-2ea44f)](https://papermc.io)
 [![Java](https://img.shields.io/badge/Java-21%20%7C%2025-orange)](https://adoptium.net)
-[![Skills](https://img.shields.io/badge/skills-30-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
+[![Skills](https://img.shields.io/badge/skills-31-blue)](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)
 [![Agent Skills](https://img.shields.io/badge/format-Agent%20Skills-8a63d2)](https://agentskills.io)
 [![Skills compile](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml/badge.svg)](https://github.com/MrPippi/MJP-Paper-Skills/actions/workflows/skills-compile.yml)
 [![License: MIT](https://img.shields.io/github/license/MrPippi/MJP-Paper-Skills)](LICENSE)
@@ -29,7 +29,7 @@ AI 编程工具经常在 Paper 插件上出现细微错误：过时或已混淆�
 - **Mojang 官方名称**：NMS 代码使用 Paperweight userdev，以及 Minecraft 自 26.1 起以未混淆形式发布的名称。
 - **线程安全的设计**：每个技能都会说明每次调用在哪个线程执行（主线程、Netty IO 或异步）。
 - **不限工具**：开放的 [Agent Skills](https://agentskills.io) 格式可用于 Claude Code、OpenAI Codex、Cursor、GitHub Copilot、Gemini CLI 等工具。
-- **两条路线**：16 个处理底层工作的 NMS 技能，以及 14 个只需 `paper-api` 的 Paper API 技能。
+- **两条路线**：16 个处理底层工作的 NMS 技能，以及 15 个只需 `paper-api` 的 Paper API 技能。
 - **易读的文档**：每个技能也发布在[文档网站](https://mrpippi.github.io/MJP-Paper-Skills)上，提供英文和繁体中文版本。
 
 ## 目录
@@ -114,7 +114,7 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 
 ## 技能目录
 
-共 30 个技能，均已针对 Paper 1.21.11 和 26.2 完成编译验证。可在[文档网站](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)按条件筛选并查看完整模板；机器可读的索引为 [`Skills/skills-registry.yml`](Skills/skills-registry.yml)。
+共 31 个技能，均已针对 Paper 1.21.11 和 26.2 完成编译验证。可在[文档网站](https://mrpippi.github.io/MJP-Paper-Skills/docs/skills)按条件筛选并查看完整模板；机器可读的索引为 [`Skills/skills-registry.yml`](Skills/skills-registry.yml)。
 
 ### NMS（16 个技能，需要 Paperweight userdev）
 
@@ -137,7 +137,7 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 | 桥接 | [`nms-reflection-bridge`](Skills/nms/nms-reflection-bridge/SKILL.md) | 不依赖 Paperweight、通过反射访问 NMS |
 | 桥接 | [`nms-version-adapter`](Skills/nms/nms-version-adapter/SKILL.md) | 支持多版本 NMS 的适配器模式 |
 
-### Paper API（14 个技能，只需 `paper-api`）
+### Paper API（15 个技能，只需 `paper-api`）
 
 | 类别 | 技能 | 功能 |
 |----------|-------|--------------|
@@ -148,6 +148,7 @@ Before writing Paper plugin code, find the matching skill in <skills-folder>/ski
 | 集成 | [`paper-service-api`](Skills/paper/paper-service-api/SKILL.md) | 通过 ServicesManager 提供跨插件 API |
 | 集成 | [`paper-softdepend-hook`](Skills/paper/paper-softdepend-hook/SKILL.md) | Vault 和 PlaceholderAPI 的软依赖 Hook |
 | 集成 | [`paper-embedded-http`](Skills/paper/paper-embedded-http/SKILL.md) | 绑定 localhost、带限流的内嵌 JSON HTTP API |
+| 集成 | [`paper-discord-bridge`](Skills/paper/paper-discord-bridge/SKILL.md) | 仅用 JDK 的 Discord 双向聊天桥接：webhook 外发、Gateway 接收 |
 | 网络 | [`paper-packetevents-filter`](Skills/paper/paper-packetevents-filter/SKILL.md) | 使用 PacketEvents 或 ProtocolLib 过滤数据包 |
 | 网络 | [`paper-client-side-effects`](Skills/paper/paper-client-side-effects/SKILL.md) | 每位玩家独立的世界边界、时间、天气和隐藏玩家 |
 | 玩法 | [`paper-combat-tag`](Skills/paper/paper-combat-tag/SKILL.md) | PvP 战斗标记，含伤害归属和战斗中下线处理 |
@@ -198,12 +199,12 @@ Your request ──▶ skill description ──▶ SKILL.md ──▶ references
 MJP-Paper-Skills/
 ├── .claude/skills/           # 可直接复制的技能文件夹（镜像 Skills/，PLATFORM 文件夹除外）
 ├── Skills/                   # 技能的标准来源
-│   ├── skills-registry.yml   # 全部 30 个技能的索引（paper-nms + paper-api）
+│   ├── skills-registry.yml   # 全部 31 个技能的索引（paper-nms + paper-api）
 │   ├── _shared/              # 所有技能共用的线程与命名规则
 │   ├── paper-nms/PLATFORM.md # NMS build.gradle / paper-plugin.yml 模板、版本表
 │   ├── paper-api/PLATFORM.md # Paper API 构建配置、软依赖坐标
 │   ├── nms/<skill-id>/       # SKILL.md + examples.md + references/（16 个 NMS 技能）
-│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/（14 个 Paper API 技能）
+│   └── paper/<skill-id>/     # SKILL.md + examples.md + references/（15 个 Paper API 技能）
 ├── scripts/                  # sync-skill-references.mjs（references/）、extract-skill-java.mjs（编译检查）
 ├── verify/                   # 为各版本编译所提取模板的 Gradle 项目
 ├── docs/paper-nms/           # NMS API 速查表
